@@ -212,11 +212,14 @@ function sizeCanvas(c) {
 }
 
 function rebuildBgGradient() {
-  // PERF: bake the base gradient AND the nebula into ONE cached canvas —
-  // the per-frame background cost becomes a single drawImage blit
+  // PERF: bake the base gradient AND the nebula into ONE cached canvas at
+  // DEVICE resolution — per-frame background cost becomes a single 1:1 blit
+  // (a CSS-px cache would be re-filtered/upscaled every frame on HiDPI)
   const c = document.createElement("canvas");
-  c.width = Math.max(1, bgW); c.height = Math.max(1, bgH);
+  c.width = Math.max(1, Math.round(bgW * dpr));
+  c.height = Math.max(1, Math.round(bgH * dpr));
   const x = c.getContext("2d");
+  x.scale(dpr, dpr);
 
   const grd = x.createRadialGradient(bgW*0.2,bgH*0.15,0,bgW*0.5,bgH*0.5,Math.max(bgW,bgH));
   grd.addColorStop(0,"#0a0b12"); grd.addColorStop(0.6,"#06070d"); grd.addColorStop(1,"#000");
@@ -291,10 +294,18 @@ const DISTANT_SUN = {
   time: 0             // Animation time
 };
 
-function spawnStar() {
-  // use cached bg sizes for consistency and to avoid layout reads
-  return { x: (Math.random()-0.5)*bgW*2, y:(Math.random()-0.5)*bgH*2, base:0.15+Math.random()*0.35, a:0, ta:0, next:performance.now()+500+Math.random()*1500, twEnd:0 };
+// PERF: reset stars IN PLACE — allocating fresh objects for every respawn
+// during warp caused GC pauses (= stutter) right in the middle of the effect
+function resetStar(s) {
+  s.x = (Math.random()-0.5)*bgW*2;
+  s.y = (Math.random()-0.5)*bgH*2;
+  s.base = 0.15+Math.random()*0.35;
+  s.a = 0; s.ta = 0;
+  s.next = performance.now()+500+Math.random()*1500;
+  s.twEnd = 0;
+  return s;
 }
+function spawnStar() { return resetStar({}); }
 function spawnMeteor() {
   const edges = ["top","right","bottom","left"][Math.floor(Math.random()*4)];
   let x, y, vx, vy; const speed = 3.5 + Math.random()*2.2;
@@ -508,8 +519,11 @@ function drawTIEFighters(ctx, now) {
 // (nebula is baked into the background cache — see rebuildBgGradient)
 
 function renderStars(dt = 16.7) {
-  // paint bg (gradient + nebula pre-baked into one cached canvas)
+  // paint bg (gradient + nebula pre-baked at device res; 1:1 copy, no filtering)
+  bctx.save();
+  bctx.setTransform(1, 0, 0, 1, 0, 0);
   bctx.drawImage(bgGradient, 0, 0);
+  bctx.restore();
 
   // Draw distant sun/planet BEFORE stars (so stars appear in front)
   const now = performance.now();
@@ -560,7 +574,7 @@ function renderStars(dt = 16.7) {
       const s = stars[k];
       s.x += s.x * starSpeed + parallaxX * 40;
       s.y += s.y * starSpeed + parallaxY * 40;
-      if (s.x*s.x + s.y*s.y > (bgW*bgW + bgH*bgH)) Object.assign(s, spawnStar());
+      if (s.x*s.x + s.y*s.y > (bgW*bgW + bgH*bgH)) resetStar(s);
 
       // Distance from center: fade lengths/alpha near the center to avoid white-out
       const dist = Math.hypot(s.x, s.y);
@@ -624,13 +638,17 @@ function startWarp(theme = pickWarpTheme(true)){
     resizeAll();
     ensureShip();
     ensureShip3D();
+  }, CONFIG.WARP.ENTER_FADE_MS);
 
-    // Begin warming planet PNGs only after first transition
+  // Warm planet PNGs only AFTER the warp fully settles — fetching/decoding
+  // megabytes of images during the warp animation caused visible stutter
+  setTimeout(() => {
     try {
       const allTargets = [...ROOMS[0].targets, ...ROOMS[1].targets];
       const seen = new Set();
       const urls = [];
       allTargets.forEach(t => {
+        if (t.noSprite) return;
         const key = (t.name || "").toLowerCase().replace(/[^a-z0-9]/g,'');
         if (!key) return;
         const file = FILE_OVERRIDE[key] || key;
@@ -638,12 +656,11 @@ function startWarp(theme = pickWarpTheme(true)){
         if (!seen.has(url)) { seen.add(url); urls.push(url); }
       });
       if (urls.length) {
-        if ('requestIdleCallback' in window) requestIdleCallback(() => warmImagesSequential(urls), { timeout: 2_000 });
-        else setTimeout(() => warmImagesSequential(urls), 200);
+        if ('requestIdleCallback' in window) requestIdleCallback(() => warmImagesSequential(urls), { timeout: 4_000 });
+        else setTimeout(() => warmImagesSequential(urls), 500);
       }
     } catch {}
-
-  }, CONFIG.WARP.ENTER_FADE_MS);
+  }, CONFIG.WARP.ENTER_FADE_MS + CONFIG.WARP.HOLD_MS + CONFIG.WARP.EXIT_FADE_MS + 1500);
 
   setTimeout(() => {
     warpTarget = CONFIG.STARS.CRUISE_SPEED;
@@ -1127,8 +1144,43 @@ const aboutHTML = `
   </div>
 `;
 
+// ---------- Services (Hire Me planet) ----------
+const SERVICES = SITE.services || {};
+function servicesHTML(){
+  const tiers = (SERVICES.tiers || []).map(t => `
+    <article class="price-card${t.featured ? " price-card--featured" : ""}">
+      ${t.featured ? `<div class="price-card__flag">Most popular</div>` : ""}
+      <h3 class="price-card__name">${t.name}</h3>
+      <div class="price-card__price">${t.price}</div>
+      <div class="price-card__tagline">${t.tagline || ""}</div>
+      <ul class="price-card__features">${(t.features || []).map(f => `<li>${f}</li>`).join("")}</ul>
+    </article>`).join("");
+  const includes = (SERVICES.includes || []).map(i => `<span class="badge">${i}</span>`).join("");
+  return `
+    <p>${SERVICES.intro || "I design and build websites — get in touch for a quote."}</p>
+    <div class="price-grid">${tiers}</div>
+    ${includes ? `<p class="subhead">Every project includes</p><div class="badges">${includes}</div>` : ""}
+    ${SERVICES.note ? `<p class="input-help" style="margin-top:12px">${SERVICES.note}</p>` : ""}
+    <div class="link-row" style="margin-top:16px">
+      <button class="btn" id="svc-contact" type="button">Start a project</button>
+      <a class="link-btn" href="${LINKS.email}">${ICONS.email}Email me</a>
+      <a class="link-btn" href="${LINKS.linkedin}" target="_blank" rel="noopener">${ICONS.linkedin}LinkedIn</a>
+    </div>`;
+}
+
 // ---------- Projects (rich details) ----------
 const PROJECTS = [
+  {
+    title:"Whats4Dinner.com",
+    summary:"Live meal-planning web app — recipe discovery, sign-in, and “what’s for dinner?” answered in seconds.",
+    requires:["React","TypeScript","OAuth","API design","Deployment"],
+    does:[
+      "Recipe discovery and meal planning flows",
+      "OAuth sign-in with real user accounts",
+      "Shipped, hosted and running in production"
+    ],
+    links:[{ label:"Visit live site", href:"https://whts4dinner.com" }]
+  },
   {
     title:"NDA Signed Mission HUD",
     summary:"Cinematic HUD driving objectives, diegetic markers, and guided flow.",
@@ -1212,6 +1264,8 @@ const CONTACT_HTML = `
     </div>
     <p id="contact-status" aria-live="polite" style="margin:6px 0 0; color:#cfe1ff;"></p>
   </form>
+  <p class="subhead">Or find me here</p>
+  ${renderLinksRow()}
 `;
 
 function bindContactForm(){
@@ -1300,6 +1354,7 @@ const ROOMS = [
     { name: NAMES[9], px: 60, py: 18, r: 34, planet: PLANETS.violet, label: "Certifications",  action: () => openLanding("Certifications", certificationsHTML()), warp: "theme-violet", ringTilt: -0.38 },
     { name: SKILLS_PLANET.name, px: 75, py: 68, r: SKILLS_PLANET.r, planet: SKILLS_PLANET.planet, label: SKILLS_PLANET.label, action: () => openLanding("Skills", renderSkillsHTML()), asteroids: SKILLS_PLANET.asteroids, warp: WARP_THEME[skillsCfg.palette || "violet"] || "theme-violet" },
     { name: NAMES[6], px: 78, py: 22, r: 40, planet: PLANETS.coral,  label: "Contact",         action: () => openLanding("Contact", CONTACT_HTML), warp: "theme-magma" },
+    { name: "Aurum", px: 14, py: 70, r: 40, planet: PLANETS.amber, label: "Hire Me", action: () => openLanding("Hire Me — Web Design", servicesHTML()), warp: "theme-magma", noSprite: true },
     { name: NAMES[3], px: 42, py: 74, r: 40, planet: PLANETS.mint,   label: "Solar System →",     action: () => setRoom(1), warp: "theme-emerald" },
   ]},
   { targets: [
@@ -1347,6 +1402,13 @@ function buildPlanetTextures(list){
   list.forEach(t => {
     const key = t.name.toLowerCase().replace(/[^a-z0-9]/g, '');
     if (planetCache.has(key)) { t.tex = planetCache.get(key); ensureAsteroids(t); return; }
+
+    // planets without artwork go straight to a generated texture (no 404 fetch)
+    if (t.noSprite) {
+      const tex = makePlanetTexture(t.r, t.planet, t.name.split("").reduce((a,c)=>a+c.charCodeAt(0),0));
+      planetCache.set(key, tex); t.tex = tex; ensureAsteroids(t);
+      return;
+    }
 
     const img = new Image();
     // PATCH: hint async decode to avoid layout jank
@@ -1779,6 +1841,9 @@ function openLanding(title, html){
   landing.hidden = false;
   if (landing.querySelector("#contact-form")) bindContactForm();
   if (landing.querySelector(".skills")) refreshSkillBars();
+  // "Start a project" on the services panel jumps to the contact form
+  const svcBtn = landing.querySelector("#svc-contact");
+  if (svcBtn) svcBtn.addEventListener("click", () => openLanding("Contact", CONTACT_HTML), { once: true });
 }
 
 // ========================== INPUT ==========================
@@ -1870,6 +1935,19 @@ function adaptQuality(dt){
   }
 }
 
+// ========================== FRAME PROFILER ==========================
+// Pinpoints stutter: whenever a frame stalls (>50ms) the console gets a
+// per-section breakdown naming the culprit. Add ?debug to the URL (or set
+// localStorage rvdw-debug=1) for rolling 5s averages as well.
+const PERF_DEBUG = /[?&]debug/.test(location.search) ||
+  (() => { try { return localStorage.getItem("rvdw-debug") === "1"; } catch { return false; } })();
+const perf = { frame: {}, sums: {}, frames: 0, lastSummary: performance.now(), lastWarn: 0 };
+function perfTime(name, fn, arg){
+  const t0 = performance.now();
+  fn(arg);
+  perf.frame[name] = performance.now() - t0;
+}
+
 let _lastTs = performance.now();
 function loop(){
   const now = performance.now();
@@ -1882,13 +1960,35 @@ function loop(){
     if (!ship.moving) aimShipTowards(mouseX, mouseY);
   }
 
-  renderStars(dt);
-  updateCam(dt);
-  updateShip();
-  drawUI();
+  // PERF: skip painting entirely while a landing panel covers the canvases
+  const covered = landing && !landing.hidden;
+
+  perf.frame = {};
+  if (!covered) perfTime("stars+bg", renderStars, dt);
+  perfTime("camera", updateCam, dt);
+  perfTime("ship", updateShip);
+  if (!covered) perfTime("planets+ui", drawUI);
   maybeAutopilot();
 
   adaptQuality(dt); // PATCH: adaptive perf
+
+  // jank report: name the slow section instead of guessing
+  // (only when the tab is focused — background/occluded tabs are throttled
+  // by the browser itself, which is not jank)
+  if (dt > 50 && dt < 5000 && document.hasFocus() && now - perf.lastWarn > 2000){
+    perf.lastWarn = now;
+    const parts = Object.entries(perf.frame).map(([k,v]) => `${k} ${v.toFixed(1)}ms`).join(" · ");
+    console.warn(`[perf] long frame ${dt.toFixed(0)}ms → ${parts} (rest = ship3d/GC/browser)`);
+  }
+  if (PERF_DEBUG){
+    for (const k in perf.frame) perf.sums[k] = (perf.sums[k] || 0) + perf.frame[k];
+    perf.frames++;
+    if (now - perf.lastSummary > 5000){
+      const avg = Object.entries(perf.sums).map(([k,v]) => `${k} ${(v/perf.frames).toFixed(2)}ms`).join(" · ");
+      console.info(`[perf] avg over ${perf.frames} frames → ${avg}`);
+      perf.sums = {}; perf.frames = 0; perf.lastSummary = now;
+    }
+  }
 
   requestAnimationFrame(loop);
 }

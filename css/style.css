@@ -285,11 +285,11 @@ a:focus-visible,
   z-index:5;
   display:flex;gap:4px;align-items:center;
   padding:6px;
-  background:rgba(8,11,20,.72);
+  /* PERF: no backdrop-filter here — blurring an ever-changing canvas
+     underneath forces a GPU re-blur every frame (major stutter source) */
+  background:rgba(8,11,20,.9);
   border:1px solid var(--line);
   border-radius:999px;
-  -webkit-backdrop-filter:blur(14px);
-          backdrop-filter:blur(14px);
   box-shadow:0 14px 40px rgba(0,0,0,.45);
   max-width:min(94vw,720px);
   overflow-x:auto;
@@ -326,11 +326,10 @@ a:focus-visible,
   width:46px;height:46px;
   display:grid;place-items:center;
   padding:0;border-radius:50%;cursor:pointer;
-  background:rgba(8,11,20,.72);
+  /* PERF: solid bg, no backdrop-filter (see .quick-nav note) */
+  background:rgba(8,11,20,.9);
   border:1px solid var(--line-strong);
   color:var(--ink-soft);
-  -webkit-backdrop-filter:blur(14px);
-          backdrop-filter:blur(14px);
   box-shadow:0 10px 30px rgba(0,0,0,.4);
   transition:color .15s ease, border-color .15s ease, background .15s ease, transform .12s ease;
 }
@@ -345,8 +344,6 @@ a:focus-visible,
 .audio-toggle[data-muted="true"] .audio-toggle__icon--on{display:none}
 .audio-toggle[data-muted="true"] .audio-toggle__icon--off{display:block}
 .audio-toggle[data-muted="true"]{color:var(--ink-dim)}
-.low-end .audio-toggle{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(8,11,20,.94)}
-
 /* ---------- Click flash (hit marker) ---------- */
 .flash{
   position:absolute;width:40px;height:40px;
@@ -828,6 +825,65 @@ a:focus-visible,
 .card .link-row{margin-top:auto;padding-top:12px}
 
 /* ==========================================================================
+   PRICING (Hire Me panel)
+   ========================================================================== */
+.price-grid{
+  display:grid;gap:14px;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  margin-top:16px;
+  align-items:stretch;
+}
+.price-card{
+  position:relative;
+  display:flex;flex-direction:column;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:22px 18px 18px;
+  transition:transform .15s ease, border-color .15s ease;
+}
+.price-card:hover{transform:translateY(-2px);border-color:var(--line-strong)}
+.price-card--featured{
+  border-color:rgba(255,224,129,.45);
+  background:linear-gradient(170deg, rgba(255,224,129,.07), transparent 45%), var(--card);
+}
+.price-card__flag{
+  position:absolute;top:-11px;left:16px;
+  background:linear-gradient(180deg,#ffe995,#f4cc4e);
+  color:#1a1403;
+  font-family:var(--font-display);
+  font-size:.66rem;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;
+  padding:4px 11px;border-radius:999px;
+  box-shadow:0 4px 14px rgba(0,0,0,.35);
+}
+.price-card__name,
+#landing .landing__panel h3.price-card__name{
+  margin:0 0 2px;
+  font-size:.74rem;font-weight:600;
+  letter-spacing:.22em;text-transform:uppercase;
+  color:var(--gold);
+}
+.price-card__price{
+  font-family:var(--font-display);
+  font-size:1.7rem;font-weight:700;
+  color:var(--ink);
+  margin:2px 0 4px;
+}
+.price-card__tagline{color:var(--ink-dim);font-size:.86rem;margin-bottom:12px}
+.price-card__features{
+  margin:auto 0 0;padding:0;list-style:none;
+  display:grid;gap:8px;
+  color:var(--ink-soft);font-size:.88rem;line-height:1.5;
+}
+.price-card__features li{padding-left:20px;position:relative}
+.price-card__features li::before{
+  content:"✦";
+  position:absolute;left:0;top:1px;
+  color:var(--cyan);font-size:.75rem;
+}
+
+/* ==========================================================================
    MISC COMPONENTS
    ========================================================================== */
 .video-wrap{
@@ -897,7 +953,6 @@ a:focus-visible,
 /* low-end mode hook (JS toggles <html class="low-end">) */
 .low-end .skill__fill{animation:none !important;width:var(--w)}
 .low-end .landing__panel{-webkit-backdrop-filter:none !important;backdrop-filter:none !important;background:var(--panel-solid)}
-.low-end .quick-nav{-webkit-backdrop-filter:none !important;backdrop-filter:none !important;background:rgba(8,11,20,.94)}
 
 /* skip offscreen rendering cost for heavy sections */
 @supports (content-visibility:auto){
