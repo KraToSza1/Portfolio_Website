@@ -1,0 +1,125 @@
+/**
+ * Intro Crawl Styles
+ * Star Wars style opening crawl
+ */
+
+.crawl-wrapper {
+  position: relative;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  perspective: 360px;
+  z-index: 2;
+  overflow: hidden;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+.crawl-wrapper::before,
+.crawl-wrapper::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 16vh;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.crawl-wrapper::before {
+  top: 0;
+  background: linear-gradient(#000, transparent);
+}
+
+.crawl-wrapper::after {
+  bottom: 0;
+  background: linear-gradient(transparent, #000);
+}
+
+.crawl {
+  text-align: center;
+  max-width: min(940px, 92vw);
+  padding: 0 16px;
+  animation: crawlReadable var(--crawl-duration) linear forwards;
+  transform: translateY(40vh) scale(1) rotateX(12deg);
+  will-change: transform;
+  position: relative;
+}
+
+.crawl--slow {
+  animation-duration: calc(var(--crawl-duration) * 1.35);
+}
+
+.crawl p {
+  margin: 0.9em 0;
+  color: #f4f6ff;
+  opacity: 0.9;
+  line-height: 1.7;
+  font-size: clamp(0.95rem, 3.6vw, 1.1rem);
+}
+
+.crawl .whisper {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.crawl .callout {
+  color: var(--yellow);
+  font-weight: 700;
+}
+
+/* Phones: a touch more padding for the crawl block */
+@media (max-width: 520px) {
+  .crawl {
+    padding-inline: clamp(20px, 6vw, 28px);
+  }
+}
+
+@keyframes crawlReadable {
+  0% {
+    transform: translateY(40vh) scale(1.00) rotateX(12deg);
+  }
+  50% {
+    transform: translateY(-50vh) scale(0.90) rotateX(15deg);
+  }
+  100% {
+    transform: translateY(-165vh) scale(0.82) rotateX(18deg);
+  }
+}
+
+/* Reduced motion = no crawl, just center */
+@media (prefers-reduced-motion: reduce) {
+  .crawl {
+    animation: none;
+    transform: none;
+  }
+}
+
+/* Start button */
+#start-button,
+.btn-start {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: clamp(16px, 2.8vh, 40px);
+  padding: 12px 24px;
+  background: var(--yellow);
+  color: #000;
+  font-weight: 700;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 3;
+  transition: filter 0.15s ease, transform 0.08s ease;
+  min-height: 44px;
+  margin-bottom: max(0px, var(--safe-bottom));
+}
+
+#start-button:hover {
+  filter: brightness(0.95);
+}
+
+#start-button:active {
+  transform: translateX(-50%) scale(0.98);
+}

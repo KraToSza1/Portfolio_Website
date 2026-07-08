@@ -6,27 +6,25 @@
   "use strict";
 
   // ---- tiny helpers ---------------------------------------------------------
-  function glowSpriteMat(hex = 0x5ef2ff, w = 96, h = 16) {
+  // soft radial glow texture — used for the engine bloom and the trail puffs.
+  // Drawn on camera-facing planes (NOT THREE.Sprite: sprites misbehave with
+  // this scene's Y-flipped orthographic camera).
+  function radialGlowTexture(size = 128) {
     const c = document.createElement("canvas");
-    c.width = w; c.height = h;
+    c.width = c.height = size;
     const g = c.getContext("2d");
-    const grd = g.createLinearGradient(0, 0, w, 0);
-    grd.addColorStop(0, "rgba(94,242,255,0)");
-    grd.addColorStop(0.5, "rgba(94,242,255,1)");
-    grd.addColorStop(1, "rgba(94,242,255,0)");
-    g.fillStyle = grd; g.fillRect(0, 0, w, h);
+    const grd = g.createRadialGradient(size/2, size/2, size*0.05, size/2, size/2, size/2);
+    grd.addColorStop(0,    "rgba(255,255,255,0.95)");
+    grd.addColorStop(0.25, "rgba(200,235,255,0.55)");
+    grd.addColorStop(0.6,  "rgba(150,215,255,0.18)");
+    grd.addColorStop(1,    "rgba(150,215,255,0)");
+    g.fillStyle = grd; g.fillRect(0, 0, size, size);
 
     const tex = new THREE.CanvasTexture(c);
     tex.minFilter = THREE.LinearFilter;
     tex.magFilter = THREE.LinearFilter;
-    tex.wrapS = THREE.ClampToEdgeWrapping;
-    tex.wrapT = THREE.ClampToEdgeWrapping;
     tex.colorSpace = THREE.SRGBColorSpace;
-
-    return new THREE.SpriteMaterial({
-      map: tex, color: hex, transparent: true,
-      depthWrite: false, blending: THREE.AdditiveBlending
-    });
+    return tex;
   }
 
   class Ship3D {
@@ -53,24 +51,89 @@
       this._paused = false;
 
       const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (reduce || !window.THREE) return;
+      
+      // Wait for Three.js to load if not available yet
+      if (!window.THREE) {
+        // Check every 100ms for up to 10 seconds (100 attempts)
+        let attempts = 0;
+        const maxAttempts = 100;
+        const checkThree = setInterval(() => {
+          attempts++;
+          if (window.THREE) {
+            clearInterval(checkThree);
+            // Three.js is now loaded, initialize renderer
+            try {
+              this._initializeRenderer();
+              if (this.enabled) {
+                console.log("[Ship3D] Successfully initialized after Three.js load");
+              }
+            } catch (e) {
+              console.warn("[Ship3D] Init failed after Three.js load:", e);
+            }
+            return;
+          }
+          if (attempts >= maxAttempts) {
+            clearInterval(checkThree);
+            console.error("[Ship3D] Three.js not loaded after 10 seconds. Ship will not render.");
+            console.error("[Ship3D] Make sure Three.js CDN is accessible or load it locally.");
+            return;
+          }
+        }, 100);
+        return;
+      }
+      
+      if (reduce) return;
+      
+      // Initialize renderer - all initialization happens here
+      this._initializeRenderer();
+      
+      // Don't continue if initialization failed
+      if (!this.enabled || !this.renderer) return;
+    }
 
+    _initializeRenderer() {
+      if (!window.THREE) {
+        console.warn("[Ship3D] Three.js not available");
+        return;
+      }
+      
       // ---- renderer (robust if canvas already has a 2D ctx) -----------------
       const makeRendererOn = (canvas) => {
         // Prefer explicit WebGL1 context (WebGL2 will still work if present)
-        const ctx = canvas.getContext("webgl", {
-          alpha: true, antialias: true, premultipliedAlpha: false,
-          preserveDrawingBuffer: false, powerPreference: "high-performance"
-        }) || canvas.getContext("experimental-webgl");
-        if (!ctx) throw new Error("Ship3D: WebGL not available");
+        // Enhanced browser compatibility for Firefox, Edge, Opera
+        const webglOptions = {
+          alpha: true, 
+          antialias: true, 
+          premultipliedAlpha: false,
+          preserveDrawingBuffer: false, 
+          powerPreference: "high-performance",
+          failIfMajorPerformanceCaveat: false // Allow fallback for older devices
+        };
+        
+        const ctx = canvas.getContext("webgl", webglOptions) 
+                 || canvas.getContext("webgl", webglOptions) // Retry
+                 || canvas.getContext("experimental-webgl", webglOptions);
+        
+        if (!ctx) {
+          // Try without strict options for older browsers
+          const ctx2 = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+          if (!ctx2) throw new Error("Ship3D: WebGL not available");
+          return new THREE.WebGLRenderer({
+            canvas, context: ctx2, antialias: false, alpha: true, premultipliedAlpha: false
+          });
+        }
+        
         return new THREE.WebGLRenderer({
           canvas, context: ctx, antialias: true, alpha: true, premultipliedAlpha: false
         });
       };
 
       let renderer = null;
-      try { renderer = makeRendererOn(this.canvas); renderer.getContext(); }
-      catch {
+      try { 
+        renderer = makeRendererOn(this.canvas);
+        // Verify renderer works
+        if (renderer) renderer.getContext(); 
+      } catch (e) {
         // try a sibling overlay canvas if the provided one is "busy"
         try {
           const alt = document.createElement("canvas");
@@ -85,9 +148,16 @@
           renderer = makeRendererOn(this.canvas);
         } catch (e2) {
           console.warn("[Ship3D] WebGL init failed:", e2);
+          this.enabled = false;
           return; // give up gracefully
         }
       }
+      
+      if (!renderer) {
+        this.enabled = false;
+        return;
+      }
+      
       this.renderer = renderer;
 
       // color management (r0.157+)
@@ -98,7 +168,7 @@
 
       // DPI / device pixel ratio helpers
       this._setPixelRatio = () => {
-        const pr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1)); // clamp DPR for perf
+        const pr = Math.max(1, Math.min(2, window.devicePixelRatio || 1)); // clamp DPR for perf
         this.renderer.setPixelRatio(pr);
       };
       this._setPixelRatio();
@@ -131,109 +201,144 @@
         this._dppxMQ.addEventListener?.("change", this._onDppx);
       } catch {}
 
-      // ---- palette (pulls from icon) ----------------------------------------
+      // ---- palette (matches the site design system: gold + cyan on navy) -----
       const PALETTE = {
-        teal: 0x23c4cc,       // nose tip
-        tealBright: 0x5ef2ff, // glows
-        hull: 0xbfc4ca,       // light grey
-        dark: 0x54585f,       // dark grey
-        red:  0xff6e6e,       // wing panels
-        black: 0x1d2027
+        hull:   0xd9e0ef,  // starlight grey
+        panel:  0x232c47,  // deep navy
+        accent: 0xffd75e,  // gold
+        glow:   0x8ad8ff,  // signal cyan
       };
 
-      // toon/flat-ish materials (WebGL1 safe)
-      const mk = (color, opts={}) =>
-        new THREE.MeshStandardMaterial(Object.assign({
-          color, flatShading: true, metalness: 0.2, roughness: 0.9
-        }, opts));
-      const hullMat   = mk(PALETTE.hull);
-      const darkMat   = mk(PALETTE.dark, { metalness: 0.35, roughness: 0.6 });
-      const redMat    = mk(PALETTE.red);
-      const tealMat   = mk(PALETTE.teal, { metalness: 0.1, roughness: 0.6 });
+      const hullMat = new THREE.MeshStandardMaterial({
+        color: PALETTE.hull, metalness: 0.55, roughness: 0.35
+      });
+      const panelMat = new THREE.MeshStandardMaterial({
+        color: PALETTE.panel, metalness: 0.5, roughness: 0.45
+      });
+      const accentMat = new THREE.MeshStandardMaterial({
+        color: PALETTE.accent, metalness: 0.7, roughness: 0.3,
+        emissive: PALETTE.accent, emissiveIntensity: 0.22
+      });
       const canopyMat = new THREE.MeshStandardMaterial({
-        color: PALETTE.black, metalness: 0.1, roughness: 0.15,
-        transparent: true, opacity: 0.9
+        color: 0x0e1626, metalness: 0.3, roughness: 0.12,
+        emissive: PALETTE.glow, emissiveIntensity: 0.35,
+        transparent: true, opacity: 0.96
       });
-      const glowMat = new THREE.MeshStandardMaterial({
-        color: PALETTE.tealBright, emissive: PALETTE.tealBright,
-        emissiveIntensity: 1.0, metalness: 0, roughness: 1, flatShading: true
-      });
-      const engineMat = new THREE.MeshStandardMaterial({
-        color: 0x8be9ff, emissive: 0x8be9ff, emissiveIntensity: 1.0,
-        metalness: 0, roughness: 1, flatShading: true
+      const nozzleMat = new THREE.MeshStandardMaterial({
+        color: 0x11141d, metalness: 0.8, roughness: 0.35
       });
 
-      // ---- shared geometries (perf) -----------------------------------------
-      const G = {
-        body:      new THREE.BoxGeometry(84, 20, 18),
-        arm:       new THREE.BoxGeometry(58, 10, 10),
-        wing:      new THREE.BoxGeometry(52, 8, 4),
-        wingCore:  new THREE.BoxGeometry(26, 10, 6),
-        pod:       new THREE.CylinderGeometry(4, 4, 12, 16),
-        nozzle:    new THREE.CylinderGeometry(7, 10, 10, 20),
-        tip:       new THREE.ConeGeometry(12, 24, 6),
-        flame:     new THREE.ConeGeometry(11, 28, 12),
-        canopy:    new THREE.OctahedronGeometry(10),
-        dot:       new THREE.SphereGeometry(1.8, 10, 10),
-      };
-
-      // ---- build the ship (faces +X) ----------------------------------------
+      // ---- build the ship (faces +X) ------------------------------------------
       this.ship = new THREE.Group();
 
-      const body = new THREE.Mesh(G.body, hullMat);
-      body.position.set(-4, 0, 0);
+      // sleek fuselage — smooth lathed profile, nose at +X
+      const profile = [
+        new THREE.Vector2(0.01, -54),
+        new THREE.Vector2(6.5,  -52),
+        new THREE.Vector2(9,    -42),
+        new THREE.Vector2(11,   -16),
+        new THREE.Vector2(11.4,   4),
+        new THREE.Vector2(9.6,   22),
+        new THREE.Vector2(6.6,   38),
+        new THREE.Vector2(3.2,   50),
+        new THREE.Vector2(0.01,  56)
+      ];
+      const fuselage = new THREE.Mesh(new THREE.LatheGeometry(profile, 24), hullMat);
+      fuselage.rotation.z = -Math.PI / 2; // lathe axis (+Y) -> nose (+X)
 
-      const tip = new THREE.Mesh(G.tip, tealMat);
-      tip.rotation.z = -Math.PI * 0.5;
-      tip.position.set(52, 0, 0);
+      // gold nose cap
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(3.4, 13, 16), accentMat);
+      nose.rotation.z = -Math.PI / 2;
+      nose.position.set(52.5, 0, 0);
 
-      const canopy = new THREE.Mesh(G.canopy, canopyMat);
-      canopy.scale.set(1.0, 0.75, 1.2);
-      canopy.position.set(14, 0, 10);
+      // glass cockpit bubble (faces the viewer in the top-down camera)
+      const canopy = new THREE.Mesh(new THREE.SphereGeometry(7, 18, 14), canopyMat);
+      canopy.scale.set(2.0, 0.95, 0.85);
+      canopy.position.set(17, 0, 7.5);
 
-      const armL = new THREE.Mesh(G.arm, darkMat);
-      armL.position.set(-6, -28, 0);
-      const armR = armL.clone(); armR.position.y = 28;
+      // gold hull band
+      const band = new THREE.Mesh(new THREE.TorusGeometry(11.4, 0.9, 8, 28), accentMat);
+      band.rotation.y = Math.PI / 2;
+      band.position.set(2, 0, 0);
 
-      const wingL = new THREE.Mesh(G.wing, redMat);
-      wingL.position.set(0, -22, 2); wingL.rotation.z = THREE.MathUtils.degToRad(-12);
-      const wingR = wingL.clone(); wingR.position.y = 22; wingR.rotation.z = THREE.MathUtils.degToRad(12);
+      // swept delta wings (extruded silhouette instead of plain boxes)
+      const wingShape = new THREE.Shape();
+      wingShape.moveTo(16, 0);
+      wingShape.lineTo(-10, 34);
+      wingShape.lineTo(-19, 34);
+      wingShape.lineTo(-24, 0);
+      wingShape.closePath();
+      const wingGeo = new THREE.ExtrudeGeometry(wingShape, {
+        depth: 2.4, bevelEnabled: true, bevelThickness: 0.7, bevelSize: 0.7, bevelSegments: 1
+      });
+      const wingR = new THREE.Mesh(wingGeo, panelMat);
+      wingR.position.set(-8, 0, -1.2);
+      const wingL = wingR.clone();
+      wingL.scale.y = -1;
 
-      const wingCoreL = new THREE.Mesh(G.wingCore, hullMat);
-      wingCoreL.position.set(-10, -22, 2);
-      const wingCoreR = wingCoreL.clone(); wingCoreR.position.y = 22;
+      // gold wing-tip blades
+      const tipGeo = new THREE.CylinderGeometry(1.5, 1.5, 12, 10);
+      const tipR = new THREE.Mesh(tipGeo, accentMat);
+      tipR.rotation.z = Math.PI / 2;
+      tipR.position.set(-20, 34.5, 0);
+      const tipL = tipR.clone();
+      tipL.position.y = -34.5;
 
-      const podL = new THREE.Mesh(G.pod, darkMat);
-      podL.rotation.z = Math.PI * 0.5; podL.position.set(-20, -34, -6);
-      const podR = podL.clone(); podR.position.y = 34;
+      // rear stabilizer fins
+      const finShape = new THREE.Shape();
+      finShape.moveTo(6, 0);
+      finShape.lineTo(-6, 15);
+      finShape.lineTo(-11, 15);
+      finShape.lineTo(-13, 0);
+      finShape.closePath();
+      const finGeo = new THREE.ExtrudeGeometry(finShape, {
+        depth: 2, bevelEnabled: true, bevelThickness: 0.5, bevelSize: 0.5, bevelSegments: 1
+      });
+      const finR = new THREE.Mesh(finGeo, panelMat);
+      finR.position.set(-38, 6, -1);
+      const finL = finR.clone();
+      finL.scale.y = -1;
+      finL.position.y = -6;
 
-      const slitGroup = new THREE.Group();
-      const sMat = glowSpriteMat(PALETTE.tealBright);
-      for (let i = 0; i < 6; i++) {
-        const s = new THREE.Sprite(sMat);
-        s.scale.set(18, 4, 1);
-        s.position.set(-10 + i * 7.2, 0, 12);
-        slitGroup.add(s);
-      }
+      // engine nozzle
+      const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 7.4, 11, 20), nozzleMat);
+      nozzle.rotation.z = Math.PI / 2;
+      nozzle.position.set(-57, 0, 0);
 
-      const nozzle = new THREE.Mesh(G.nozzle, darkMat);
-      nozzle.rotation.z = Math.PI * 0.5; nozzle.position.set(-58, 0, 0);
-
-      const flame = new THREE.Mesh(G.flame, engineMat);
-      flame.rotation.z = -Math.PI * 0.5; flame.position.set(-72, 0, 0);
-      this.flame = flame;
-
-      const dots = new THREE.Group();
-      for (let i=0;i<4;i++){
-        const p = new THREE.Mesh(G.dot, glowMat);
-        p.position.set(-30 - i*6, (i%2?6:-6), -6);
-        dots.add(p);
-      }
+      // flame assembly (grouped so it stretches/flickers as one)
+      // NOTE: normal blending — additive doesn't composite reliably on a
+      // transparent canvas (alpha stays ~0 and the flame disappears)
+      // DoubleSide everywhere below: the Y-flipped ortho projection inverts
+      // triangle winding, so single-sided planes get backface-culled away
+      const mkFlameMat = (color, opacity) => new THREE.MeshBasicMaterial({
+        color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide
+      });
+      this._flameMats = [];
+      this.flame = new THREE.Group();
+      const outerFlame = new THREE.Mesh(new THREE.ConeGeometry(6.4, 26, 14), mkFlameMat(0x9fdcff, 0.6));
+      outerFlame.rotation.z = Math.PI / 2;   // cone tip trails behind (-X)
+      outerFlame.position.set(-13, 0, 0);
+      const innerFlame = new THREE.Mesh(new THREE.ConeGeometry(3, 16, 12), mkFlameMat(0xeaffff, 0.9));
+      innerFlame.rotation.z = Math.PI / 2;
+      innerFlame.position.set(-8, 0, 0);
+      this._glowTex = radialGlowTexture();
+      this._glowPlaneGeo = new THREE.PlaneGeometry(1, 1);
+      const engineGlow = new THREE.Mesh(this._glowPlaneGeo, new THREE.MeshBasicMaterial({
+        map: this._glowTex, color: PALETTE.glow,
+        transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide
+      }));
+      engineGlow.scale.set(42, 42, 1);
+      this.flame.add(outerFlame, innerFlame, engineGlow);
+      this.flame.position.set(-62, 0, 0);
+      [outerFlame.material, innerFlame.material, engineGlow.material].forEach(m => {
+        m.userData.baseOpacity = m.opacity;
+        this._flameMats.push(m);
+      });
 
       this.ship.add(
-        body, tip, canopy,
-        armL, armR, wingL, wingR, wingCoreL, wingCoreR,
-        podL, podR, slitGroup, nozzle, flame, dots
+        fuselage, nose, canopy, band,
+        wingR, wingL, tipR, tipL, finR, finL,
+        nozzle, this.flame
       );
       this.scene.add(this.ship);
 
@@ -243,25 +348,28 @@
       this.trails = [];
       this._trailCap = 64;
 
-      // pool of sprites w/ individual materials so opacity can vary independently
+      // pool of glow planes w/ individual materials so opacity can vary independently
       this._trailPool = [];
-      const baseTrailMat = new THREE.SpriteMaterial({
-        color: PALETTE.tealBright, transparent: true, opacity: 0.5,
-        depthWrite: false, blending: THREE.AdditiveBlending
+      const baseTrailMat = new THREE.MeshBasicMaterial({
+        map: this._glowTex, color: PALETTE.glow,
+        transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide
       });
       const allocTrailSprite = () => {
         // clone to get an independent material instance (independent opacity)
-        const s = new THREE.Sprite(baseTrailMat.clone());
+        const s = new THREE.Mesh(this._glowPlaneGeo, baseTrailMat.clone());
         s.renderOrder = 2;
         return s;
       };
       for (let i = 0; i < this._trailCap; i++) this._trailPool.push(allocTrailSprite());
 
       // ---- lights -----------------------------------------------------------
-      this.scene.add(new THREE.AmbientLight(0xffffff, 0.85));
-      const key = new THREE.DirectionalLight(0xffffff, 0.9);
-      key.position.set(220, 140, 240);
+      this.scene.add(new THREE.AmbientLight(0xcdd8f5, 0.9));
+      const key = new THREE.DirectionalLight(0xffffff, 1.4);
+      key.position.set(220, -160, 300);
       this.scene.add(key);
+      const rim = new THREE.DirectionalLight(PALETTE.glow, 0.6); // cyan rim from "space"
+      rim.position.set(-180, 120, -80);
+      this.scene.add(rim);
 
       // context loss / restore
       this.canvas.addEventListener("webglcontextlost", (e) => e.preventDefault(), false);
@@ -346,7 +454,10 @@
           s = oldest.s; // reuse sprite & material
         } else {
           // absolute fallback (shouldn't hit often)
-          s = new THREE.Sprite();
+          s = new THREE.Mesh(this._glowPlaneGeo, new THREE.MeshBasicMaterial({
+            map: this._glowTex, color: 0x8ad8ff,
+            transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide
+          }));
         }
       }
 
@@ -357,7 +468,7 @@
       }
 
       const dir = new THREE.Vector2(Math.cos(this.ship.rotation.z), Math.sin(this.ship.rotation.z));
-      const dist = 34;
+      const dist = 64 * this.ship.scale.x; // spawn puffs at the engine, not mid-hull
       s.position.set(this.ship.position.x - dir.x * dist, this.ship.position.y - dir.y * dist, 0);
       const base = 10 + Math.random() * 7;
       s.scale.set(base, base, 1);
@@ -411,14 +522,15 @@
       this.ship.rotation.x = wobX + this._bank;
       this.ship.rotation.y = wobY;
 
-      // engine flicker/visibility
-      const base = this.engineOn ? 1.0 : 0.45;
-      const flick = base + Math.sin(this._time * 34) * 0.08;
-      if (this.flame && this.flame.material) {
-        this.flame.material.emissiveIntensity = flick;
-        const s = this.engineOn ? (1.0 + Math.sin(this._time * 18) * 0.08) : 0.7;
-        this.flame.scale.setScalar(s);
-        this.flame.visible = (this.engineOn || flick > 0.5);
+      // engine flicker/visibility (group of additive cones + glow sprite)
+      const base = this.engineOn ? 1.0 : 0.35;
+      const flick = base + Math.sin(this._time * 34) * 0.08 + Math.sin(this._time * 9.7) * 0.04;
+      if (this.flame) {
+        const stretch = this.engineOn ? (1.0 + Math.sin(this._time * 18) * 0.1) : 0.55;
+        this.flame.scale.set(stretch, this.engineOn ? 1 : 0.7, this.engineOn ? 1 : 0.7);
+        this.flame.visible = flick > 0.28;
+        const k = Math.max(0, Math.min(1, flick));
+        for (const m of this._flameMats) m.opacity = m.userData.baseOpacity * k;
       }
 
       if (this.engineOn) {

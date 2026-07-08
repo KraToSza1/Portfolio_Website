@@ -1,0 +1,78 @@
+/**
+ * CSS Reset
+ * Base styles and resets
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--yellow);
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Mobile polish */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+  scrollbar-gutter: stable both-edges;
+}
+
+/* Links & buttons */
+a {
+  color: #cfe1ff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* Viewport height: fallback first, then dvh, then svh */
+.bg-canvas,
+.crawl-wrapper,
+.stage {
+  height: calc(var(--vh, 1vh) * 100);
+  min-height: calc(var(--vh, 1vh) * 100);
+}
+
+@supports (height: 100dvh) {
+  .bg-canvas,
+  .crawl-wrapper,
+  .stage {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+}
+
+@supports (height: 100svh) {
+  .bg-canvas,
+  .crawl-wrapper,
+  .stage {
+    height: 100svh;
+    min-height: 100svh;
+  }
+}

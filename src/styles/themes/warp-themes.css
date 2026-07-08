@@ -1,0 +1,59 @@
+/**
+ * Warp Theme Colors
+ * Theme variations for warp effects
+ */
+
+.warp.theme-cyan {
+  --warp-tint-1: rgba(120, 215, 255, 0.18);
+  --warp-tint-2: rgba(54, 130, 255, 0.12);
+}
+
+.warp.theme-violet {
+  --warp-tint-1: rgba(205, 153, 255, 0.18);
+  --warp-tint-2: rgba(131, 78, 255, 0.12);
+}
+
+.warp.theme-magma {
+  --warp-tint-1: rgba(255, 142, 98, 0.18);
+  --warp-tint-2: rgba(255, 68, 68, 0.12);
+}
+
+.warp.theme-emerald {
+  --warp-tint-1: rgba(115, 255, 188, 0.18);
+  --warp-tint-2: rgba(26, 184, 124, 0.12);
+}
+
+.warp.pulse.active {
+  animation: warpPulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes warpPulse {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Low-end device optimizations */
+.low-end .portrait-fade {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  opacity: 0.45;
+}
+
+.low-end .skill__fill {
+  animation: none !important;
+}
+
+.low-end .about__avatar {
+  animation: none !important;
+  box-shadow: 0 0 0 2px rgba(158, 219, 255, 0.18) inset;
+}
+
+/* kill the mini V if markup still has it */
+.title .v-lc {
+  transform: none !important;
+  line-height: inherit !important;
+}

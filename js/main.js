@@ -15,6 +15,34 @@ const bgMusic = document.getElementById("bg-music");
 // set default SFX volume
 if (shootSfx) shootSfx.volume = 0.12;
 
+// ---------- Sound toggle (music + SFX), persisted across visits ----------
+const audioToggle = document.getElementById("audio-toggle");
+let soundMuted = false;
+try { soundMuted = localStorage.getItem("rvdw-sound-muted") === "1"; } catch {}
+
+function applySoundState(){
+  if (bgMusic)  bgMusic.muted  = soundMuted;
+  if (shootSfx) shootSfx.muted = soundMuted;
+  if (bgMusic){
+    if (soundMuted && !bgMusic.paused) bgMusic.pause();
+    else if (!soundMuted && missionStarted && bgMusic.paused){
+      bgMusic.volume = 0.12;
+      bgMusic.play().catch(() => {});
+    }
+  }
+  if (audioToggle){
+    audioToggle.dataset.muted = soundMuted ? "true" : "false";
+    audioToggle.setAttribute("aria-pressed", soundMuted ? "true" : "false");
+    audioToggle.setAttribute("aria-label", soundMuted ? "Turn sound on" : "Turn sound off");
+    audioToggle.title = soundMuted ? "Sound: off" : "Sound: on";
+  }
+}
+audioToggle?.addEventListener("click", () => {
+  soundMuted = !soundMuted;
+  try { localStorage.setItem("rvdw-sound-muted", soundMuted ? "1" : "0"); } catch {}
+  applySoundState();
+});
+
 // Site data (skills, links, etc.)
 const SITE = (() => { try { return JSON.parse(document.getElementById("site-data")?.textContent || "{}"); } catch { return {}; } })();
 const APP_OPTS = window.APP_OPTS || {};
@@ -33,7 +61,7 @@ function fadeTo(audio, target = 0.12, ms = 1200) {
 }
 
 function startBgMusic() {
-  if (!bgMusic) return;
+  if (!bgMusic || soundMuted) return;
   bgMusic.volume = 0.15;
   bgMusic.currentTime = 0;
   bgMusic.play().then(() => {
@@ -184,13 +212,33 @@ function sizeCanvas(c) {
 }
 
 function rebuildBgGradient() {
-  const grd = bctx.createRadialGradient(bgW*0.2,bgH*0.15,0,bgW*0.5,bgH*0.5,Math.max(bgW,bgH));
+  // PERF: bake the base gradient AND the nebula into ONE cached canvas —
+  // the per-frame background cost becomes a single drawImage blit
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, bgW); c.height = Math.max(1, bgH);
+  const x = c.getContext("2d");
+
+  const grd = x.createRadialGradient(bgW*0.2,bgH*0.15,0,bgW*0.5,bgH*0.5,Math.max(bgW,bgH));
   grd.addColorStop(0,"#0a0b12"); grd.addColorStop(0.6,"#06070d"); grd.addColorStop(1,"#000");
-  bgGradient = grd;
+  x.fillStyle = grd; x.fillRect(0,0,bgW,bgH);
+
+  if (!reduceMotion) {
+    x.save();
+    x.globalAlpha = 0.18;
+    const nebula = x.createRadialGradient(bgW*0.5, bgH*0.5, 0, bgW*0.6, bgH*0.6, bgW*0.8);
+    nebula.addColorStop(0,   "rgba(150, 100, 255, 0.12)");
+    nebula.addColorStop(0.4, "rgba(100, 150, 255, 0.08)");
+    nebula.addColorStop(0.7, "rgba(100, 255, 200, 0.05)");
+    nebula.addColorStop(1,   "transparent");
+    x.fillStyle = nebula; x.fillRect(0,0,bgW,bgH);
+    x.restore();
+  }
+
+  bgGradient = c;
 }
 
 function resizeAll() {
-  dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1)); // clamp DPR a bit for memory
+  dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1)); // clamp DPR: >2 is invisible but 2x+ the fill cost
   const a = sizeCanvas(bg);
   const b = sizeCanvas(ui);
 
@@ -226,6 +274,23 @@ const meteors = [];
 let LOW_END = false;                   // heuristic jank detector flips this
 let STAR_STEP = 1;                     // draw every STAR_STEP-th star
 
+// ========================== DISTANT SUN/PLANET ==========================
+// Glowing sun/planet in the far distance (top-right corner)
+// Only shows after mission starts (Enter Mission button clicked)
+let missionStarted = false; // Track if mission has started
+
+const DISTANT_SUN = {
+  x: 0.85,           // Position (0-1): 85% from left (right side)
+  y: 0.15,           // Position (0-1): 15% from top (top area)
+  baseRadius: 35,    // Base radius in pixels (scales with viewport) - much smaller!
+  glowRadius: 80,   // Glow radius - much smaller!
+  pulseSpeed: 0.0004, // MUCH slower pulse (more sun-like, less strobing)
+  pulseAmount: 0.03,  // MUCH less pulsing (3% instead of 15% - more stable)
+  color: [255, 235, 190], // Warmer, more sun-like orange/yellow
+  glowColor: [255, 210, 160], // Glow color (softer, warmer)
+  time: 0             // Animation time
+};
+
 function spawnStar() {
   // use cached bg sizes for consistency and to avoid layout reads
   return { x: (Math.random()-0.5)*bgW*2, y:(Math.random()-0.5)*bgH*2, base:0.15+Math.random()*0.35, a:0, ta:0, next:performance.now()+500+Math.random()*1500, twEnd:0 };
@@ -255,32 +320,213 @@ function updateMeteors(ctx){
   }
 }
 
-// cache: label metrics so we don’t call measureText every frame
-function ensureTextMetrics(t){
-  if (t._mw && t._nw) return;
-  uictx.save();
-  uictx.font = "600 18px Segoe UI, sans-serif";
-  t._mw = uictx.measureText(t.label || "").width;
-  uictx.font = "14px Segoe UI, sans-serif";
-  t._nw = uictx.measureText(`· ${t.name}`).width;
-  uictx.restore();
+// ===== PERF: cached sprites (glows + labels) ==============================
+// Canvas shadowBlur + per-frame gradient/text rendering were the main causes
+// of jank during planet flights — everything below renders ONCE to an
+// offscreen canvas and is drawn with a single drawImage per frame.
+
+const glowSpriteCache = new Map();
+function getGlowSprite(color){
+  let c = glowSpriteCache.get(color);
+  if (c) return c;
+  const size = 128, half = size / 2;
+  c = document.createElement("canvas");
+  c.width = c.height = size;
+  const x = c.getContext("2d");
+  const g = x.createRadialGradient(half, half, size * 0.16, half, half, half);
+  g.addColorStop(0,   color + "66");
+  g.addColorStop(0.5, color + "22");
+  g.addColorStop(1,   color + "00");
+  x.fillStyle = g;
+  x.fillRect(0, 0, size, size);
+  glowSpriteCache.set(color, c);
+  return c;
 }
 
-function renderStars() {
-  // paint bg once per frame without DOM reads
-  bctx.fillStyle = "#000"; bctx.fillRect(0, 0, bgW, bgH);
-  bctx.fillStyle = bgGradient; bctx.fillRect(0,0,bgW,bgH);
+const LABEL_SS = 2; // supersample so labels stay crisp under camera zoom
+function ensureLabelSprite(t){
+  if (t._labelSprite) return;
+  const c = document.createElement("canvas");
+  const x = c.getContext("2d");
+  const f1 = "600 17px 'Space Grotesk', 'Segoe UI', sans-serif";
+  const f2 = "13px 'Inter', 'Segoe UI', sans-serif";
+  x.font = f1; const w1 = x.measureText(t.label || "").width;
+  x.font = f2; const w2 = x.measureText(`· ${t.name}`).width;
+  const pad = 16;
+  const w = Math.ceil(Math.max(w1, w2)) + pad * 2;
+  const h = 56;
+  c.width = w * LABEL_SS; c.height = h * LABEL_SS;
+  x.scale(LABEL_SS, LABEL_SS);
+  x.textAlign = "center"; x.textBaseline = "top";
+  x.font = f1;
+  x.shadowColor = "rgba(138, 216, 255, 0.65)";
+  x.shadowBlur = 10;
+  x.fillStyle = "rgba(238, 242, 255, 0.96)";
+  x.fillText(t.label || "", w / 2, 4);
+  x.shadowBlur = 0;
+  x.font = f2;
+  x.fillStyle = "rgba(160, 172, 200, 0.95)";
+  x.fillText(`· ${t.name}`, w / 2, 30);
+  t._labelSprite = { canvas: c, w, h };
+}
+
+// PERF: the sun is pre-rendered to an offscreen sprite once per viewport size —
+// building 4 radial gradients per frame was a major source of jank
+let sunSprite = null, sunSpriteKey = "";
+function buildSunSprite(scale){
+  const half = Math.max(12, 100 * scale); // covers corona (radius*2.5) + margin
+  const size = Math.ceil(half * 2);
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const x = c.getContext("2d");
+  const radius = DISTANT_SUN.baseRadius * scale;
+  const glowRadius = DISTANT_SUN.glowRadius * scale;
+  const gc = DISTANT_SUN.glowColor, cc = DISTANT_SUN.color;
+
+  const outerGlow = x.createRadialGradient(half, half, radius * 0.4, half, half, glowRadius);
+  outerGlow.addColorStop(0,   `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.28)`);
+  outerGlow.addColorStop(0.4, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.15)`);
+  outerGlow.addColorStop(0.7, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.08)`);
+  outerGlow.addColorStop(1,   "rgba(255, 200, 150, 0)");
+  x.fillStyle = outerGlow;
+  x.beginPath(); x.arc(half, half, glowRadius, 0, Math.PI * 2); x.fill();
+
+  const middleGlow = x.createRadialGradient(half, half, radius * 0.6, half, half, radius * 1.5);
+  middleGlow.addColorStop(0,   `rgba(${cc[0]}, ${cc[1]}, ${cc[2]}, 0.5)`);
+  middleGlow.addColorStop(0.5, `rgba(${cc[0]}, ${cc[1]}, ${cc[2]}, 0.28)`);
+  middleGlow.addColorStop(0.8, `rgba(${cc[0]}, ${cc[1]}, ${cc[2]}, 0.12)`);
+  middleGlow.addColorStop(1,   "rgba(255, 220, 180, 0)");
+  x.fillStyle = middleGlow;
+  x.beginPath(); x.arc(half, half, radius * 1.5, 0, Math.PI * 2); x.fill();
+
+  const innerCore = x.createRadialGradient(half, half, radius * 0.2, half, half, radius);
+  innerCore.addColorStop(0,   "rgba(255, 255, 245, 0.98)");
+  innerCore.addColorStop(0.2, "rgba(255, 250, 230, 0.95)");
+  innerCore.addColorStop(0.4, `rgba(${cc[0]}, ${cc[1]}, ${cc[2]}, 0.9)`);
+  innerCore.addColorStop(0.7, `rgba(${cc[0]}, ${cc[1]}, ${cc[2]}, 0.7)`);
+  innerCore.addColorStop(1,   "rgba(255, 210, 160, 0.4)");
+  x.fillStyle = innerCore;
+  x.beginPath(); x.arc(half, half, radius, 0, Math.PI * 2); x.fill();
+
+  x.save();
+  x.globalCompositeOperation = "screen";
+  x.globalAlpha = 0.12;
+  const corona = x.createRadialGradient(half, half, radius * 0.9, half, half, radius * 2.5);
+  corona.addColorStop(0,   "rgba(255, 245, 210, 0.25)");
+  corona.addColorStop(0.5, "rgba(255, 230, 180, 0.15)");
+  corona.addColorStop(1,   "rgba(255, 200, 150, 0)");
+  x.fillStyle = corona;
+  x.beginPath(); x.arc(half, half, radius * 2.5, 0, Math.PI * 2); x.fill();
+  x.restore();
+
+  return c;
+}
+
+function renderDistantSun(ctx, now) {
+  if (!missionStarted || reduceMotion) return;
+
+  const scale = Math.min(bgW, bgH) / 1000;
+  const key = Math.round(scale * 100);
+  if (!sunSprite || sunSpriteKey !== key) { sunSprite = buildSunSprite(scale); sunSpriteKey = key; }
+
+  const pulse = 1.0 + Math.sin(now * DISTANT_SUN.pulseSpeed) * DISTANT_SUN.pulseAmount;
+  const parallaxFactor = 0.0002 * 15;
+  const sunX = bgW * DISTANT_SUN.x + (mouseX - bgW/2) * parallaxFactor;
+  const sunY = bgH * DISTANT_SUN.y + (mouseY - bgH/2) * parallaxFactor;
+  const half = (sunSprite.width / 2) * pulse;
+  ctx.drawImage(sunSprite, sunX - half, sunY - half, half * 2, half * 2);
+}
+
+// ========================== TIE FIGHTER SILHOUETTES ==========================
+const TIE_FIGHTERS = [];
+let tieFighterLastUpdate = 0;
+const TIE_UPDATE_INTERVAL = 50; // Update TIE fighters every 50ms (20fps instead of 60fps)
+
+function initTIEFighters() {
+  // Reduced count for performance - only 2 TIE fighters
+  const count = 2;
+  for (let i = 0; i < count; i++) {
+    TIE_FIGHTERS.push({
+      x: Math.random() * bgW,
+      y: Math.random() * bgH * 0.3,
+      speed: 0.15 + Math.random() * 0.2,
+      size: 10 + Math.random() * 8,
+      alpha: 0.12 + Math.random() * 0.08,
+      time: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+function drawTIEFighters(ctx, now) {
+  if (reduceMotion || !missionStarted) return;
+
+  if (TIE_FIGHTERS.length === 0) initTIEFighters();
+
+  // Throttle POSITION updates only — always draw, otherwise the fighters
+  // flicker in and out (the bg canvas is repainted every frame)
+  const doUpdate = now - tieFighterLastUpdate >= TIE_UPDATE_INTERVAL;
+  if (doUpdate) tieFighterLastUpdate = now;
+
+  ctx.save();
+
+  TIE_FIGHTERS.forEach(tie => {
+    if (doUpdate) {
+      tie.time += 0.0005;
+      tie.x += Math.sin(tie.time) * 0.2;
+      tie.y += tie.speed;
+
+      // Wrap around screen
+      if (tie.x < -50) tie.x = bgW + 50;
+      if (tie.x > bgW + 50) tie.x = -50;
+      if (tie.y > bgH + 50) {
+        tie.y = -50;
+        tie.x = Math.random() * bgW;
+      }
+    }
+
+    ctx.globalAlpha = tie.alpha;
+    ctx.fillStyle = "rgba(150, 150, 150, 0.7)";
+    ctx.strokeStyle = "rgba(200, 200, 200, 0.5)";
+    ctx.lineWidth = 1;
+    
+    // Main body only (simpler for performance)
+    ctx.beginPath();
+    ctx.arc(tie.x, tie.y, tie.size * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Wings (single call with moveTo)
+    ctx.beginPath();
+    ctx.arc(tie.x - tie.size * 0.5, tie.y, tie.size * 0.35, 0, Math.PI * 2);
+    ctx.moveTo(tie.x + tie.size * 0.5, tie.y);
+    ctx.arc(tie.x + tie.size * 0.5, tie.y, tie.size * 0.35, 0, Math.PI * 2);
+    ctx.stroke();
+  });
+  
+  ctx.restore();
+}
+
+// (nebula is baked into the background cache — see rebuildBgGradient)
+
+function renderStars(dt = 16.7) {
+  // paint bg (gradient + nebula pre-baked into one cached canvas)
+  bctx.drawImage(bgGradient, 0, 0);
+
+  // Draw distant sun/planet BEFORE stars (so stars appear in front)
+  const now = performance.now();
+  renderDistantSun(bctx, now);
+  
+  // Draw TIE fighter silhouettes (very distant)
+  drawTIEFighters(bctx, now);
 
   // adaptive quality while page/tab hidden (skip work)
   const hidden = document.visibilityState === "hidden";
   const step = hidden ? 3 : STAR_STEP;
 
-  starSpeed += (warpTarget - starSpeed) * 0.06;
+  starSpeed += (warpTarget - starSpeed) * Math.min(1, 1 - Math.pow(0.94, dt / 16.7));
   const cx = bgW/2, cy = bgH/2;
   const parallaxFactor = starSpeed > 0.02 ? 0.0006 : 0.00008;
   const parallaxX = (mouseX - cx) * parallaxFactor;
   const parallaxY = (mouseY - cy) * parallaxFactor;
-  const now = performance.now();
 
   if (starSpeed < 0.01) {
     bctx.fillStyle = "#fff";
@@ -297,14 +543,18 @@ function renderStars() {
       const rx = cx + s.x + parallaxX*40;
       const ry = cy + s.y + parallaxY*40;
       const r = s.twEnd ? 1.6 : 1.1;
+      // PERF: fillRect instead of arc — identical look at 1-2px, far cheaper
       bctx.globalAlpha = Math.max(0, Math.min(1, s.a));
-      bctx.beginPath(); bctx.arc(rx, ry, r, 0, Math.PI*2); bctx.fill();
+      bctx.fillRect(rx - r, ry - r, r + r, r + r);
     }
     bctx.globalAlpha = 1;
   } else {
     // --- WARP STREAKS (tinted + soft center) ---
     bctx.lineCap = "round";
     const minSide = Math.min(bgW, bgH);
+    // PERF: quantize alpha/width and only touch ctx state when the bucket
+    // changes — building a new rgba() string per star per frame is expensive
+    let lastAlphaQ = -1, lastWidthQ = -1;
 
     for (let k = 0; k < stars.length; k += step) {
       const s = stars[k];
@@ -320,8 +570,16 @@ function renderStars() {
       const alpha = Math.min(0.28, 0.08 + starSpeed * 0.50) * centerFade;
       const width = Math.max(0.6, starSpeed * 18 * (0.2 + 0.8 * centerFade));
 
-      bctx.strokeStyle = `rgba(${starTint[0]},${starTint[1]},${starTint[2]},${alpha})`;
-      bctx.lineWidth   = width;
+      const alphaQ = Math.round(alpha * 20);      // 0.05 buckets
+      const widthQ = Math.round(width * 2);       // 0.5px buckets
+      if (alphaQ !== lastAlphaQ) {
+        bctx.strokeStyle = `rgba(${starTint[0]},${starTint[1]},${starTint[2]},${alphaQ / 20})`;
+        lastAlphaQ = alphaQ;
+      }
+      if (widthQ !== lastWidthQ) {
+        bctx.lineWidth = widthQ / 2;
+        lastWidthQ = widthQ;
+      }
 
       bctx.beginPath();
       bctx.moveTo(cx + s.x, cy + s.y);
@@ -342,6 +600,14 @@ function pickWarpTheme(preferred = true){
 }
 
 function startWarp(theme = pickWarpTheme(true)){
+  // Mark mission as started - sun will now appear
+  missionStarted = true;
+  
+  // Initialize TIE fighters after mission starts
+  if (TIE_FIGHTERS.length === 0) {
+    initTIEFighters();
+  }
+  
   // Safety: remove previous theme classes
   warpOverlay.classList.remove("theme-cyan","theme-violet","theme-magma","theme-emerald","pulse");
   if (theme) warpOverlay.classList.add(theme);
@@ -406,17 +672,25 @@ const LINKS = {
   resume: SITE.links?.resume || "assets/docs/Raymond-Van-Der-Walt-Resume.pdf",
   github: SITE.links?.github || "https://github.com/",
   linkedin: SITE.links?.linkedin || "https://www.linkedin.com/",
-  email: (SITE.links?.email && `mailto:${SITE.links.email}`) || (SITE.contact?.email && `mailto:${SITE.contact.email}`) || "mailto:raymond.vdwalt@gmail.com"
+  email: (SITE.links?.email && `mailto:${SITE.links.email}`) || (SITE.contact?.email && `mailto:${SITE.contact.email}`) || "mailto:Raymondvanderwalt0@gmail.com"
+};
+
+// inline SVG icons for link buttons
+const ICONS = {
+  resume: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>`,
+  github: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.15c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.73.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.38-5.25 5.67.41.35.77 1.04.77 2.1v3.12c0 .3.21.66.8.55A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>`,
+  linkedin: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>`,
+  email: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4.24-8 5-8-5V6l8 5 8-5v2.24z"/></svg>`
 };
 
 // helper to reuse link row
 function renderLinksRow(){
   return `
     <div class="link-row">
-      <a class="link-btn" href="${LINKS.resume}" target="_blank" rel="noopener">📄 Resume</a>
-      <a class="link-btn" href="${LINKS.github}" target="_blank" rel="noopener">🐙 GitHub</a>
-      <a class="link-btn" href="${LINKS.linkedin}" target="_blank" rel="noopener">🔗 LinkedIn</a>
-      <a class="link-btn" href="${LINKS.email}">✉️ Email</a>
+      <a class="link-btn" href="${LINKS.resume}" target="_blank" rel="noopener">${ICONS.resume}Resume</a>
+      <a class="link-btn" href="${LINKS.github}" target="_blank" rel="noopener">${ICONS.github}GitHub</a>
+      <a class="link-btn" href="${LINKS.linkedin}" target="_blank" rel="noopener">${ICONS.linkedin}LinkedIn</a>
+      <a class="link-btn" href="${LINKS.email}">${ICONS.email}Email</a>
     </div>`;
 }
 
@@ -679,56 +953,177 @@ const PROFILE_SRC =
   (typeof SITE.profile === "string" ? SITE.profile :
    SITE.profile?.photo || SITE.profile?.src) || "assets/images/profile.png";
 
+const CONTACT_LOCATION = SITE.contact?.location || "";
+const CONTACT_EMAIL = SITE.links?.email || SITE.contact?.email || "Raymondvanderwalt0@gmail.com";
+const CONTACT_PHONE = SITE.contact?.phone || "";
+
 const aboutHTML = `
-  <div class="about about--split">
-    <div class="about__text">
-      <h3 style="margin:0 0 8px;color:#d7e6ff;font-weight:600;font-size:1rem">About</h3>
-      <p>
-        I’m Raymond a Frontend &amp; Game Developer who lives where UI meets
-        gameplay. For <strong>${YEARS}+ years</strong> I’ve been building cinematic HUDs,
-        moment-to-moment interactions, and performance-first web experiences
-        with UE5, React, TypeScript, and Canvas/WebGL.
-      </p>
-      <p>
-        I love tuning feel, building micro-feedback, and keeping frame time lean
-        so polish never costs performance. I collaborate tightly with design,
-        wire UI to real game states, and ship clean, maintainable systems.
-      </p>
-      <p><strong>Core stack:</strong> UE5 (Blueprints/CommonUI), React + TypeScript, Tailwind/CSS, Canvas/WebGL.</p>
-      <p><strong>Highlights:</strong> Objective/HUD systems, animated markers, dynamic PDF tooling, mobile app foundations with Expo.</p>
-
-      <ul class="about__bullets" style="margin:8px 0 12px 18px; line-height:1.6">
-        <li>Design-driven dev: prototype fast, iterate on feel, ship.</li>
-        <li>Gameplay-aware UI: widgets that respond to signals and inputs.</li>
-        <li>Perf focus: budgeted animations, memoized renders, lean shaders.</li>
-        <li>Team fit: I speak both “design” and “engineering.”</li>
-      </ul>
-
-      <h3 style="margin:14px 0 8px;color:#d7e6ff;font-weight:600;font-size:1rem">Hobbies &amp; Interests</h3>
-      <div class="pills pills--hobbies">
-        <span class="pill">🎮 Playing video games</span>
-        <span class="pill">🎓 Learning on Udemy</span>
-        <span class="pill">📚 Reading books</span>
-        <span class="pill">🧪 Prototyping UI ideas</span>
-        <span class="pill">🎧 Game OSTs &amp; synthwave</span>
-        <span class="pill">🌿 Family time &amp; outdoors</span>
+  <div class="about about--professional">
+    <!-- Header with Contact Pills -->
+    <div class="about__header-section">
+      <p class="about__main-title">${SITE.contact?.availability || "Open to opportunities"}</p>
+      <div class="about__contact-pills">
+        ${CONTACT_LOCATION ? `<div class="contact-pill">
+          <span class="contact-pill__icon">📍</span>
+          <span class="contact-pill__text">${CONTACT_LOCATION}</span>
+        </div>` : ""}
+        <div class="contact-pill">
+          <span class="contact-pill__icon">✉️</span>
+          <span class="contact-pill__text">
+            <a href="mailto:${CONTACT_EMAIL}" class="contact-pill__link">${CONTACT_EMAIL}</a>
+          </span>
+        </div>
+        ${CONTACT_PHONE ? `<div class="contact-pill">
+          <span class="contact-pill__icon">📞</span>
+          <span class="contact-pill__text">
+            <a href="tel:${CONTACT_PHONE}" class="contact-pill__link">${CONTACT_PHONE}</a>
+          </span>
+        </div>` : ""}
       </div>
-
-      <h3 style="margin:14px 0 8px;color:#d7e6ff;font-weight:600;font-size:1rem">Connect</h3>
-      ${renderLinksRow()}
     </div>
 
-    <figure class="about__media" aria-label="Portrait">
-      <div class="portrait-neo"></div>
-      <div class="portrait-fade" aria-hidden="true"></div>
-      <img
-        class="portrait-neo__img"
-        src="${PROFILE_SRC}"
-        alt="Raymond Van Der Walt"
-        onerror="this.style.display='none'"
-        decoding="async"
-      />
-    </figure>
+    <!-- Two Column Layout -->
+    <div class="about__content-grid">
+      <!-- Left Column: Profile & Bio -->
+      <div class="about__left-column">
+        <figure class="about__profile-image">
+          <img
+            class="about__portrait"
+            src="${PROFILE_SRC}"
+            alt="Raymond Van Der Walt"
+            onerror="this.style.display='none'"
+            decoding="async"
+          />
+        </figure>
+        <div class="about__profile-info">
+          <h3 class="about__name">Raymond Van Der Walt</h3>
+          <p class="about__title">Frontend &amp; Game Developer</p>
+          <p class="about__bio-text">
+            I'm a developer who lives where <strong class="highlight">UI meets gameplay</strong>. 
+            With <strong class="highlight">${YEARS}+ years</strong> of experience, I build 
+            <strong class="highlight-cyan">cinematic HUDs</strong>, 
+            <strong class="highlight-cyan">moment-to-moment interactions</strong>, and 
+            <strong class="highlight-cyan">performance-first web experiences</strong> 
+            using UE5, React, TypeScript, and Canvas/WebGL.
+          </p>
+          <p class="about__bio-text">
+            I love <strong class="highlight">tuning feel</strong>, building 
+            <strong class="highlight">micro-feedback</strong>, and keeping 
+            <strong class="highlight">frame time lean</strong> so polish never costs performance. 
+            I collaborate tightly with design, wire UI to real game states, and ship clean, maintainable systems.
+          </p>
+        </div>
+      </div>
+
+      <!-- Right Column: Experience & Skills -->
+      <div class="about__right-column">
+        <div class="about__details-grid">
+          <!-- Experience Section -->
+          <div class="about__detail-section">
+            <h4 class="about__detail-title">Experience</h4>
+            <div class="about__detail-item">
+              <div class="detail-item__years">2022-24</div>
+              <div class="detail-item__desc">
+                <strong>Frontend &amp; Game Developer</strong><br>
+                Building cinematic UI systems, HUDs, and performance-first web experiences with UE5, React, and WebGL.
+              </div>
+            </div>
+            <div class="about__detail-item">
+              <div class="detail-item__years">2020-22</div>
+              <div class="detail-item__desc">
+                <strong>Web Developer</strong><br>
+                Developing responsive web applications and dynamic form flows with React, TypeScript, and Node.js.
+              </div>
+            </div>
+          </div>
+
+          <!-- Education Section -->
+          <div class="about__detail-section">
+            <h4 class="about__detail-title">Education</h4>
+            <div class="about__detail-item">
+              <div class="detail-item__years">2016-19</div>
+              <div class="detail-item__desc">
+                <strong>Self-Taught &amp; Online Learning</strong><br>
+                Continuous learning through Udemy, Coursera, and hands-on project development.
+              </div>
+            </div>
+          </div>
+
+          <!-- Technical Skills -->
+          <div class="about__detail-section">
+            <h4 class="about__detail-title">Technical Skills</h4>
+            <div class="about__skills-grid">
+              <div class="skill-card">
+                <div class="skill-card__icon">UE5</div>
+                <div class="skill-card__name">Unreal Engine 5</div>
+                <div class="skill-card__rating">
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot"></span>
+                </div>
+              </div>
+              <div class="skill-card">
+                <div class="skill-card__icon">&lt;/&gt;</div>
+                <div class="skill-card__name">React</div>
+                <div class="skill-card__rating">
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot"></span>
+                </div>
+              </div>
+              <div class="skill-card">
+                <div class="skill-card__icon">TS</div>
+                <div class="skill-card__name">TypeScript</div>
+                <div class="skill-card__rating">
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot"></span>
+                  <span class="skill-dot"></span>
+                </div>
+              </div>
+              <div class="skill-card">
+                <div class="skill-card__icon">GL</div>
+                <div class="skill-card__name">Canvas/WebGL</div>
+                <div class="skill-card__rating">
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot skill-dot--filled"></span>
+                  <span class="skill-dot"></span>
+                  <span class="skill-dot"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Soft Skills -->
+          <div class="about__detail-section">
+            <h4 class="about__detail-title">Soft Skills</h4>
+            <div class="about__soft-skills">
+              <span class="soft-skill-tag">Creativity</span>
+              <span class="soft-skill-tag">Attention to Detail</span>
+              <span class="soft-skill-tag">Problem Solving</span>
+              <span class="soft-skill-tag">Communication</span>
+              <span class="soft-skill-tag">Team Collaboration</span>
+              <span class="soft-skill-tag">Performance Focus</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Links -->
+        <div class="about__contact-section">
+          ${renderLinksRow()}
+        </div>
+      </div>
+    </div>
   </div>
 `;
 
@@ -856,7 +1251,7 @@ function bindContactForm(){
     const m = encodeURIComponent(form.message.value || "");
     const subject = encodeURIComponent(`Portfolio contact from ${form.name.value || "visitor"}`);
     const body = encodeURIComponent(`Name: ${decodeURIComponent(n)}\nEmail: ${decodeURIComponent(e)}\n\n${decodeURIComponent(m)}`);
-    const emailAddr = (SITE.links?.email || "raymond.vdwalt@gmail.com").replace(/^mailto:/,"");
+    const emailAddr = (SITE.links?.email || "Raymondvanderwalt0@gmail.com").replace(/^mailto:/,"");
     window.location.href = `mailto:${emailAddr}?subject=${subject}&body=${body}`;
   }
 
@@ -924,7 +1319,7 @@ const FILE_OVERRIDE = {
   thal3: "Thal3",
   orionisix: "Orionis-IX",
   volara: "Volara",
-  nyxus: "Nyxus",
+  nyxus: "Nyxus-768",
   aurelia: "Aurelia",
   kairon: "Kairon",
   xerith: "Xerith",
@@ -933,6 +1328,21 @@ const FILE_OVERRIDE = {
 };
 
 const planetCache = new Map();
+
+// PERF: downscale big planet PNGs (up to 1024px) ONCE to ~display size —
+// rescaling the full-res image every frame was a large per-frame cost.
+// 2x supersample keeps them sharp under DPR and the 1.85x camera zoom.
+function prescalePlanet(img, r){
+  const size = Math.max(2, Math.ceil(r * 2 * 2));
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const x = c.getContext("2d");
+  x.imageSmoothingEnabled = true;
+  x.imageSmoothingQuality = "high";
+  x.drawImage(img, 0, 0, size, size);
+  return c;
+}
+
 function buildPlanetTextures(list){
   list.forEach(t => {
     const key = t.name.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -941,7 +1351,10 @@ function buildPlanetTextures(list){
     const img = new Image();
     // PATCH: hint async decode to avoid layout jank
     try { img.decoding = "async"; } catch {}
-    img.onload = () => { planetCache.set(key, img); t.tex = img; ensureAsteroids(t); };
+    img.onload = () => {
+      const tex = prescalePlanet(img, t.r);
+      planetCache.set(key, tex); t.tex = tex; ensureAsteroids(t);
+    };
     img.onerror = () => {
       const tex = makePlanetTexture(t.r, t.planet, t.name.split("").reduce((a,c)=>a+c.charCodeAt(0),0));
       planetCache.set(key, tex); t.tex = tex; ensureAsteroids(t);
@@ -956,6 +1369,7 @@ function setRoom(i){
   currentRoom = Math.max(0, Math.min(i, ROOMS.length-1));
   TARGETS = ROOMS[currentRoom].targets;
   buildPlanetTextures(TARGETS);
+  if (typeof buildQuickNav === "function") buildQuickNav();
 }
 
 // ========================== ASTEROIDS / PLANET TEXTURES ==========================
@@ -995,32 +1409,44 @@ function ensureAsteroids(t){
 }
 function drawAsteroidBelt(x, y, t){
   if (!t.beltPoints) return;
+  // PERF: one path + one fill for the whole belt (was 130 separate fills/frame)
   uictx.save(); uictx.translate(x,y); uictx.rotate(t.beltTilt || 0);
+  uictx.globalAlpha = 0.6;
+  uictx.fillStyle = "rgba(220,230,255,0.85)";
+  uictx.beginPath();
   for (const p of t.beltPoints){
     p.a += p.speed;
     const px = Math.cos(p.a) * p.radius, py = Math.sin(p.a) * p.er;
-    uictx.globalAlpha = 0.75 * p.shade;
-    uictx.fillStyle = "rgba(220,230,255,0.85)";
-    uictx.beginPath(); uictx.arc(px, py, p.size, 0, Math.PI*2); uictx.fill();
+    uictx.moveTo(px + p.size, py);
+    uictx.arc(px, py, p.size, 0, Math.PI*2);
   }
+  uictx.fill();
   uictx.restore(); uictx.globalAlpha = 1;
 }
 
 // ========================== DRAWING ==========================
 let lastHoveredIndex = -1;
 function drawPlanetHalo(x, y, t, r, now){
-  const pulse = 0.88 + Math.sin(now*0.001 + r*0.03)*0.12;
-  uictx.save(); uictx.globalAlpha = 0.16 * pulse;
-  uictx.shadowColor = t.planet.glow || t.planet.base;
-  uictx.shadowBlur = r * (1.4 + 0.8*pulse);
-  uictx.beginPath(); uictx.arc(x, y, r*1.18, 0, Math.PI*2);
-  uictx.strokeStyle = "transparent"; uictx.stroke(); uictx.restore();
+  // cached radial-gradient sprite — no shadowBlur, one drawImage
+  const pulse = 0.9 + Math.sin(now*0.0008 + r*0.03)*0.1;
+  const sprite = getGlowSprite(t.planet.glow || t.planet.base);
+  const gr = r * 2.4 * pulse;
+  uictx.globalAlpha = 0.42;
+  uictx.drawImage(sprite, x - gr, y - gr, gr * 2, gr * 2);
+  uictx.globalAlpha = 1;
 }
 function drawPlanetSparkle(x,y,r,now){
-  const a = (now*0.0006) % (Math.PI*2);
+  // Throttle sparkle updates (every 40ms = ~25fps for this effect)
+  const sparkleFrame = Math.floor(now / 40);
+  const a = (sparkleFrame * 0.024) % (Math.PI*2); // Simpler calculation
   const sx = x + Math.cos(a) * r*0.35, sy = y + Math.sin(a*1.3) * r*0.22;
-  uictx.save(); uictx.globalAlpha = 0.25 + Math.sin(now*0.01)*0.1;
-  uictx.fillStyle = "#ffffff"; uictx.beginPath(); uictx.arc(sx, sy, Math.max(1.5, r*0.04), 0, Math.PI*2); uictx.fill(); uictx.restore();
+  uictx.save(); 
+  uictx.globalAlpha = 0.22 + Math.sin(sparkleFrame*0.4)*0.08; // Simpler calculation
+  uictx.fillStyle = "#ffffff"; 
+  uictx.beginPath(); 
+  uictx.arc(sx, sy, Math.max(1.4, r*0.038), 0, Math.PI*2); // Slightly smaller
+  uictx.fill(); 
+  uictx.restore();
 }
 function jitterFor(t){
   const seed = t.name.split("").reduce((a,c)=>a+c.charCodeAt(0),0);
@@ -1038,33 +1464,46 @@ function drawTargetPlanet(x,y,t, hovered, now){
   if (t.tex) uictx.drawImage(t.tex, px - r, py - r, r * 2, r * 2);
 
   if (t.planet.ring){
-    uictx.save(); uictx.translate(px, py); uictx.rotate(typeof t.ringTilt === "number" ? t.ringTilt : -0.22);
-    uictx.strokeStyle = t.planet.ringColor || "rgba(200,220,255,.55)";
-    uictx.lineWidth = Math.max(2, r * 0.12);
-    uictx.beginPath(); uictx.ellipse(0, 0, r*1.35, r*0.55, 0, 0, Math.PI*2); uictx.stroke();
+    uictx.save();
+    uictx.translate(px, py);
+    uictx.rotate(typeof t.ringTilt === "number" ? t.ringTilt : -0.22);
+
+    const ringGlow = 0.8 + Math.sin(now * 0.0008 + r * 0.03) * 0.2;
+    const ringColor = t.planet.ringColor || "rgba(200,220,255,.55)";
+    // soft under-glow pass (wide + faint) replaces expensive shadowBlur
+    uictx.strokeStyle = ringColor;
+    uictx.globalAlpha = 0.25 * ringGlow;
+    uictx.lineWidth = Math.max(5, r * 0.24);
+    uictx.beginPath();
+    uictx.ellipse(0, 0, r*1.35, r*0.55, 0, 0, Math.PI*2);
+    uictx.stroke();
+    // crisp main ring
+    uictx.globalAlpha = ringGlow;
+    uictx.lineWidth = Math.max(2, r * 0.1);
+    uictx.beginPath();
+    uictx.ellipse(0, 0, r*1.35, r*0.55, 0, 0, Math.PI*2);
+    uictx.stroke();
+
     uictx.restore();
+    uictx.globalAlpha = 1;
   }
 
   if (t.beltPoints) drawAsteroidBelt(px, py, t);
   drawPlanetSparkle(px,py,r,now);
 
   if (hovered){
-    uictx.save(); uictx.globalAlpha = 0.25;
-    uictx.shadowColor = t.planet.glow || t.planet.base; uictx.shadowBlur = r * 1.2;
-    uictx.beginPath(); uictx.arc(px, py, r*1.15, 0, Math.PI*2);
-    uictx.strokeStyle = "transparent"; uictx.stroke(); uictx.restore();
+    const glowPulse = 0.85 + Math.sin(now * 0.003) * 0.15;
+    const sprite = getGlowSprite(t.planet.glow || t.planet.base);
+    const gr = r * 2.9;
+    uictx.globalAlpha = 0.55 * glowPulse;
+    uictx.drawImage(sprite, px - gr, py - gr, gr * 2, gr * 2);
+    uictx.globalAlpha = 1;
   }
 
-  ensureTextMetrics(t);
-
-  uictx.font = "600 18px Segoe UI, sans-serif";
-  uictx.fillStyle = "#cfe1ff";
-  uictx.fillText(t.label, px - t._mw/2, py + r + 10);
-
-  uictx.font = "14px Segoe UI, sans-serif";
-  const nameText = `· ${t.name}`;
-  uictx.fillStyle = "#ffffff";
-  uictx.fillText(nameText, px - t._nw/2, py + r + 30);
+  // Planet labels — pre-rendered sprite, one drawImage per frame
+  ensureLabelSprite(t);
+  const ls = t._labelSprite;
+  uictx.drawImage(ls.canvas, px - ls.w / 2, py + r + 6, ls.w, ls.h);
 }
 
 // === Decorative Space Station (sprite + pseudo-3D) ==========================
@@ -1131,12 +1570,12 @@ function drawStation(){
 
   uictx.restore();
 
-  // label (uses SITE.station.label if provided)
-  uictx.font = "600 14px Segoe UI, sans-serif";
+  // label (uses SITE.station.label if provided) — width measured once
+  uictx.font = "600 13px 'Space Grotesk', 'Segoe UI', sans-serif";
   const label = STATION.label || "Station";
-  const lw = uictx.measureText(label).width;
+  if (STATION._lw == null) STATION._lw = uictx.measureText(label).width;
   uictx.fillStyle = "#cfe1ff";
-  uictx.fillText(label, x - lw/2, y + STATION.r + 16);
+  uictx.fillText(label, x - STATION._lw/2, y + STATION.r + 16);
 }
 
 function drawTargets(){
@@ -1161,6 +1600,8 @@ function drawTargets(){
   // Decorative station (draw after planets so it floats on top a bit)
   drawStation();
 
+  // pointer cursor over clickable planets (cheap: only touch DOM on change)
+  if (hoveredIdx !== lastHoveredIndex) ui.style.cursor = hoveredIdx >= 0 ? "pointer" : "";
   lastHoveredIndex = hoveredIdx;
 }
 function drawUI(){
@@ -1175,10 +1616,13 @@ function drawUI(){
 
 // ========================== CAMERA ==========================
 const cam = { x:0, y:0, scale:1, tx:0, ty:0, ts:1, active:false, arriving:false, onArrive:null };
-function updateCam(){
-  cam.x += (cam.tx - cam.x) * 0.12;
-  cam.y += (cam.ty - cam.y) * 0.12;
-  cam.scale += (cam.ts - cam.scale) * 0.12;
+function updateCam(dt = 16.7){
+  // time-based smoothing (equivalent to 0.12/frame at 60fps) so slow devices
+  // converge in the same wall-clock time instead of taking forever
+  const a = Math.min(1, 1 - Math.pow(0.88, dt / 16.7));
+  cam.x += (cam.tx - cam.x) * a;
+  cam.y += (cam.ty - cam.y) * a;
+  cam.scale += (cam.ts - cam.scale) * a;
   if (cam.active && Math.abs(cam.x-cam.tx)<0.6 && Math.abs(cam.y-cam.ty)<0.6 && Math.abs(cam.scale-cam.ts)<0.01){
     cam.active = false;
     if (!cam.arriving) {
@@ -1298,8 +1742,8 @@ function ensureLanding(){
   landing.innerHTML = `
     <div class="landing__bg"></div>
     <div class="landing__panel">
-      <button class="landing__close" aria-label="Close">Back to orbit</button>
-      <h2 id="landing-title"></h2>
+      <button class="landing__close btn-lcars" aria-label="Close">Back to orbit</button>
+      <h2 id="landing-title" class="holographic"></h2>
       <div id="landing-body"></div>
     </div>`;
   document.body.appendChild(landing);
@@ -1311,8 +1755,11 @@ function setLandingBackgroundByPlanet(t){
   const bgEl = landing.querySelector(".landing__bg");
   const glow = t?.planet?.glow || "#9fc7ff";
   const base = t?.planet?.base || "#0c1220";
-  const shade = t?.planet?.shade || "#060a14";
-  bgEl.style.background = `radial-gradient(900px 600px at 25% 20%, ${glow}33 0%, ${base} 35%, ${shade} 70%, #000 100%)`;
+  // keep the backdrop dark — just a soft planet-coloured aura, not a colour flood
+  bgEl.style.background = `
+    radial-gradient(1100px 700px at 22% 18%, ${glow}2b 0%, transparent 55%),
+    radial-gradient(1300px 900px at 82% 88%, ${base}1a 0%, transparent 60%),
+    #04050b`;
 }
 
 function refreshSkillBars(){
@@ -1343,20 +1790,25 @@ document.addEventListener("mousemove", (e) => {
   noteInput();
 }, { passive: true });
 
+// Shared "fly to planet and open it" behaviour (canvas click, keyboard, quick nav)
+function engageTarget(t){
+  if (cam.active || cam.arriving || ship.moving) return;
+  if (landing && !landing.hidden) landing.hidden = true;
+  const tx = toPx(t.px, width), ty = toPx(t.py, height);
+  const ring = document.createElement("div");
+  ring.className = "flash"; ring.style.left = tx + "px"; ring.style.top = ty + "px";
+  stage.appendChild(ring); ring.addEventListener("animationend", () => ring.remove(), { once: true });
+  const theme = t.warp || pickWarpTheme(true);
+  flyShipTo(tx, ty, () => { setLandingBackgroundByPlanet(t); t.action(); }, theme);
+}
+
 ui.addEventListener("click", (e) => {
   if (cam.active || cam.arriving || ship.moving) return;
   const r = ui.getBoundingClientRect();
   const x = e.clientX - r.left, y = e.clientY - r.top;
   for (const t of TARGETS) {
     const tx = toPx(t.px, width), ty = toPx(t.py, height), rr = t.r;
-    if (Math.hypot(x - tx, y - ty) <= rr) {
-      const ring = document.createElement("div");
-      ring.className = "flash"; ring.style.left = tx + "px"; ring.style.top = ty + "px";
-      stage.appendChild(ring); ring.addEventListener("animationend", () => ring.remove(), { once: true });
-      const theme = t.warp || pickWarpTheme(true);
-      flyShipTo(tx, ty, () => { setLandingBackgroundByPlanet(t); t.action(); }, theme);
-      return;
-    }
+    if (Math.hypot(x - tx, y - ty) <= rr) { engageTarget(t); return; }
   }
   noteInput();
 }, { passive: true });
@@ -1364,15 +1816,26 @@ ui.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Enter" || cam.active || cam.arriving || ship.moving) return;
   if (lastHoveredIndex < 0) return;
-  const t = TARGETS[lastHoveredIndex];
-  const tx = toPx(t.px, width), ty = toPx(t.py, height);
-  const ring = document.createElement("div");
-  ring.className = "flash"; ring.style.left = tx + "px"; ring.style.top = ty + "px";
-  stage.appendChild(ring); ring.addEventListener("animationend", () => ring.remove(), { once: true });
-  const theme = t.warp || pickWarpTheme(true);
-  flyShipTo(tx, ty, () => { setLandingBackgroundByPlanet(t); t.action(); }, theme);
+  engageTarget(TARGETS[lastHoveredIndex]);
   noteInput();
 });
+
+// ========================== QUICK NAV ==========================
+// Accessible bar mirroring the current room's planets — keyboard/touch friendly.
+const quickNav = document.getElementById("quick-nav");
+function buildQuickNav(){
+  if (!quickNav) return;
+  quickNav.innerHTML = "";
+  TARGETS.forEach(t => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "quick-nav__btn";
+    b.textContent = t.label;
+    b.addEventListener("click", () => { noteInput(); engageTarget(t); });
+    quickNav.appendChild(b);
+  });
+  quickNav.hidden = false;
+}
 
 // ========================== AUTOPILOT ==========================
 function maybeAutopilot(){
@@ -1419,8 +1882,8 @@ function loop(){
     if (!ship.moving) aimShipTowards(mouseX, mouseY);
   }
 
-  renderStars();
-  updateCam();
+  renderStars(dt);
+  updateCam(dt);
   updateShip();
   drawUI();
   maybeAutopilot();
@@ -1430,7 +1893,25 @@ function loop(){
   requestAnimationFrame(loop);
 }
 ensureLanding();
+buildQuickNav();
+applySoundState();
 loop();
+
+// re-render cached planet labels once the web fonts are ready
+if (document.fonts?.ready) {
+  document.fonts.ready.then(() => {
+    ROOMS.forEach(room => room.targets.forEach(t => { t._labelSprite = null; }));
+  });
+}
+
+// tiny debug hook (harmless in production, useful in devtools)
+window.__portfolioState = () => ({
+  shipMoving: ship.moving,
+  camActive: cam.active,
+  camArriving: cam.arriving,
+  cam: { x: cam.x, y: cam.y, scale: cam.scale, tx: cam.tx, ty: cam.ty, ts: cam.ts },
+  room: currentRoom
+});
 
 // Safer, cooler warp on start (cyan/violet bias)
 startBtn?.addEventListener("click", async () => {

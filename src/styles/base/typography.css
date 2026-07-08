@@ -1,0 +1,61 @@
+/**
+ * Typography Styles
+ * Fonts and text styling
+ */
+
+/* StarJedi Outline Font */
+@font-face {
+  font-family: "StarJediOutline";
+  src: url("../../assets/fonts/starboba/starjedioutline.ttf") format("truetype");
+  font-display: swap;
+  font-weight: normal;
+  font-style: normal;
+  /* Font may have issues - will fall back to system font if corrupted */
+}
+
+/* Silent fallback if font fails to load */
+@supports not (font-family: "StarJediOutline") {
+  .title {
+    font-family: "Segoe UI", system-ui, sans-serif;
+  }
+}
+
+/* Title styling with StarJedi Outline font */
+.title {
+  font-family: "StarJediOutline", "Segoe UI", system-ui, sans-serif;
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+  word-spacing: 0.08em;
+  letter-spacing: 0.5px;
+  font-size: clamp(2rem, 8vw, 4.6rem);
+  margin: 0 0 0.6em;
+  color: var(--yellow);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
+  padding-inline: 0.2em;
+}
+
+.title .word {
+  display: inline-block;
+  margin: 0 0.06em;
+}
+
+.title .v-lc {
+  display: inline-block;
+  transform: scale(0.78) translateY(0.16em);
+  transform-origin: left bottom;
+  line-height: 0;
+}
+
+.title .word--van {
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: none;
+}
+
+.subtitle {
+  font-size: clamp(1.05rem, 4.5vw, 2rem);
+  margin: 0 0 1.25em;
+  color: #e9ecff;
+  opacity: 0.95;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.35);
+}

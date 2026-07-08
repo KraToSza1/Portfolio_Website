@@ -1,0 +1,131 @@
+/**
+ * Skills Section Styles
+ */
+
+.skills {
+  display: grid;
+  gap: 16px;
+}
+
+.skill-group {
+  background: rgba(10, 12, 20, 0.5);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.skill-group:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+}
+
+.skill-group__title {
+  margin: 0 0 8px;
+  color: #d7e6ff;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.skill {
+  margin-bottom: 12px;
+}
+
+.skill:last-child {
+  margin-bottom: 0;
+}
+
+.skill__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.skill__name {
+  color: var(--panel-text);
+  font-size: 0.9rem;
+}
+
+.skill__pct {
+  color: var(--panel-sub);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.skill__bar {
+  height: 6px;
+  background: rgba(42, 53, 85, 0.5);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.skill__fill {
+  height: 100%;
+  width: var(--w, 0%);
+  background: linear-gradient(90deg, #78d7ff, #3682ff);
+  border-radius: 3px;
+  animation: skillFill 1.2s ease-out forwards;
+  position: relative;
+  overflow: hidden;
+}
+
+.skill__fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: skillShine 2s ease-in-out infinite;
+}
+
+@keyframes skillFill {
+  from {
+    width: 0%;
+  }
+}
+
+@keyframes skillShine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.skill__fill--amber {
+  background: linear-gradient(90deg, #ffd84a, #f4b800);
+}
+
+.skill__fill--coral {
+  background: linear-gradient(90deg, #ff9aa2, #ff4f6d);
+}
+
+.skill__fill--mint {
+  background: linear-gradient(90deg, #9df6c7, #2ce6a1);
+}
+
+.skill__fill--aqua {
+  background: linear-gradient(90deg, #78d7ff, #3682ff);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.badge {
+  padding: 4px 10px;
+  background: rgba(78, 215, 255, 0.15);
+  border: 1px solid rgba(78, 215, 255, 0.4);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: #4ed7ff;
+  font-weight: 600;
+}

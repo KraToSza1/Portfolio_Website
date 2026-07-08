@@ -1,0 +1,265 @@
+/**
+ * Landing Panel Styles
+ * LCARS-style landing overlay
+ */
+
+/* LCARS Button Styling */
+.btn-lcars,
+.landing__close,
+button.btn-lcars {
+  background: linear-gradient(to right, #ff9900 0%, #ff6600 100%);
+  color: #000;
+  border: 2px solid #ff9900;
+  border-radius: 0 20px 20px 0;
+  padding: 10px 24px;
+  font-weight: 700;
+  font-family: 'Segoe UI', 'Futura', system-ui, sans-serif;
+  cursor: pointer;
+  position: relative;
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 100%, 0 100%);
+  transition: all 0.2s ease;
+  box-shadow: 
+    0 4px 12px rgba(255, 153, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn-lcars:hover,
+.landing__close:hover {
+  background: linear-gradient(to right, #ffaa00 0%, #ff7700 100%);
+  box-shadow: 
+    0 6px 16px rgba(255, 153, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  filter: brightness(1.1);
+}
+
+.btn-lcars:active,
+.landing__close:active {
+  transform: scale(0.98);
+  box-shadow: 
+    0 2px 8px rgba(255, 153, 0, 0.3),
+    inset 0 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* LCARS accent - add decorative line */
+.btn-lcars::before,
+.landing__close::before {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: #000;
+  opacity: 0.3;
+}
+
+/* Holographic Text Effects */
+.holographic,
+.landing__panel h2,
+#landing-title {
+  color: #00ffff;
+  text-shadow: 
+    0 0 10px #00ffff,
+    0 0 20px #00ffff,
+    0 0 30px #00ffff,
+    0 0 40px rgba(0, 255, 255, 0.5);
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 255, 255, 0.08) 2px,
+    rgba(0, 255, 255, 0.08) 4px
+  );
+  position: relative;
+  animation: holographicScan 3s linear infinite;
+}
+
+.holographic::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(0, 255, 255, 0.1) 50%,
+    transparent
+  );
+  animation: holographicScanLine 2s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes holographicScan {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.2);
+  }
+}
+
+/* Warp overlay */
+.warp {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, var(--warp-tint-1) 0%, transparent 70%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+  z-index: 1;
+}
+
+.warp.active {
+  opacity: 1;
+}
+
+.warp.theme-cyan {
+  --warp-tint-1: rgba(120, 215, 255, 0.18);
+  --warp-tint-2: rgba(54, 130, 255, 0.12);
+}
+
+.warp.theme-violet {
+  --warp-tint-1: rgba(205, 153, 255, 0.18);
+  --warp-tint-2: rgba(131, 78, 255, 0.12);
+}
+
+.warp.theme-magma {
+  --warp-tint-1: rgba(255, 142, 98, 0.18);
+  --warp-tint-2: rgba(255, 68, 68, 0.12);
+}
+
+.warp.theme-emerald {
+  --warp-tint-1: rgba(115, 255, 188, 0.18);
+  --warp-tint-2: rgba(26, 184, 124, 0.12);
+}
+
+.warp.pulse.active {
+  animation: warpPulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes warpPulse {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Stage (planets + ship) */
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.stage[hidden] {
+  display: none;
+}
+
+/* Ship 3D canvas */
+.ship3d-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Click flash (hit marker) */
+.flash {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
+  pointer-events: none;
+  animation: flashExpand 0.4s ease-out forwards;
+  z-index: 3;
+}
+
+@keyframes flashExpand {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Landing overlay */
+.landing {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: auto;
+}
+
+.landing[hidden] {
+  display: none;
+}
+
+.landing__bg {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(900px 600px at 25% 20%, rgba(159, 199, 255, 0.2) 0%, #0c1220 35%, #060a14 70%, #000 100%);
+  z-index: -1;
+}
+
+.landing__panel {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+  width: min(var(--panel-max-w), 92vw);
+  max-height: 86vh;
+  overflow: auto;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  /* LCARS-style panel */
+  background: 
+    linear-gradient(135deg, rgba(255, 153, 0, 0.05) 0%, rgba(10, 12, 20, 0.58) 50%, rgba(10, 12, 20, 0.58) 100%),
+    rgba(10, 12, 20, 0.58);
+  border: 2px solid var(--panel-border);
+  border-left: 4px solid #ff9900;
+  border-radius: 0 20px 20px 0;
+  padding: 26px 24px 22px;
+  box-shadow:
+    0 22px 80px rgba(0, 0, 0, 0.55),
+    inset -4px 0 0 rgba(255, 153, 0, 0.2);
+  color: var(--panel-text);
+  transform: translateY(8px) scale(0.985);
+  opacity: 0;
+  position: relative;
+  contain: content;
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 100%, 0 100%);
+}
+
+.landing__panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, #ff9900, transparent);
+  z-index: -1;
+}
+
+.landing .landing__panel {
+  animation: panelEnter 0.4s ease-out forwards;
+}
+
+@keyframes panelEnter {
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}

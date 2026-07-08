@@ -1,0 +1,391 @@
+/**
+ * About Section Styles
+ * Professional clean layout inspired by modern resume design
+ * Adapted to space/Star Wars theme
+ */
+
+.about--professional {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  color: #e7ecff !important; /* Force light text */
+  background: transparent !important;
+}
+
+/* Override any conflicting styles */
+.about--professional,
+.about--professional p,
+.about--professional div,
+.about--professional span,
+.about--professional li {
+  color: #e7ecff !important;
+}
+
+/* Explicitly set text colors for all elements */
+.about--professional .about__name,
+.about--professional .about__bio-text,
+.about--professional .about__profile-info,
+.about--professional .detail-item__desc {
+  color: #e7ecff !important;
+}
+
+.about--professional .about__detail-title,
+.about--professional .detail-item__desc strong {
+  color: #ffffff !important;
+}
+
+/* Header Section */
+.about__header-section {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid rgba(255, 232, 31, 0.2);
+}
+
+.about__main-title {
+  margin: 0 0 20px 0;
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--yellow);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 20px rgba(255, 232, 31, 0.3);
+}
+
+/* Contact Pills */
+.about__contact-pills {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.contact-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 232, 31, 0.1);
+  border: 1px solid rgba(255, 232, 31, 0.3);
+  border-radius: 24px;
+  font-size: 0.9rem;
+  color: #e7ecff !important;
+  transition: all 0.2s ease;
+}
+
+.contact-pill:hover {
+  background: rgba(255, 232, 31, 0.15);
+  border-color: rgba(255, 232, 31, 0.5);
+  transform: translateY(-2px);
+}
+
+.contact-pill__icon {
+  font-size: 1rem;
+}
+
+.contact-pill__link {
+  color: #e7ecff !important;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.contact-pill__link:hover {
+  color: var(--yellow);
+}
+
+/* Content Grid - Two Column Layout */
+.about__content-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 48px;
+  align-items: start;
+  margin-top: 32px;
+}
+
+/* Left Column: Profile */
+.about__left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.about__profile-image {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.about--professional .about__portrait {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  border-radius: 16px !important;
+  border: 2px solid rgba(0, 255, 255, 0.5) !important;
+  box-shadow: 
+    0 0 30px rgba(0, 255, 255, 0.3),
+    0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: block;
+  object-fit: cover;
+}
+
+.about__profile-image:hover .about__portrait {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 
+    0 0 40px rgba(0, 255, 255, 0.5),
+    0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.about__profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.about__name {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.about__title {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--yellow);
+  font-weight: 600;
+}
+
+.about__bio-text {
+  margin: 0;
+  line-height: 1.7;
+  color: #e7ecff !important;
+  font-size: 0.95rem;
+}
+
+.about__bio-text strong.highlight {
+  color: #00ffff;
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+  font-weight: 600;
+}
+
+.about__bio-text strong.highlight-cyan {
+  color: #00ffff;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+  font-weight: 600;
+}
+
+/* Right Column: Experience & Skills */
+.about__right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.about__details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+/* Detail Sections */
+.about__detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.about__detail-title {
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.about__detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.detail-item__years {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--yellow);
+  margin-bottom: 4px;
+}
+
+.detail-item__desc {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #cfe1ff !important;
+}
+
+.detail-item__desc strong {
+  color: #ffffff;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Skills Grid */
+.about__skills-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.skill-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: rgba(10, 15, 30, 0.4);
+  border: 1px solid rgba(255, 232, 31, 0.2);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.skill-card:hover {
+  border-color: rgba(255, 232, 31, 0.4);
+  background: rgba(10, 15, 30, 0.6);
+  transform: translateY(-2px);
+}
+
+.skill-card__icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 232, 31, 0.1);
+  border: 1px solid rgba(255, 232, 31, 0.3);
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--yellow);
+  margin-bottom: 8px;
+}
+
+.skill-card__name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.skill-card__rating {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.skill-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 232, 31, 0.2);
+  border: 1px solid rgba(255, 232, 31, 0.3);
+}
+
+.skill-dot--filled {
+  background: var(--yellow);
+  border-color: var(--yellow);
+  box-shadow: 0 0 6px rgba(255, 232, 31, 0.5);
+}
+
+/* Soft Skills */
+.about__soft-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.soft-skill-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 16px;
+  font-size: 0.85rem;
+  color: #00ffff;
+  transition: all 0.2s ease;
+}
+
+.soft-skill-tag:hover {
+  background: rgba(0, 255, 255, 0.15);
+  border-color: rgba(0, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Contact Section */
+.about__contact-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 232, 31, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+  .about__content-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .about__details-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .about__profile-image {
+    justify-self: center;
+  }
+
+  .about__portrait {
+    max-width: 240px;
+  }
+
+  .about__name,
+  .about__title {
+    text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .about--professional {
+    padding: 24px 16px;
+  }
+
+  .about__main-title {
+    font-size: 2rem;
+  }
+
+  .about__skills-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about__contact-pills {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+/* Legacy styles for compatibility */
+.about {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.about__avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 153, 0, 0.4);
+}

@@ -1,0 +1,32 @@
+/**
+ * CSS Custom Properties (Variables)
+ * Centralized theme variables
+ */
+
+:root {
+  --yellow: #ffe81f;
+  --bg: #000;
+  --white: #fff;
+  --flash: #ff3b30;
+
+  --panel: #0a0c14;
+  --panel-border: #2b3555;
+  --panel-text: #e7ecff;
+  --panel-sub: #a9b6d6;
+  --focus: #9edbff;
+
+  /* Warp tint (optional themes override these) */
+  --warp-tint-1: rgba(120, 215, 255, 0.14);
+  --warp-tint-2: rgba(54, 130, 255, 0.10);
+
+  /* Readable crawl speed */
+  --crawl-duration: 45s;
+
+  /* Layout helpers */
+  --panel-max-w: 900px;
+
+  /* Responsive/safe-area helpers (updated by JS) */
+  --vh: 1vh;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}

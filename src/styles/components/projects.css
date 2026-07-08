@@ -1,0 +1,147 @@
+/**
+ * Projects Section Styles
+ * Case studies and project cards
+ */
+
+.case {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(10, 12, 20, 0.5);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.case__title {
+  margin: 0 0 8px;
+  color: var(--panel-text);
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.case__summary {
+  margin: 0 0 12px;
+  color: var(--panel-sub);
+  line-height: 1.6;
+}
+
+.case__hero {
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.video-wrap {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.video-wrap iframe,
+.video-wrap video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 8px;
+}
+
+.case__bullets {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+
+.case__bullets li {
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+  color: var(--panel-text);
+  line-height: 1.6;
+}
+
+.case__bullets li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: #00ffff;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.pill {
+  padding: 4px 12px;
+  background: rgba(42, 53, 85, 0.5);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  font-size: 0.85rem;
+  color: var(--panel-text);
+}
+
+.card {
+  padding: 16px;
+  background: rgba(10, 12, 20, 0.5);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.card__title {
+  margin: 0 0 8px;
+  color: var(--panel-text);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.card__desc,
+.card__sub {
+  margin: 0 0 8px;
+  color: var(--panel-sub);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.link-btn {
+  padding: 8px 16px;
+  background: rgba(42, 53, 85, 0.5);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: var(--panel-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.link-btn:hover {
+  background: rgba(78, 215, 255, 0.2);
+  border-color: rgba(78, 215, 255, 0.5);
+  color: #4ed7ff;
+  text-decoration: none;
+}
