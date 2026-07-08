@@ -163,6 +163,26 @@ const THEME_TINTS = {
 };
 function setStarTintFromTheme(theme){ starTint = THEME_TINTS[theme] || [160,210,255]; }
 
+// cached vanishing-point glow for the hyperspace tunnel (one per theme tint)
+const warpGlowCache = new Map();
+function getWarpGlow(){
+  const key = starTint.join(",");
+  let c = warpGlowCache.get(key);
+  if (c) return c;
+  const size = 256, half = size / 2;
+  c = document.createElement("canvas");
+  c.width = c.height = size;
+  const x = c.getContext("2d");
+  const g = x.createRadialGradient(half, half, 0, half, half, half);
+  g.addColorStop(0,    "rgba(255,255,255,0.5)");
+  g.addColorStop(0.25, `rgba(${starTint[0]},${starTint[1]},${starTint[2]},0.32)`);
+  g.addColorStop(0.6,  `rgba(${starTint[0]},${starTint[1]},${starTint[2]},0.10)`);
+  g.addColorStop(1,    `rgba(${starTint[0]},${starTint[1]},${starTint[2]},0)`);
+  x.fillStyle = g; x.fillRect(0, 0, size, size);
+  warpGlowCache.set(key, c);
+  return c;
+}
+
 // 3D ship state (Three.js only)
 let ship = { x: 0, y: 0, angle: -90, moving: false, onArrive: null, path: null, t0: 0, dur: CONFIG.SHIP.FLIGHT_MS };
 
@@ -536,7 +556,9 @@ function renderStars(dt = 16.7) {
   const hidden = document.visibilityState === "hidden";
   const step = hidden ? 3 : STAR_STEP;
 
-  starSpeed += (warpTarget - starSpeed) * Math.min(1, 1 - Math.pow(0.94, dt / 16.7));
+  // punchy ramp-up, smooth wind-down — feels like a hyperspace kick
+  const rampBase = warpTarget > starSpeed ? 0.88 : 0.95;
+  starSpeed += (warpTarget - starSpeed) * Math.min(1, 1 - Math.pow(rampBase, dt / 16.7));
   const cx = bgW/2, cy = bgH/2;
   const parallaxFactor = starSpeed > 0.02 ? 0.0006 : 0.00008;
   const parallaxX = (mouseX - cx) * parallaxFactor;
@@ -563,13 +585,26 @@ function renderStars(dt = 16.7) {
     }
     bctx.globalAlpha = 1;
   } else {
-    // --- WARP STREAKS (tinted + soft center) ---
-    bctx.lineCap = "round";
+    // --- WARP STREAKS — hyperspace tunnel ---
+    // PERF: this used to be one stroke() call PER STAR (420 path
+    // rasterizations/frame) — the thing that was killing the warp.
+    // Streaks are now grouped into a handful of alpha/width buckets and
+    // stroked as ONE Path2D each (~10 strokes total), drawn additively
+    // so overlapping lines build up a bright light-speed core.
     const minSide = Math.min(bgW, bgH);
-    // PERF: quantize alpha/width and only touch ctx state when the bucket
-    // changes — building a new rgba() string per star per frame is expensive
-    let lastAlphaQ = -1, lastWidthQ = -1;
+    const speedNorm = Math.min(1, starSpeed / CONFIG.STARS.WARP_SPEED);
 
+    // soft glow at the vanishing point — sells the "tunnel" read
+    if (speedNorm > 0.15) {
+      const gk = (speedNorm - 0.15) / 0.85;
+      const glow = getWarpGlow();
+      const gr = minSide * (0.45 + 0.5 * gk);
+      bctx.globalAlpha = 0.55 * gk;
+      bctx.drawImage(glow, cx - gr, cy - gr, gr * 2, gr * 2);
+      bctx.globalAlpha = 1;
+    }
+
+    const buckets = new Map();
     for (let k = 0; k < stars.length; k += step) {
       const s = stars[k];
       s.x += s.x * starSpeed + parallaxX * 40;
@@ -580,29 +615,33 @@ function renderStars(dt = 16.7) {
       const dist = Math.hypot(s.x, s.y);
       const centerFade = Math.min(1, dist / (minSide * 0.36)); // 0 in core → 1 outward
 
-      const len   = Math.min(12, 1 + starSpeed * 520) * (0.25 + 0.75 * centerFade);
-      const alpha = Math.min(0.28, 0.08 + starSpeed * 0.50) * centerFade;
-      const width = Math.max(0.6, starSpeed * 18 * (0.2 + 0.8 * centerFade));
+      const len   = Math.min(22, 1 + starSpeed * 620) * (0.25 + 0.75 * centerFade);
+      const alpha = Math.min(0.34, 0.08 + starSpeed * 0.6) * centerFade;
+      const width = Math.max(0.6, starSpeed * 16 * (0.2 + 0.8 * centerFade));
 
-      const alphaQ = Math.round(alpha * 20);      // 0.05 buckets
-      const widthQ = Math.round(width * 2);       // 0.5px buckets
-      if (alphaQ !== lastAlphaQ) {
-        bctx.strokeStyle = `rgba(${starTint[0]},${starTint[1]},${starTint[2]},${alphaQ / 20})`;
-        lastAlphaQ = alphaQ;
-      }
-      if (widthQ !== lastWidthQ) {
-        bctx.lineWidth = widthQ / 2;
-        lastWidthQ = widthQ;
-      }
-
-      bctx.beginPath();
-      bctx.moveTo(cx + s.x, cy + s.y);
-      bctx.lineTo(
+      const aQ = Math.min(7, Math.round(alpha * 20)); // 0..7 alpha buckets
+      if (!aQ) continue;                              // fully faded — skip
+      const wQ = Math.min(5, Math.round(width));      // 1px width buckets
+      const key = aQ * 8 + wQ;
+      let path = buckets.get(key);
+      if (!path) { path = new Path2D(); buckets.set(key, path); }
+      path.moveTo(cx + s.x, cy + s.y);
+      path.lineTo(
         cx + s.x - (s.x * starSpeed * len),
         cy + s.y - (s.y * starSpeed * len)
       );
-      bctx.stroke();
     }
+
+    bctx.save();
+    bctx.globalCompositeOperation = "lighter";
+    bctx.lineCap = "round";
+    for (const [key, path] of buckets) {
+      const aQ = (key / 8) | 0, wQ = key % 8;
+      bctx.strokeStyle = `rgba(${starTint[0]},${starTint[1]},${starTint[2]},${aQ / 20})`;
+      bctx.lineWidth = Math.max(0.6, wQ);
+      bctx.stroke(path);
+    }
+    bctx.restore();
   }
   updateMeteors(bctx);
 }

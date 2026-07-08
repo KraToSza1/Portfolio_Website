@@ -1,3 +1,4 @@
+@charset "UTF-8";
 /* ==========================================================================
    Raymond van der Walt — Interactive Portfolio
    Design system: deep-space navy · starlight gold · signal cyan
@@ -280,22 +281,20 @@ a:focus-visible,
 /* ---------- Quick nav (accessible fallback + wayfinding) ---------- */
 .quick-nav{
   position:absolute;
-  left:50%;transform:translateX(-50%);
-  bottom:calc(clamp(14px,2.4vh,28px) + var(--safe-bottom));
+  left:max(14px, env(safe-area-inset-left, 0px));
+  top:calc(14px + var(--safe-top));
   z-index:5;
-  display:flex;gap:4px;align-items:center;
+  display:flex;flex-wrap:wrap;gap:4px;align-items:center;
   padding:6px;
   /* PERF: no backdrop-filter here — blurring an ever-changing canvas
      underneath forces a GPU re-blur every frame (major stutter source) */
   background:rgba(8,11,20,.9);
   border:1px solid var(--line);
-  border-radius:999px;
+  border-radius:22px;
   box-shadow:0 14px 40px rgba(0,0,0,.45);
-  max-width:min(94vw,720px);
-  overflow-x:auto;
-  scrollbar-width:none;
+  /* never collide with the sound toggle in the top-right corner */
+  max-width:min(calc(100vw - 96px), 780px);
 }
-.quick-nav::-webkit-scrollbar{display:none}
 .quick-nav[hidden]{display:none}
 .quick-nav__btn{
   appearance:none;border:0;cursor:pointer;
@@ -445,7 +444,8 @@ a:focus-visible,
   transition:background .15s ease, color .15s ease, border-color .15s ease, transform .08s ease;
   min-height:44px;
 }
-#landing .landing__close::before,.btn-lcars::before{content:"← ";color:var(--gold)}
+/* \2190 = left arrow, escaped so it survives any charset misdetection */
+#landing .landing__close::before,.btn-lcars::before{content:"\2190  ";color:var(--gold)}
 #landing .landing__close:hover,.btn-lcars:hover{
   background:rgba(255,224,129,.1);
   border-color:rgba(255,224,129,.4);
@@ -878,7 +878,7 @@ a:focus-visible,
 }
 .price-card__features li{padding-left:20px;position:relative}
 .price-card__features li::before{
-  content:"✦";
+  content:"\2726"; /* four-pointed star, escaped for charset safety */
   position:absolute;left:0;top:1px;
   color:var(--cyan);font-size:.75rem;
 }
