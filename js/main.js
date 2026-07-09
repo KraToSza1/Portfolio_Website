@@ -1625,10 +1625,17 @@ const aboutHTML = `
           <div class="about__detail-section">
             <h4 class="about__detail-title">Education</h4>
             <div class="about__detail-item">
-              <div class="detail-item__years">2016-19</div>
+              <div class="detail-item__years">IIE</div>
               <div class="detail-item__desc">
-                <strong>Self-Taught &amp; Online Learning</strong><br>
-                Continuous learning through Udemy, Coursera, and hands-on project development.
+                <strong>Higher Certificate in Web and Mobile Development</strong><br>
+                The Independent Institute of Education (IIE) — formal training in web &amp; mobile development.
+              </div>
+            </div>
+            <div class="about__detail-item">
+              <div class="detail-item__years">Ongoing</div>
+              <div class="detail-item__desc">
+                <strong>Continuous Learning</strong><br>
+                Udemy, Coursera, and hands-on product/game projects on top of formal study.
               </div>
             </div>
           </div>
