@@ -1312,12 +1312,8 @@ button.link-btn{
 
 /* very short viewports (rotated phones / split-screen) */
 @media (max-height:420px) and (orientation:landscape){
-  .crawl{transform:none;animation:none}
-  body{overflow:auto}
-}
-@media (max-width:480px){
-  html,body{height:auto;min-height:100%}
-  body{overflow:auto}
+  .crawl{transform:none;animation:none;padding-top:2vh}
+  .crawl-hint{display:none}
 }
 
 /* low-end mode hook (JS toggles <html class="low-end">) */
