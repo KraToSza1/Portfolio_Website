@@ -630,14 +630,14 @@ a:focus-visible,
   background:#0a0f1f;
 }
 .about__portrait{
-  display:block;width:100%;aspect-ratio:4/5;
-  object-fit:cover;object-position:center 18%;
+  display:block;width:100%;aspect-ratio:1/1.08;
+  object-fit:cover;object-position:center 30%;
 }
 .about__profile-image::after{
   content:"";
   position:absolute;inset:0;pointer-events:none;
   border-radius:inherit;
-  background:linear-gradient(180deg, transparent 58%, rgba(4,5,11,.45));
+  background:linear-gradient(180deg, transparent 62%, rgba(4,5,11,.55));
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
 }
 .about__name{margin:0 0 2px;font-size:1.3rem;font-weight:700}
