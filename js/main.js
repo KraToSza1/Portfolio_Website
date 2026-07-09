@@ -8,47 +8,27 @@ const uictx = ui.getContext("2d", { alpha: true });
 
 const intro = document.getElementById("intro");
 const introScroll = document.getElementById("intro-scroll");
-const crawlPauseBtn = document.getElementById("crawl-pause");
 const warpOverlay = document.getElementById("warp");
 const startBtn = document.getElementById("start-button");
 const shootSfx = document.getElementById("sfx-shoot");
 const bgMusic = document.getElementById("bg-music");
 
-// Explicit Pause / Play for the intro crawl (plus auto-pause while scrolling).
+// Auto-pause the intro crawl when the user scrolls/touches to read.
 (() => {
-  if (!intro) return;
+  if (!intro || !introScroll) return;
   const crawlEl = intro.querySelector(".crawl");
-  const labelEl = crawlPauseBtn?.querySelector("[data-pause-label]");
   let crawlPaused = false;
 
-  const applyCrawlPause = (paused) => {
-    crawlPaused = !!paused;
-    intro.classList.toggle("is-reading", crawlPaused);
-    crawlEl?.classList.toggle("is-paused", crawlPaused);
-    if (crawlPauseBtn) {
-      crawlPauseBtn.setAttribute("aria-pressed", crawlPaused ? "true" : "false");
-      crawlPauseBtn.setAttribute("aria-label", crawlPaused ? "Play intro crawl" : "Pause intro crawl");
-      crawlPauseBtn.dataset.paused = crawlPaused ? "true" : "false";
-    }
-    if (labelEl) labelEl.textContent = crawlPaused ? "Play" : "Pause";
+  const pauseCrawl = () => {
+    if (crawlPaused) return;
+    crawlPaused = true;
+    intro.classList.add("is-reading");
+    crawlEl?.classList.add("is-paused");
   };
 
-  crawlPauseBtn?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    applyCrawlPause(!crawlPaused);
+  ["touchstart", "wheel", "scroll"].forEach(evt => {
+    introScroll.addEventListener(evt, pauseCrawl, { passive: true });
   });
-
-  // Scrolling/touching the story also pauses so reading stays easy
-  if (introScroll) {
-    ["touchstart", "wheel", "scroll"].forEach(evt => {
-      introScroll.addEventListener(evt, () => {
-        if (!crawlPaused) applyCrawlPause(true);
-      }, { passive: true });
-    });
-  }
-
-  // Start unpaused; button is the clear control
-  applyCrawlPause(false);
 })();
 
 // set default SFX volume
