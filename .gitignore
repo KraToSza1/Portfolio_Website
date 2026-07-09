@@ -29,3 +29,5 @@ Thumbs.db
 # Service Worker
 sw.js.bak
 
+.vercel
+.env*
