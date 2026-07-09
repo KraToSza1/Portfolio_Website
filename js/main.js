@@ -1603,7 +1603,6 @@ const CONTACT_PHONE = SITE.contact?.phone || "";
 
 const aboutHTML = `
   <div class="about about--professional">
-    <!-- Header with Contact Pills -->
     <div class="about__header-section">
       <p class="about__main-title">${SITE.contact?.availability || "Open to opportunities"}</p>
       <div class="about__contact-pills">
@@ -1626,15 +1625,15 @@ const aboutHTML = `
       </div>
     </div>
 
-    <!-- Two Column Layout -->
     <div class="about__content-grid">
-      <!-- Left Column: Profile & Bio -->
       <div class="about__left-column">
         <figure class="about__profile-image">
           <img
             class="about__portrait"
             src="${PROFILE_SRC}"
-            alt="Raymond Van Der Walt"
+            alt="Illustrated portrait of Raymond Van Der Walt in a creative developer workspace"
+            width="680"
+            height="850"
             onerror="this.style.display='none'"
             decoding="async"
           />
@@ -1643,45 +1642,57 @@ const aboutHTML = `
           <h3 class="about__name">Raymond Van Der Walt</h3>
           <p class="about__title">Frontend &amp; Game Developer</p>
           <p class="about__bio-text">
-            I'm a developer who lives where <strong class="highlight">UI meets gameplay</strong>. 
-            With <strong class="highlight">${YEARS}+ years</strong> of experience, I build 
-            <strong class="highlight-cyan">cinematic HUDs</strong>, 
-            <strong class="highlight-cyan">moment-to-moment interactions</strong>, and 
-            <strong class="highlight-cyan">performance-first web experiences</strong> 
-            using UE5, React, TypeScript, and Canvas/WebGL.
+            Based in <strong class="highlight">South Africa</strong>, I build at the intersection of
+            <strong class="highlight">cinematic UI</strong> and
+            <strong class="highlight">interactive systems</strong> —
+            whether that’s a production web product or an Unreal HUD that has to feel alive at 60fps.
           </p>
           <p class="about__bio-text">
-            I love <strong class="highlight">tuning feel</strong>, building
-            <strong class="highlight">micro-feedback</strong>, and keeping
-            <strong class="highlight">frame time lean</strong> so polish never costs performance.
-            I collaborate tightly with design, wire UI to real game states, and ship clean, maintainable systems.
+            With <strong class="highlight">${YEARS}+ years</strong> shipping interfaces, I work across
+            <strong class="highlight-cyan">React / TypeScript</strong>,
+            <strong class="highlight-cyan">UE5 (UMG / CommonUI / Blueprints)</strong>, and
+            <strong class="highlight-cyan">Canvas / WebGL</strong>.
+            I care about moment-to-moment feel, accessibility, and keeping frame time lean so polish never costs performance.
           </p>
           <p class="about__bio-text">
-            I also ship my own products — flagship
-            <a href="https://whts4dinner.com" target="_blank" rel="noopener"><strong class="highlight">Whts4dinner.com</strong></a>,
-            plus live tools like QuotePilot, ForgeQuest AI, StorIQ, and Elize's Canteen.
+            I’m also a founder-builder. My flagship product is
+            <a href="https://whts4dinner.com" target="_blank" rel="noopener"><strong class="highlight">Whts4dinner.com</strong></a>
+            — a live meal-planning app — alongside tools like QuotePilot, ForgeQuest AI, StorIQ, Elize’s Canteen, and Will Tool.
+            On the game side I craft cinematic mission HUDs, ARPG menu systems, and UI that speaks the same language as game state.
           </p>
+          <p class="about__bio-text">
+            Outside client work I’m usually deep in UE5 C++ / UI courses, prototyping product ideas, or tuning micro-interactions until they feel right.
+            If you need someone who can own the UI end-to-end — design collaboration, implementation, and ship — let’s talk.
+          </p>
+          <div class="about__focus">
+            <p class="about__focus-label">Currently focused on</p>
+            <div class="about__soft-skills">
+              <span class="soft-skill-tag">UE5 UI systems</span>
+              <span class="soft-skill-tag">React products</span>
+              <span class="soft-skill-tag">Cinematic HUDs</span>
+              <span class="soft-skill-tag">AI-assisted tools</span>
+              <span class="soft-skill-tag">Performance budgets</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Right Column: Experience & Skills -->
       <div class="about__right-column">
         <div class="about__details-grid">
-          <!-- Experience Section -->
           <div class="about__detail-section">
             <h4 class="about__detail-title">Experience</h4>
             <div class="about__detail-item">
               <div class="detail-item__years">2025–26</div>
               <div class="detail-item__desc">
                 <strong>Whts4dinner.com — Founder &amp; Developer</strong><br>
-                Designed, built and shipped a live meal-planning web app with OAuth — running in production at whts4dinner.com.
+                Designed, built, and shipped a live meal-planning web app with OAuth — in production at whts4dinner.com.
               </div>
             </div>
             <div class="about__detail-item">
               <div class="detail-item__years">2025–26</div>
               <div class="detail-item__desc">
                 <strong>Product builds — QuotePilot, ForgeQuest, StorIQ, MiniSME</strong><br>
-                Shipped AI/SME web tools and location SEO tooling end-to-end on Vercel.
+                Shipped AI / SME web tools and location SEO tooling end-to-end on Vercel.
               </div>
             </div>
             <div class="about__detail-item">
@@ -1692,15 +1703,39 @@ const aboutHTML = `
               </div>
             </div>
             <div class="about__detail-item">
-              <div class="detail-item__years">2020-22</div>
+              <div class="detail-item__years">2020–22</div>
               <div class="detail-item__desc">
                 <strong>Web Developer</strong><br>
-                Developing responsive web applications and dynamic form flows with React, TypeScript, and Node.js.
+                Responsive web apps and dynamic form flows with React, TypeScript, and Node.js.
               </div>
             </div>
           </div>
 
-          <!-- Education Section -->
+          <div class="about__detail-section">
+            <h4 class="about__detail-title">How I work</h4>
+            <div class="about__detail-item">
+              <div class="detail-item__years">01</div>
+              <div class="detail-item__desc">
+                <strong>UI wired to real state</strong><br>
+                Interfaces that react to gameplay, data, and user intent — not static mock screenshots.
+              </div>
+            </div>
+            <div class="about__detail-item">
+              <div class="detail-item__years">02</div>
+              <div class="detail-item__desc">
+                <strong>Feel first, then polish</strong><br>
+                Micro-feedback, motion, and input response tuned so every click and hover earns its keep.
+              </div>
+            </div>
+            <div class="about__detail-item">
+              <div class="detail-item__years">03</div>
+              <div class="detail-item__desc">
+                <strong>Ship clean systems</strong><br>
+                Maintainable React / UE5 UI architecture, performance budgets, and accessibility baked in.
+              </div>
+            </div>
+          </div>
+
           <div class="about__detail-section">
             <h4 class="about__detail-title">Education</h4>
             <div class="about__detail-item">
@@ -1714,12 +1749,11 @@ const aboutHTML = `
               <div class="detail-item__years">Ongoing</div>
               <div class="detail-item__desc">
                 <strong>Continuous Learning</strong><br>
-                Udemy, Coursera, and hands-on product/game projects on top of formal study.
+                Deep UE5 C++ / UI tracks on Udemy, plus hands-on product and game projects on top of formal study.
               </div>
             </div>
           </div>
 
-          <!-- Technical Skills -->
           <div class="about__detail-section">
             <h4 class="about__detail-title">Technical Skills</h4>
             <div class="about__skills-grid">
@@ -1774,7 +1808,6 @@ const aboutHTML = `
             </div>
           </div>
 
-          <!-- Soft Skills -->
           <div class="about__detail-section">
             <h4 class="about__detail-title">Soft Skills</h4>
             <div class="about__soft-skills">
@@ -1784,11 +1817,12 @@ const aboutHTML = `
               <span class="soft-skill-tag">Communication</span>
               <span class="soft-skill-tag">Team Collaboration</span>
               <span class="soft-skill-tag">Performance Focus</span>
+              <span class="soft-skill-tag">Founder mindset</span>
+              <span class="soft-skill-tag">Self-directed learning</span>
             </div>
           </div>
         </div>
 
-        <!-- Contact Links -->
         <div class="about__contact-section">
           ${renderLinksRow()}
         </div>
