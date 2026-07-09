@@ -1046,6 +1046,7 @@ button.link-btn{
   .crawl{animation:none;transform:none}
   .warp{transition:none}
   .skill__fill{animation:none;width:var(--w)}
+  .card--project,.status-badge--live::before{animation:none}
   #landing:not([hidden]) .landing__panel{animation:none}
 }
 
