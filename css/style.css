@@ -278,34 +278,79 @@ a:focus-visible,
 }
 #ship{display:none !important} /* legacy 2D ship never renders */
 
-/* ---------- Quick nav (accessible fallback + wayfinding) ---------- */
+/* ---------- Quick nav (responsive: pill bar on desktop, menu on mobile) ---------- */
 .quick-nav{
   position:absolute;
   left:max(14px, env(safe-area-inset-left, 0px));
   top:calc(14px + var(--safe-top));
   z-index:5;
-  display:flex;flex-wrap:wrap;gap:4px;align-items:center;
+  display:flex;flex-direction:column;align-items:flex-start;gap:6px;
+  /* never collide with the sound toggle in the top-right corner */
+  max-width:min(calc(100vw - 96px), 940px);
+}
+.quick-nav[hidden]{display:none}
+
+.quick-nav__toggle{
+  display:none; /* shown on small screens via media query below */
+  align-items:center;gap:8px;
+  appearance:none;border:0;cursor:pointer;
+  /* PERF: no backdrop-filter — blurring the animating canvas underneath
+     forces a GPU re-blur every frame */
+  background:rgba(8,11,20,.9);
+  border:1px solid var(--line-strong);
+  color:var(--ink);
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:.82rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  padding:11px 16px;
+  border-radius:999px;
+  box-shadow:0 14px 40px rgba(0,0,0,.45);
+  min-height:44px;
+  transition:color .15s ease, border-color .15s ease;
+}
+.quick-nav__toggle svg{width:16px;height:16px;fill:currentColor;flex:none}
+.quick-nav__toggle:hover{color:var(--gold);border-color:rgba(255,224,129,.4)}
+
+.quick-nav__list{
+  display:flex;gap:4px;align-items:center;flex-wrap:wrap;
   padding:6px;
-  /* PERF: no backdrop-filter here — blurring an ever-changing canvas
-     underneath forces a GPU re-blur every frame (major stutter source) */
   background:rgba(8,11,20,.9);
   border:1px solid var(--line);
   border-radius:22px;
   box-shadow:0 14px 40px rgba(0,0,0,.45);
-  /* never collide with the sound toggle in the top-right corner */
-  max-width:min(calc(100vw - 96px), 780px);
 }
-.quick-nav[hidden]{display:none}
+
+/* small screens: collapse into a dropdown menu */
+@media (max-width:1099px){
+  .quick-nav__toggle{display:inline-flex}
+  .quick-nav__list{display:none}
+  .quick-nav--open .quick-nav__list{
+    display:flex;
+    flex-direction:column;align-items:stretch;
+    border-radius:16px;
+    min-width:200px;
+    max-height:calc(100dvh - 140px);
+    overflow-y:auto;
+  }
+  .quick-nav--open .quick-nav__btn{
+    width:100%;
+    text-align:left;
+    border-radius:10px;
+    padding:12px 14px;
+  }
+}
 .quick-nav__btn{
   appearance:none;border:0;cursor:pointer;
   background:transparent;
   color:var(--ink-soft);
   font-family:var(--font-display);
   font-weight:500;
-  font-size:.82rem;
-  letter-spacing:.08em;
+  font-size:.8rem;
+  letter-spacing:.06em;
   text-transform:uppercase;
-  padding:9px 14px;
+  padding:9px 12px;
   border-radius:999px;
   white-space:nowrap;
   transition:background .15s ease, color .15s ease;

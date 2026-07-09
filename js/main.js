@@ -1978,6 +1978,7 @@ document.addEventListener("mousemove", (e) => {
 // Shared "fly to planet and open it" behaviour (canvas click, keyboard, quick nav)
 function engageTarget(t){
   if (cam.active || cam.arriving || ship.moving) return;
+  if (typeof setNavOpen === "function") setNavOpen(false);
   if (landing && !landing.hidden) closeLanding();
   const tx = toPx(t.px, width), ty = toPx(t.py, height);
   const ring = document.createElement("div");
@@ -2007,19 +2008,45 @@ document.addEventListener("keydown", (e) => {
 });
 
 // ========================== QUICK NAV ==========================
-// Accessible bar mirroring the current room's planets — keyboard/touch friendly.
+// Accessible nav mirroring the current room's planets. Responsive:
+// a single-row pill bar on wide screens, a compact menu button that
+// opens a vertical dropdown on phones/tablets (CSS decides which).
 const quickNav = document.getElementById("quick-nav");
+function setNavOpen(open){
+  if (!quickNav) return;
+  quickNav.classList.toggle("quick-nav--open", !!open);
+  const t = quickNav.querySelector(".quick-nav__toggle");
+  if (t){
+    t.setAttribute("aria-expanded", open ? "true" : "false");
+    t.setAttribute("aria-label", open ? "Close navigation" : "Open navigation");
+  }
+}
 function buildQuickNav(){
   if (!quickNav) return;
+  const wasOpen = quickNav.classList.contains("quick-nav--open");
   quickNav.innerHTML = "";
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "quick-nav__toggle";
+  toggle.setAttribute("aria-expanded", wasOpen ? "true" : "false");
+  toggle.setAttribute("aria-label", "Open navigation");
+  toggle.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg><span>Menu</span>`;
+  toggle.addEventListener("click", () => setNavOpen(!quickNav.classList.contains("quick-nav--open")));
+
+  const list = document.createElement("div");
+  list.className = "quick-nav__list";
   TARGETS.forEach(t => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "quick-nav__btn";
     b.textContent = t.label;
-    b.addEventListener("click", () => { noteInput(); engageTarget(t); });
-    quickNav.appendChild(b);
+    b.addEventListener("click", () => { noteInput(); setNavOpen(false); engageTarget(t); });
+    list.appendChild(b);
   });
+
+  quickNav.appendChild(toggle);
+  quickNav.appendChild(list);
   quickNav.hidden = false;
 }
 
