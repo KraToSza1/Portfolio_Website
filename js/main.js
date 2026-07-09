@@ -750,7 +750,8 @@ const LINKS = {
   resume: SITE.links?.resume || "assets/docs/Raymond-Van-Der-Walt-Resume.pdf",
   github: SITE.links?.github || "https://github.com/",
   linkedin: SITE.links?.linkedin || "https://www.linkedin.com/",
-  email: (SITE.links?.email && `mailto:${SITE.links.email}`) || (SITE.contact?.email && `mailto:${SITE.contact.email}`) || "mailto:Raymondvanderwalt0@gmail.com"
+  w4d: SITE.links?.whats4dinner || "https://whts4dinner.com",
+  email: (SITE.links?.email && `mailto:${SITE.links.email}`) || (SITE.contact?.email && `mailto:${SITE.contact.email}`) || "mailto:Raymondvdw@gmail.com"
 };
 
 // inline SVG icons for link buttons
@@ -758,7 +759,8 @@ const ICONS = {
   resume: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>`,
   github: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.15c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.73.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.38-5.25 5.67.41.35.77 1.04.77 2.1v3.12c0 .3.21.66.8.55A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>`,
   linkedin: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>`,
-  email: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4.24-8 5-8-5V6l8 5 8-5v2.24z"/></svg>`
+  email: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4.24-8 5-8-5V6l8 5 8-5v2.24z"/></svg>`,
+  w4d: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>`
 };
 
 // helper to reuse link row
@@ -768,6 +770,7 @@ function renderLinksRow(){
       <a class="link-btn" href="${LINKS.resume}" target="_blank" rel="noopener">${ICONS.resume}Resume</a>
       <a class="link-btn" href="${LINKS.github}" target="_blank" rel="noopener">${ICONS.github}GitHub</a>
       <a class="link-btn" href="${LINKS.linkedin}" target="_blank" rel="noopener">${ICONS.linkedin}LinkedIn</a>
+      <a class="link-btn" href="${LINKS.w4d}" target="_blank" rel="noopener">${ICONS.w4d}Whats4Dinner</a>
       <a class="link-btn" href="${LINKS.email}">${ICONS.email}Email</a>
     </div>`;
 }
@@ -1045,7 +1048,7 @@ const PROFILE_SRC =
    SITE.profile?.photo || SITE.profile?.src) || "assets/images/profile.png";
 
 const CONTACT_LOCATION = SITE.contact?.location || "";
-const CONTACT_EMAIL = SITE.links?.email || SITE.contact?.email || "Raymondvanderwalt0@gmail.com";
+const CONTACT_EMAIL = SITE.links?.email || SITE.contact?.email || "Raymondvdw@gmail.com";
 const CONTACT_PHONE = SITE.contact?.phone || "";
 
 const aboutHTML = `
@@ -1254,16 +1257,20 @@ function workWithMeHTML(){
 // ---------- Arcade (retro FPS, lazy-loaded) ----------
 function arcadeHTML(){
   return `
-    <p>A tiny retro FPS I built from scratch in a canvas — raycast walls, angry demons,
-    two levels. No engine, no libraries: the same kind of rendering tech behind the
-    1993 classics, running live in your browser.</p>
+    <p>A complete retro FPS I built from scratch in a canvas — raycast walls, three
+    weapons, four demon breeds, exploding barrels, keycards and a boss fight across
+    three levels. No engine, no libraries, no image files: everything is code,
+    the same rendering tech behind the 1993 classics.</p>
     <div class="arcade">
       <canvas id="arcade-canvas" width="320" height="200" tabindex="0" aria-label="Retro FPS game"></canvas>
       <div class="arcade__controls">
         <span><strong>WASD / ↑↓</strong> move</span>
-        <span><strong>←→ or mouse</strong> turn</span>
-        <span><strong>Space / click</strong> shoot</span>
-        <span><strong>R</strong> restart</span>
+        <span><strong>←→ / mouse</strong> turn</span>
+        <span><strong>Space / click</strong> fire</span>
+        <span><strong>1–3</strong> weapons</span>
+        <span><strong>M</strong> map</span>
+        <span><strong>P</strong> pause</span>
+        <span><strong>R</strong> retry</span>
       </div>
     </div>`;
 }
@@ -1414,7 +1421,7 @@ function bindContactForm(){
     const m = encodeURIComponent(form.message.value || "");
     const subject = encodeURIComponent(`Portfolio contact from ${form.name.value || "visitor"}`);
     const body = encodeURIComponent(`Name: ${decodeURIComponent(n)}\nEmail: ${decodeURIComponent(e)}\n\n${decodeURIComponent(m)}`);
-    const emailAddr = (SITE.links?.email || "Raymondvanderwalt0@gmail.com").replace(/^mailto:/,"");
+    const emailAddr = (SITE.links?.email || "Raymondvdw@gmail.com").replace(/^mailto:/,"");
     window.location.href = `mailto:${emailAddr}?subject=${subject}&body=${body}`;
   }
 
