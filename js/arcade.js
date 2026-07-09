@@ -85,9 +85,14 @@
   const WALLS = { "#": 1, "T": 2, "S": 3, "M": 4, "X": 5 };
 
   // ============================ CONFIG ============================
-  const W = 320, H = 200, HUD_H = 28, VIEW_H = H - HUD_H;
+  // Base ("chrome") space: HUD/menus are authored in 320x200 coordinates and
+  // drawn through a scale transform. The 3D view renders at SCALE x that —
+  // up to 960x600 — chosen from the display and stepped down automatically
+  // if the device can't keep up.
+  const BW = 320, BH = 200, BHUD = 28, VIEW_B = BH - BHUD;
+  let SCALE = 2, W = BW * 2, H = BH * 2, VIEW_H = VIEW_B * 2;
   const FOV_PLANE = 0.66;
-  const TEX = 64;
+  const TEX = 128; // art is authored in 64-space and rendered at 2x
 
   const WEAPONS = [
     { name: "PISTOL",  ammo: "bullets", rate: 0.32, pellets: 1, spread: 0.012, dmg: [12, 18], kick: 4,  color: "#ffe6a0" },
@@ -161,18 +166,37 @@
   };
 
   // ============================ ART (procedural) ============================
+  // art is authored in 64-unit space but rasterized at TEX (128) resolution —
+  // the 2x oversampling is what keeps walls/sprites clean at high render scale
   function mkTex(size, draw) {
     const c = document.createElement("canvas");
     c.width = c.height = size;
-    draw(c.getContext("2d"));
+    const g = c.getContext("2d");
+    g.scale(size / 64, size / 64);
+    draw(g);
     return c;
   }
+  // raw-pixel-space copy helpers (NOT via mkTex — that would re-scale the art)
   function darken(tex) {
-    return mkTex(TEX, function (g) {
-      g.drawImage(tex, 0, 0);
-      g.fillStyle = "rgba(0,0,0,0.36)";
-      g.fillRect(0, 0, TEX, TEX);
-    });
+    const c = document.createElement("canvas");
+    c.width = c.height = tex.width;
+    const g = c.getContext("2d");
+    g.drawImage(tex, 0, 0);
+    g.fillStyle = "rgba(0,0,0,0.36)";
+    g.fillRect(0, 0, c.width, c.height);
+    return c;
+  }
+  // subtle top-light / bottom-shade — sells depth on flat procedural walls
+  function polish(tex) {
+    const g = tex.getContext("2d");
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    const gr = g.createLinearGradient(0, 0, 0, tex.height);
+    gr.addColorStop(0,   "rgba(255,255,255,0.07)");
+    gr.addColorStop(0.5, "rgba(255,255,255,0)");
+    gr.addColorStop(1,   "rgba(0,0,0,0.28)");
+    g.fillStyle = gr;
+    g.fillRect(0, 0, tex.width, tex.height);
+    return tex;
   }
   function buildTextures() {
     const brick = mkTex(TEX, function (g) {
@@ -221,7 +245,7 @@
       g.fillStyle = "#8ad8ff"; g.fillRect(20, 38, 24, 14);
       g.fillStyle = "#0c0d12"; g.fillRect(29, 41, 6, 8); // keyhole
     });
-    const light = [null, brick, tech, slime, metal, exit];
+    const light = [null, brick, tech, slime, metal, exit].map(function (t) { return t && polish(t); });
     return { light: light, dark: [null].concat(light.slice(1).map(darken)) };
   }
 
@@ -351,7 +375,9 @@
   function Game(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
-    this.ctx.imageSmoothingEnabled = false;
+    // render resolution from the display (capped 960x600); auto-steps down if slow
+    const pxw = (canvas.clientWidth || 640) * Math.min(2, window.devicePixelRatio || 1);
+    this.setResolution(pxw >= 900 ? 3 : 2);
     this.tex = buildTextures();
     this.sprites = {
       imp: buildDemon(ETYPES.imp.pal),
@@ -360,7 +386,6 @@
       boss: buildDemon(ETYPES.boss.pal)
     };
     this.items = buildItems();
-    this.zbuf = new Float64Array(W);
     this.keys = {};
     this.mode = "title";     // title | play | pause | inter | dead | win
     this.projs = [];
@@ -401,6 +426,26 @@
     this.loop = this.loop.bind(this);
     this._raf = requestAnimationFrame(this.loop);
   }
+
+  Game.prototype.setResolution = function (s) {
+    SCALE = s;
+    W = (BW * s) | 0; H = (BH * s) | 0; VIEW_H = (VIEW_B * s) | 0;
+    this.canvas.width = W; this.canvas.height = H;
+    this.zbuf = new Float64Array(W);
+    const g = this.ctx;
+    g.imageSmoothingEnabled = true; // smooth scaling — no chunky pixels
+    // lighting gradients + vignette, cached per resolution
+    this.ceilG = g.createLinearGradient(0, 0, 0, VIEW_H / 2);
+    this.ceilG.addColorStop(0, "#1c2134");
+    this.ceilG.addColorStop(1, "#0a0c14");
+    this.floorG = g.createLinearGradient(0, VIEW_H / 2, 0, VIEW_H);
+    this.floorG.addColorStop(0, "#16110e");
+    this.floorG.addColorStop(1, "#332a22");
+    this.vig = g.createRadialGradient(W / 2, VIEW_H / 2, VIEW_H * 0.45, W / 2, VIEW_H / 2, VIEW_H * 0.95);
+    this.vig.addColorStop(0, "rgba(0,0,0,0)");
+    this.vig.addColorStop(1, "rgba(0,0,0,0.42)");
+    this._fr = 0; this._jank = 0;
+  };
 
   Game.prototype.press = function (k) {
     if (k === "m") this.showMap = !this.showMap;
@@ -747,16 +792,17 @@
     const g = this.ctx;
     if (this.mode === "title") { this.renderTitle(g); return; }
 
-    const shakeX = this.shake > 0 ? (Math.random() - 0.5) * this.shake * 7 : 0;
-    const shakeY = this.shake > 0 ? (Math.random() - 0.5) * this.shake * 5 : 0;
+    const shakeX = this.shake > 0 ? (Math.random() - 0.5) * this.shake * 7 * SCALE : 0;
+    const shakeY = this.shake > 0 ? (Math.random() - 0.5) * this.shake * 5 * SCALE : 0;
+    const pad = 8 * SCALE;
     g.save();
     g.translate(shakeX | 0, shakeY | 0);
 
-    // ceiling & floor
-    g.fillStyle = "#12141f"; g.fillRect(-8, -8, W + 16, VIEW_H / 2 + 8);
-    g.fillStyle = "#26201b"; g.fillRect(-8, VIEW_H / 2, W + 16, VIEW_H / 2 + 8);
+    // ceiling & floor — gradient lighting instead of flat fills
+    g.fillStyle = this.ceilG;  g.fillRect(-pad, -pad, W + pad * 2, VIEW_H / 2 + pad);
+    g.fillStyle = this.floorG; g.fillRect(-pad, VIEW_H / 2, W + pad * 2, VIEW_H / 2 + pad);
     g.fillStyle = "rgba(0,0,0,0.35)";
-    g.fillRect(-8, VIEW_H * 0.42, W + 16, VIEW_H * 0.16);
+    g.fillRect(-pad, VIEW_H * 0.42, W + pad * 2, VIEW_H * 0.16);
 
     // walls
     const L = this.L;
@@ -840,7 +886,7 @@
       }
       const y0 = ((VIEW_H - size) / 2 + yOff) | 0;
       const x0 = sx - (size >> 1);
-      const colW = Math.max(1, (size / 24) | 0);
+      const colW = Math.max(1, (size / 48) | 0); // finer strips = cleaner wall clipping
       for (let cx = Math.max(0, x0); cx < Math.min(W, x0 + size); cx += colW) {
         if (this.zbuf[cx] <= trY) continue;
         const u = ((cx - x0) / size) * TEX;
@@ -857,7 +903,7 @@
       if (trY <= 0.1) continue;
       const sx = (W / 2) * (1 + trX / trY);
       if (sx < 0 || sx >= W || this.zbuf[sx | 0] <= trY) continue;
-      const r = Math.max(2, 7 / trY);
+      const r = Math.max(2, (VIEW_H * 0.041) / trY);
       g.fillStyle = p.player ? "rgba(138,216,255,0.35)" : "rgba(255,138,80,0.35)";
       g.beginPath(); g.arc(sx, VIEW_H / 2, r * 1.8, 0, 7); g.fill();
       g.fillStyle = p.player ? "#d5f4ff" : "#ffd07a";
@@ -876,31 +922,37 @@
       const r = Math.max(1, (p.sz * VIEW_H) / trY);
       g.globalAlpha = 1 - p.life / p.max;
       g.fillStyle = p.color;
-      g.fillRect(sx - r / 2, VIEW_H / 2 - r / 2 + (p.life / p.max) * 14 / trY, r, r);
+      g.fillRect(sx - r / 2, VIEW_H / 2 - r / 2 + (p.life / p.max) * (VIEW_H * 0.08) / trY, r, r);
       g.globalAlpha = 1;
     }
 
     this.renderGun(g);
     g.restore(); // shake
 
+    // vignette (cached gradient — one fill)
+    g.fillStyle = this.vig; g.fillRect(0, 0, W, VIEW_H);
+
     // flashes
     if (this.dmgFlash > 0) { g.fillStyle = "rgba(200,30,30," + (this.dmgFlash * 0.4).toFixed(2) + ")"; g.fillRect(0, 0, W, VIEW_H); }
     if (this.pickFlash > 0) { g.fillStyle = "rgba(255,240,180," + (this.pickFlash * 0.22).toFixed(2) + ")"; g.fillRect(0, 0, W, VIEW_H); }
 
-    // crosshair
+    // crosshair (chrome space)
+    g.save(); g.scale(SCALE, SCALE);
     g.fillStyle = "rgba(255,255,255,0.75)";
-    g.fillRect(W / 2 - 1, VIEW_H / 2 - 5, 2, 3); g.fillRect(W / 2 - 1, VIEW_H / 2 + 2, 2, 3);
-    g.fillRect(W / 2 - 5, VIEW_H / 2 - 1, 3, 2); g.fillRect(W / 2 + 2, VIEW_H / 2 - 1, 3, 2);
+    g.fillRect(BW / 2 - 1, VIEW_B / 2 - 5, 2, 3); g.fillRect(BW / 2 - 1, VIEW_B / 2 + 2, 2, 3);
+    g.fillRect(BW / 2 - 5, VIEW_B / 2 - 1, 3, 2); g.fillRect(BW / 2 + 2, VIEW_B / 2 - 1, 3, 2);
+    g.restore();
 
     if (this.showMap) this.renderMap(g);
     this.renderHUD(g);
 
     // message
     if (this.msgT > 0 && this.msg) {
+      g.save(); g.scale(SCALE, SCALE);
       g.font = "bold 10px monospace"; g.textAlign = "center"; g.textBaseline = "middle";
-      g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, 12, W, 16);
-      g.fillStyle = "#ffd75e"; g.fillText(this.msg, W / 2, 20);
-      g.textAlign = "left";
+      g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, 12, BW, 16);
+      g.fillStyle = "#ffd75e"; g.fillText(this.msg, BW / 2, 20);
+      g.restore();
     }
 
     // overlays
@@ -913,10 +965,11 @@
   function dist2(a, b) { return a * a + b * b; }
 
   Game.prototype.renderGun = function (g) {
+    g.save(); g.scale(SCALE, SCALE); // chrome space
     const w = WEAPONS[this.cur];
     const bobX = Math.sin(this.bob) * 5, bobY = Math.abs(Math.cos(this.bob)) * 4;
     const kick = this.fireCd > w.rate - 0.1 ? w.kick : 0;
-    const gx = W / 2 + bobX, gy = VIEW_H - 34 + bobY + kick;
+    const gx = BW / 2 + bobX, gy = VIEW_B - 34 + bobY + kick;
     if (this.muzzle > 0) {
       g.fillStyle = w.proj ? "rgba(150,230,255,0.9)" : "rgba(255,230,140,0.9)";
       g.beginPath(); g.arc(gx, gy - 12, 9 + Math.random() * 6, 0, 7); g.fill();
@@ -940,11 +993,13 @@
       g.fillStyle = "#d5f4ff"; g.fillRect(gx - 4, gy - 8, 8, 5);
       g.fillStyle = "#ffd75e"; g.fillRect(gx - 12, gy + 30, 24, 3);
     }
+    g.restore();
   };
 
   Game.prototype.renderMap = function (g) {
-    const L = this.L, sc = Math.min(4, ((W * 0.36) / L.w) | 0) || 3;
-    const mw = L.w * sc, mh = L.h * sc, ox = W - mw - 6, oy = 6;
+    g.save(); g.scale(SCALE, SCALE); // chrome space
+    const L = this.L, sc = Math.min(4, ((BW * 0.36) / L.w) | 0) || 3;
+    const mw = L.w * sc, mh = L.h * sc, ox = BW - mw - 6, oy = 6;
     g.fillStyle = "rgba(4,5,11,0.78)"; g.fillRect(ox - 3, oy - 3, mw + 6, mh + 6);
     for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) {
       const v = L.map[y][x];
@@ -970,6 +1025,7 @@
     g.moveTo(ox + this.px * sc, oy + this.py * sc);
     g.lineTo(ox + (this.px + this.dx * 1.6) * sc, oy + (this.py + this.dy * 1.6) * sc);
     g.stroke();
+    g.restore();
   };
 
   Game.prototype.renderFace = function (g, x, y) {
@@ -995,61 +1051,64 @@
   };
 
   Game.prototype.renderHUD = function (g) {
-    g.fillStyle = "#0b0f1a"; g.fillRect(0, VIEW_H, W, HUD_H);
-    g.fillStyle = "#232c47"; g.fillRect(0, VIEW_H, W, 1);
-    this.renderFace(g, 3, VIEW_H + 3);
+    g.save(); g.scale(SCALE, SCALE); // chrome space
+    g.fillStyle = "#0b0f1a"; g.fillRect(0, VIEW_B, BW, BHUD);
+    g.fillStyle = "#232c47"; g.fillRect(0, VIEW_B, BW, 1);
+    this.renderFace(g, 3, VIEW_B + 3);
     g.font = "bold 9px monospace"; g.textBaseline = "middle"; g.textAlign = "left";
     // HP
-    g.fillStyle = "#31121a"; g.fillRect(30, VIEW_H + 5, 52, 9);
+    g.fillStyle = "#31121a"; g.fillRect(30, VIEW_B + 5, 52, 9);
     g.fillStyle = this.hp > 35 ? "#c9333f" : "#ff7043";
-    g.fillRect(30, VIEW_H + 5, (52 * this.hp / 100) | 0, 9);
-    g.fillStyle = "#fff"; g.fillText(String(this.hp), 34, VIEW_H + 10);
+    g.fillRect(30, VIEW_B + 5, (52 * this.hp / 100) | 0, 9);
+    g.fillStyle = "#fff"; g.fillText(String(this.hp), 34, VIEW_B + 10);
     // ammo for current weapon
     const w = WEAPONS[this.cur];
-    g.fillStyle = "#8d99b8"; g.fillText("AMMO", 30, VIEW_H + 21);
-    g.fillStyle = "#ffd75e"; g.fillText(String(this[w.ammo]), 62, VIEW_H + 21);
+    g.fillStyle = "#8d99b8"; g.fillText("AMMO", 30, VIEW_B + 21);
+    g.fillStyle = "#ffd75e"; g.fillText(String(this[w.ammo]), 62, VIEW_B + 21);
     // weapon slots
     for (let i = 0; i < 3; i++) {
       const owned = this.owned[i];
       g.fillStyle = i === this.cur ? "#ffd75e" : owned ? "#8ad8ff" : "#2a3350";
-      g.fillText(String(i + 1), 92 + i * 12, VIEW_H + 10);
+      g.fillText(String(i + 1), 92 + i * 12, VIEW_B + 10);
     }
-    g.fillStyle = "#8d99b8"; g.fillText(w.name, 92, VIEW_H + 21);
+    g.fillStyle = "#8d99b8"; g.fillText(w.name, 92, VIEW_B + 21);
     // keycard
     if (this.hasKey) {
-      g.fillStyle = "#ffd75e"; g.fillRect(146, VIEW_H + 5, 7, 10);
-      g.fillStyle = "#0b0f1a"; g.fillRect(148, VIEW_H + 7, 3, 3);
+      g.fillStyle = "#ffd75e"; g.fillRect(146, VIEW_B + 5, 7, 10);
+      g.fillStyle = "#0b0f1a"; g.fillRect(148, VIEW_B + 7, 3, 3);
     } else {
-      g.fillStyle = "#2a3350"; g.fillRect(146, VIEW_H + 5, 7, 10);
+      g.fillStyle = "#2a3350"; g.fillRect(146, VIEW_B + 5, 7, 10);
     }
     // kills
-    g.fillStyle = "#8d99b8"; g.fillText("K", 160, VIEW_H + 10);
-    g.fillStyle = "#8ad8ff"; g.fillText(this.kills + "/" + this.L.totKills, 170, VIEW_H + 10);
+    g.fillStyle = "#8d99b8"; g.fillText("K", 160, VIEW_B + 10);
+    g.fillStyle = "#8ad8ff"; g.fillText(this.kills + "/" + this.L.totKills, 170, VIEW_B + 10);
     // level + time
-    g.fillStyle = "#8d99b8"; g.fillText("L" + (this.levelIdx + 1), 160, VIEW_H + 21);
+    g.fillStyle = "#8d99b8"; g.fillText("L" + (this.levelIdx + 1), 160, VIEW_B + 21);
     const tm = this.time | 0;
-    g.fillText(((tm / 60) | 0) + ":" + ("0" + tm % 60).slice(-2), 178, VIEW_H + 21);
+    g.fillText(((tm / 60) | 0) + ":" + ("0" + tm % 60).slice(-2), 178, VIEW_B + 21);
     // score
     g.textAlign = "right";
-    g.fillStyle = "#ffd75e"; g.fillText("SCORE " + this.score, W - 5, VIEW_H + 10);
-    g.fillStyle = "#8d99b8"; g.fillText("HI " + Math.max(this.hi, this.score), W - 5, VIEW_H + 21);
-    g.textAlign = "left";
+    g.fillStyle = "#ffd75e"; g.fillText("SCORE " + this.score, BW - 5, VIEW_B + 10);
+    g.fillStyle = "#8d99b8"; g.fillText("HI " + Math.max(this.hi, this.score), BW - 5, VIEW_B + 21);
+    g.restore();
   };
 
   Game.prototype.renderOverlay = function (g, title, color, sub) {
-    g.fillStyle = "rgba(4,5,11,0.62)"; g.fillRect(0, 0, W, H);
+    g.save(); g.scale(SCALE, SCALE);
+    g.fillStyle = "rgba(4,5,11,0.62)"; g.fillRect(0, 0, BW, BH);
     g.textAlign = "center"; g.textBaseline = "middle";
     g.font = "bold 22px monospace"; g.fillStyle = color;
-    g.fillText(title, W / 2, 84);
+    g.fillText(title, BW / 2, 84);
     g.font = "bold 9px monospace"; g.fillStyle = "#eef2ff";
-    g.fillText(sub, W / 2, 108);
-    g.textAlign = "left";
+    g.fillText(sub, BW / 2, 108);
+    g.restore();
   };
   Game.prototype.renderTally = function (g, title, sub) {
-    g.fillStyle = "rgba(4,5,11,0.78)"; g.fillRect(0, 0, W, H);
+    g.save(); g.scale(SCALE, SCALE);
+    g.fillStyle = "rgba(4,5,11,0.78)"; g.fillRect(0, 0, BW, BH);
     g.textAlign = "center"; g.textBaseline = "middle";
     g.font = "bold 18px monospace"; g.fillStyle = "#ffd75e";
-    g.fillText(title, W / 2, 46);
+    g.fillText(title, BW / 2, 46);
     g.font = "bold 10px monospace";
     const rows = [
       ["KILLS",  this.kills + " / " + this.L.totKills + "  (" + ((100 * this.kills / Math.max(1, this.L.totKills)) | 0) + "%)"],
@@ -1058,54 +1117,56 @@
       ["SCORE",  String(this.score)]
     ];
     for (let i = 0; i < rows.length; i++) {
-      g.fillStyle = "#8d99b8"; g.textAlign = "right"; g.fillText(rows[i][0], W / 2 - 10, 78 + i * 16);
-      g.fillStyle = "#eef2ff"; g.textAlign = "left";  g.fillText(rows[i][1], W / 2 + 10, 78 + i * 16);
+      g.fillStyle = "#8d99b8"; g.textAlign = "right"; g.fillText(rows[i][0], BW / 2 - 10, 78 + i * 16);
+      g.fillStyle = "#eef2ff"; g.textAlign = "left";  g.fillText(rows[i][1], BW / 2 + 10, 78 + i * 16);
     }
     g.textAlign = "center"; g.fillStyle = "#8ad8ff";
-    g.fillText(sub, W / 2, 160);
-    g.textAlign = "left";
+    g.fillText(sub, BW / 2, 160);
+    g.restore();
   };
   Game.prototype.renderWin = function (g) {
-    g.fillStyle = "rgba(10,6,0,0.82)"; g.fillRect(0, 0, W, H);
+    g.save(); g.scale(SCALE, SCALE);
+    g.fillStyle = "rgba(10,6,0,0.82)"; g.fillRect(0, 0, BW, BH);
     g.textAlign = "center"; g.textBaseline = "middle";
     g.font = "bold 20px monospace"; g.fillStyle = "#ffd75e";
-    g.fillText("THE CINDER KING FALLS", W / 2, 44);
+    g.fillText("THE CINDER KING FALLS", BW / 2, 44);
     g.font = "bold 10px monospace"; g.fillStyle = "#eef2ff";
-    g.fillText("FINAL SCORE  " + this.score, W / 2, 74);
+    g.fillText("FINAL SCORE  " + this.score, BW / 2, 74);
     g.fillStyle = this.score >= this.hi ? "#ffd75e" : "#8d99b8";
-    g.fillText(this.score >= this.hi ? "★ NEW HI-SCORE ★" : "HI-SCORE  " + this.hi, W / 2, 92);
+    g.fillText(this.score >= this.hi ? "★ NEW HI-SCORE ★" : "HI-SCORE  " + this.hi, BW / 2, 92);
     g.fillStyle = "#8ad8ff";
-    g.fillText("Now imagine what I could build for YOUR project.", W / 2, 120);
+    g.fillText("Now imagine what I could build for YOUR project.", BW / 2, 120);
     g.fillStyle = "#8d99b8";
-    g.fillText("SPACE to return to title", W / 2, 150);
-    g.textAlign = "left";
+    g.fillText("SPACE to return to title", BW / 2, 150);
+    g.restore();
   };
   Game.prototype.renderTitle = function (g) {
-    g.fillStyle = "#070810"; g.fillRect(0, 0, W, H);
+    g.save(); g.scale(SCALE, SCALE);
+    g.fillStyle = "#070810"; g.fillRect(0, 0, BW, BH);
     // ember particles
     const t = performance.now() * 0.001;
     for (let i = 0; i < 26; i++) {
-      const y = (H - ((t * (14 + i % 9) + i * 37) % H));
+      const y = (BH - ((t * (14 + i % 9) + i * 37) % BH));
       g.fillStyle = i % 3 ? "rgba(255,138,80,0.5)" : "rgba(255,215,94,0.55)";
-      g.fillRect(((i * 53 + Math.sin(t + i) * 8) % W + W) % W, y, 2, 2);
+      g.fillRect(((i * 53 + Math.sin(t + i) * 8) % BW + BW) % BW, y, 2, 2);
     }
     // demons flanking
     g.drawImage(this.sprites.imp[(t * 2 | 0) % 2], 22, 96, 64, 64);
     g.drawImage(this.sprites.boss[(t * 2 | 0) % 2], 226, 84, 76, 76);
     g.textAlign = "center"; g.textBaseline = "middle";
     g.font = "bold 34px monospace";
-    g.fillStyle = "#3a0c08"; g.fillText("INFERNO", W / 2 + 2, 52 + 2);
-    g.fillStyle = "#ffd75e"; g.fillText("INFERNO", W / 2, 52);
+    g.fillStyle = "#3a0c08"; g.fillText("INFERNO", BW / 2 + 2, 52 + 2);
+    g.fillStyle = "#ffd75e"; g.fillText("INFERNO", BW / 2, 52);
     g.font = "bold 9px monospace"; g.fillStyle = "#ff8a50";
-    g.fillText("— RAYMOND VDW'S DEMON PURGE —", W / 2, 74);
+    g.fillText("— RAYMOND VDW'S DEMON PURGE —", BW / 2, 74);
     g.fillStyle = "#eef2ff"; g.font = "bold 11px monospace";
-    g.fillText(Math.sin(t * 4) > -0.2 ? "CLICK OR PRESS SPACE TO ENTER HELL" : "", W / 2, 116);
+    g.fillText(Math.sin(t * 4) > -0.2 ? "CLICK OR PRESS SPACE TO ENTER HELL" : "", BW / 2, 116);
     g.font = "bold 8px monospace"; g.fillStyle = "#8d99b8";
-    g.fillText("WASD MOVE · ARROWS/MOUSE TURN · SPACE/CLICK FIRE", W / 2, 148);
-    g.fillText("1-3 WEAPONS · M MAP · P PAUSE · R RETRY", W / 2, 160);
-    g.fillText("3 LEVELS · FIND THE GOLD KEYCARD · SLAY THE CINDER KING", W / 2, 172);
-    if (this.hi > 0) { g.fillStyle = "#ffd75e"; g.fillText("HI-SCORE " + this.hi, W / 2, 188); }
-    g.textAlign = "left";
+    g.fillText("WASD MOVE · ARROWS/MOUSE TURN · SPACE/CLICK FIRE", BW / 2, 148);
+    g.fillText("1-3 WEAPONS · M MAP · P PAUSE · R RETRY", BW / 2, 160);
+    g.fillText("3 LEVELS · FIND THE GOLD KEYCARD · SLAY THE CINDER KING", BW / 2, 172);
+    if (this.hi > 0) { g.fillStyle = "#ffd75e"; g.fillText("HI-SCORE " + this.hi, BW / 2, 188); }
+    g.restore();
   };
 
   Game.prototype.loop = function () {
@@ -1116,6 +1177,17 @@
     this._last = now;
     this.update(dt);
     this.render();
+
+    // adaptive quality: if the device can't hold the frame rate at this
+    // resolution, step the render scale down (960 -> 640 -> 480 wide)
+    if (this.mode === "play") {
+      this._fr++;
+      if (dt > 0.031) this._jank++;
+      if (this._fr >= 120) {
+        if (this._jank / this._fr > 0.35 && SCALE > 1.5) this.setResolution(SCALE >= 3 ? 2 : 1.5);
+        this._fr = 0; this._jank = 0;
+      }
+    }
   };
 
   Game.prototype.destroy = function () {
