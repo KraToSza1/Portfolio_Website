@@ -800,34 +800,98 @@ const CONTACT_ENDPOINT = (SITE.forms && SITE.forms.contact) || (SITE.contact && 
 // ---------- Skills ----------
 const SKILLS = (SITE.skills || []).map(g => ({
   title: g.group || g.title || "Skills",
+  accent: String(g.accent || SITE.skillsPlanet?.palette || "aqua").toLowerCase(),
+  mark: g.mark || (g.group || "SK").slice(0, 2).toUpperCase(),
   items: (g.items || []).map(it => ({ name: it.name, pct: it.level ?? it.pct ?? 0 })),
   badges: g.badges || []
 }));
 
-function skillBarClass(){
-  const p = String(SITE.skillsPlanet?.palette || "aqua").toLowerCase();
-  if (p === "amber") return "skill__fill--amber";
+function skillFillClass(accent){
+  const p = String(accent || "aqua").toLowerCase();
+  if (p === "amber" || p === "gold") return "skill__fill--amber";
   if (p === "coral") return "skill__fill--coral";
-  if (p === "mint")  return "skill__fill--mint";
+  if (p === "mint" || p === "emerald") return "skill__fill--mint";
+  if (p === "violet" || p === "purple") return "skill__fill--violet";
   return "skill__fill--aqua";
 }
 
+function skillLevelLabel(pct){
+  if (pct >= 88) return "Expert";
+  if (pct >= 78) return "Strong";
+  if (pct >= 68) return "Solid";
+  return "Building";
+}
+
 function renderSkillsHTML(){
-  const barClass = skillBarClass();
-  const groups = SKILLS.map(g => {
-    const rows = g.items.map(s => `
-      <div class="skill">
+  const all = SKILLS.flatMap(g => g.items);
+  const avg = all.length
+    ? Math.round(all.reduce((sum, s) => sum + s.pct, 0) / all.length)
+    : 0;
+  const expert = all.filter(s => s.pct >= 88).length;
+  const top = [...all].sort((a, b) => b.pct - a.pct).slice(0, 5);
+
+  const groups = SKILLS.map((g, gi) => {
+    const fill = skillFillClass(g.accent);
+    const rows = g.items.map((s, si) => `
+      <div class="skill" style="--i:${si}">
         <div class="skill__row">
           <div class="skill__name">${s.name}</div>
-          <div class="skill__pct">${s.pct}%</div>
+          <div class="skill__meta">
+            <span class="skill__tier">${skillLevelLabel(s.pct)}</span>
+            <span class="skill__pct">${s.pct}%</span>
+          </div>
         </div>
-        <div class="skill__bar"><div class="skill__fill ${barClass}" style="--w:${s.pct}%"></div></div>
+        <div class="skill__bar" aria-hidden="true">
+          <div class="skill__fill ${fill}" style="--w:${s.pct}%; --delay:${0.08 + si * 0.06}s"></div>
+        </div>
       </div>`).join("");
-    const badges = g.badges?.length ? `<div class="badges">${g.badges.map(b=>`<span class="badge">${b}</span>`).join("")}</div>` : "";
-    return `<section class="skill-group"><h3 class="skill-group__title">${g.title}</h3>${rows}${badges}</section>`;
+    const badges = g.badges?.length
+      ? `<div class="badges">${g.badges.map(b => `<span class="badge">${b}</span>`).join("")}</div>`
+      : "";
+    return `
+      <section class="skill-group skill-group--${g.accent}" style="--gi:${gi}">
+        <header class="skill-group__head">
+          <span class="skill-group__mark" aria-hidden="true">${g.mark}</span>
+          <div>
+            <h3 class="skill-group__title">${g.title}</h3>
+            <p class="skill-group__count">${g.items.length} systems</p>
+          </div>
+        </header>
+        <div class="skill-group__body">${rows}</div>
+        ${badges}
+      </section>`;
   }).join("");
 
-  return `<p>Here’s a snapshot of my current toolkit. I focus on cinematic UI and performance.</p><div class="skills">${groups}</div>${renderLinksRow()}`;
+  const chips = top.map(s =>
+    `<span class="skills__chip"><strong>${s.name}</strong><em>${s.pct}%</em></span>`
+  ).join("");
+
+  return `
+    <div class="skills-panel">
+      <div class="skills__hero">
+        <div>
+          <p class="skills__kicker">Loadout</p>
+          <p class="skills__summary">
+            Cinematic UI + performance-first toolkit —
+            <strong>${all.length}</strong> skills across
+            <strong>${SKILLS.length}</strong> tracks · avg
+            <strong>${avg}%</strong> ·
+            <strong>${expert}</strong> expert-tier.
+          </p>
+        </div>
+        <div class="skills__stats" aria-label="Skills snapshot">
+          <div class="skills__stat"><span>${SKILLS.length}</span><small>Tracks</small></div>
+          <div class="skills__stat"><span>${all.length}</span><small>Skills</small></div>
+          <div class="skills__stat"><span>${avg}%</span><small>Avg</small></div>
+        </div>
+      </div>
+      <div class="skills__signature">
+        <p class="skills__signature-label">Signature stack</p>
+        <div class="skills__chips">${chips}</div>
+      </div>
+      <div class="skills">${groups}</div>
+      ${renderLinksRow()}
+    </div>`;
 }
 
 // Skills planet config
