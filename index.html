@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
   <title>Raymond van der Walt — Frontend &amp; Game Developer</title>
-  <link rel="canonical" href="https://rayvdw.com/" />
+  <link rel="canonical" href="https://rayvdw.dev/" />
 
   <!-- Preconnects first for max effect -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,15 +22,18 @@
   <meta property="og:title" content="Raymond van der Walt — Interactive Portfolio" />
   <meta property="og:description" content="Cinematic UI + interactive gameplay. Engage. Explore. Interact." />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="https://rayvdw.dev/assets/images/about/raymond.png" />
+  <meta property="og:image" content="https://rayvdw.dev/assets/images/og-cover.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta property="og:locale" content="en_ZA" />
-  <meta property="og:url" content="https://rayvdw.com/" />
+  <meta property="og:url" content="https://rayvdw.dev/" />
+  <meta property="og:site_name" content="rayvdw.dev" />
 
   <!-- Twitter -->
-  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Raymond van der Walt — Interactive Portfolio" />
   <meta name="twitter:description" content="Cinematic UI + interactive gameplay. Engage. Explore. Interact." />
-  <meta name="twitter:image" content="https://rayvdw.dev/assets/images/about/raymond.png" />
+  <meta name="twitter:image" content="https://rayvdw.dev/assets/images/og-cover.png" />
 
   <!-- Icons -->
   <link rel="icon" type="image/png" href="assets/favicon.png" sizes="32x32" />
@@ -89,11 +92,14 @@
           <br />Engage. Explore. Interact.
         </p>
 
-        <p class="crawl-hint">Scroll to read at your pace — then tap Enter Mission when you’re ready.</p>
+        <p class="crawl-hint">Scroll to read at your pace — or skip intro and jump straight in.</p>
       </section>
     </div>
 
     <div class="intro-cta">
+      <button id="skip-intro" class="intro-skip" type="button" aria-label="Skip intro and enter mission">
+        Skip intro
+      </button>
       <button id="start-button" type="button" aria-label="Enter the mission">
         Enter Mission
       </button>
@@ -357,7 +363,7 @@
       "email": "Raymondvdw@gmail.com",
       "location": "South Africa",
       "availability": "Open to remote/onsite opportunities",
-      "formEndpoint": ""
+      "formEndpoint": "/api/contact"
     },
 
     "services": {
@@ -439,10 +445,21 @@
     "image":"https://rayvdw.dev/assets/images/about/raymond.png",
     "sameAs":[
       "https://github.com/KraToSza1",
-      "https://www.linkedin.com/in/raymond-van-der-walt-2135b41a5/"
+      "https://www.linkedin.com/in/raymond-van-der-walt-2135b41a5/",
+      "https://whts4dinner.com"
     ],
     "knowsAbout":["Frontend Development","Game UI","Unreal Engine","React","WebGL","UX","TypeScript","Canvas","Motion Design","Accessibility"],
     "address":{"@type":"PostalAddress","addressCountry":"ZA"}
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebSite",
+    "name":"Raymond van der Walt Portfolio",
+    "url":"https://rayvdw.dev/",
+    "description":"Interactive portfolio for Raymond van der Walt — Frontend & Game Developer.",
+    "publisher":{"@type":"Person","name":"Raymond van der Walt"}
   }
   </script>
 
@@ -493,6 +510,12 @@
       });
     }
   </script>
+
+  <!-- Analytics -->
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
 
   <!-- Main logic -->
   <script src="js/main.js" defer></script>

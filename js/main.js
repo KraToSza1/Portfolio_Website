@@ -10,6 +10,7 @@ const intro = document.getElementById("intro");
 const introScroll = document.getElementById("intro-scroll");
 const warpOverlay = document.getElementById("warp");
 const startBtn = document.getElementById("start-button");
+const skipIntroBtn = document.getElementById("skip-intro");
 const shootSfx = document.getElementById("sfx-shoot");
 const bgMusic = document.getElementById("bg-music");
 
@@ -2131,11 +2132,21 @@ function bindContactForm(){
     }
 
     try {
-      const fd = new FormData(form);
-      const resp = await fetch(endpoint, { method: "POST", body: fd });
+      const payload = {
+        name: form.name.value.trim(),
+        email: form.email.value.trim(),
+        message: form.message.value.trim(),
+        _hp: form["_hp"]?.value || ""
+      };
+      const resp = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(payload)
+      });
       if (!resp.ok) throw new Error("Network error");
       status.textContent = "Thanks! I’ll get back to you shortly.";
       form.reset();
+      try { window.va?.("event", { name: "contact_submit" }); } catch {}
     } catch (err) {
       status.textContent = "Couldn’t reach the server. Opening your email app instead…";
       mailtoFallback();
@@ -2869,26 +2880,37 @@ window.__portfolioState = () => ({
   room: currentRoom
 });
 
-// Safer, cooler warp on start (cyan/violet bias)
-startBtn?.addEventListener("click", async () => {
-  try {
-    await shootSfx.play();
-    shootSfx.pause();
-    shootSfx.currentTime = 0;
-  } catch {}
-
-  startBgMusic(); // 🔊 fade-in music here
+async function enterMission({ playSfx = true } = {}){
+  if (missionStarted) return;
+  try { localStorage.setItem("rvdw-entered-mission", "1"); } catch {}
+  if (playSfx && shootSfx) {
+    try {
+      await shootSfx.play();
+      shootSfx.pause();
+      shootSfx.currentTime = 0;
+    } catch {}
+  }
+  startBgMusic();
   startWarp(pickWarpTheme(true));
-});
+}
 
+startBtn?.addEventListener("click", () => enterMission({ playSfx: true }));
+skipIntroBtn?.addEventListener("click", () => enterMission({ playSfx: false }));
+
+// Return visitors skip the crawl automatically
+try {
+  if (localStorage.getItem("rvdw-entered-mission") === "1") {
+    enterMission({ playSfx: false });
+  }
+} catch {}
 
 // Auto-start intro (if enabled) with cool theme
 if (APP_OPTS.autoStartIntroMs) {
   setTimeout(() => {
     const introVisible = getComputedStyle(intro).display !== "none";
     const stageHidden = stage.hasAttribute("hidden");
-    if (introVisible && stageHidden) {
-      startWarp(pickWarpTheme(true));
+    if (introVisible && stageHidden && !missionStarted) {
+      enterMission({ playSfx: false });
     }
   }, APP_OPTS.autoStartIntroMs);
 }

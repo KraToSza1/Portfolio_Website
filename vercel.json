@@ -4,5 +4,13 @@
   "buildCommand": "echo 'Static site — no build step'",
   "outputDirectory": ".",
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/assets/docs/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    }
+  ]
 }

@@ -238,14 +238,43 @@ a:focus-visible,
 /* ---------- Start button ---------- */
 .intro-cta{
   position:relative;z-index:3;
-  display:flex;
-  justify-content:center;
-  width:min(100%,360px);
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:10px;
+  align-items:center;
+  width:min(100%,420px);
   margin-inline:auto;
   padding:
     10px 16px
     max(16px, env(safe-area-inset-bottom, 0px));
   background:linear-gradient(180deg, transparent, rgba(4,5,11,.88) 28%, rgba(4,5,11,.96));
+}
+.intro-skip{
+  appearance:none;
+  min-height:52px;
+  padding:14px 16px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(16,22,36,.82);
+  color:var(--ink);
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:.78rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  cursor:pointer;
+  touch-action:manipulation;
+  white-space:nowrap;
+  transition:background .15s ease, border-color .15s ease, transform .12s ease;
+}
+.intro-skip:hover{
+  border-color:rgba(138,216,255,.45);
+  background:rgba(24,34,54,.92);
+}
+.intro-skip:active{transform:scale(.97)}
+@media (max-width:420px){
+  .intro-cta{grid-template-columns:1fr; width:min(100%,360px)}
+  .intro-skip{width:100%}
 }
 #start-button,.btn-start{
   position:relative;left:auto;transform:none;

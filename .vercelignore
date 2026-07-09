@@ -19,3 +19,5 @@ assets/fonts/**/*.jpg
 # Tooling configs
 .eslintrc.json
 .prettierrc.json
+scripts
+package-lock.json
