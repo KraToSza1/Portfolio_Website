@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <rect width="800" height="450" fill="#0b0c10"/>
+  <rect x="40" y="36" width="720" height="378" rx="18" fill="#141210" stroke="#8a6a3a"/>
+  <rect x="80" y="100" width="200" height="200" rx="14" fill="#221c14" stroke="#ffe081"/>
+  <rect x="300" y="100" width="200" height="200" rx="14" fill="#221c14" stroke="#ffe081"/>
+  <rect x="520" y="100" width="200" height="200" rx="14" fill="#221c14" stroke="#ffe081"/>
+  <circle cx="180" cy="180" r="36" fill="none" stroke="#ff9f6b" stroke-width="3"/>
+  <circle cx="400" cy="180" r="36" fill="none" stroke="#5dffb0" stroke-width="3"/>
+  <circle cx="620" cy="180" r="36" fill="none" stroke="#8ad8ff" stroke-width="3"/>
+  <rect x="110" y="250" width="140" height="14" rx="4" fill="#ffe081" opacity=".7"/>
+  <rect x="330" y="250" width="140" height="14" rx="4" fill="#ffe081" opacity=".7"/>
+  <rect x="550" y="250" width="140" height="14" rx="4" fill="#ffe081" opacity=".7"/>
+  <text x="60" y="430" fill="#cfe1ff" font-family="Segoe UI,sans-serif" font-size="20">Elize's Canteen  MiniSME Ordering UI</text>
+</svg>

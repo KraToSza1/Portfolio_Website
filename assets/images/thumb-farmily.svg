@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <rect width="800" height="450" fill="#0b0c10"/>
+  <rect x="250" y="40" width="300" height="370" rx="28" fill="#10181c" stroke="#3d7a5c"/>
+  <rect x="270" y="80" width="260" height="290" rx="12" fill="#14241d"/>
+  <rect x="290" y="110" width="220" height="20" rx="6" fill="#5dffb0" opacity=".65"/>
+  <rect x="290" y="150" width="220" height="80" rx="10" fill="#1a3026" stroke="#3d7a5c"/>
+  <rect x="290" y="250" width="100" height="70" rx="10" fill="#1a3026" stroke="#ffe081"/>
+  <rect x="410" y="250" width="100" height="70" rx="10" fill="#1a3026" stroke="#8ad8ff"/>
+  <text x="60" y="430" fill="#cfe1ff" font-family="Segoe UI,sans-serif" font-size="20">Farmily  Farm Produce Mobile App</text>
+</svg>

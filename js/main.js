@@ -855,25 +855,46 @@ function caseStudyHTML(cs){
   const pills = (cs.stack||cs.tags||[]).map(t=>`<span class="pill">${t}</span>`).join("");
   const bullets = (cs.points||cs.bullets||[]).map(b=>`<li>${b}</li>`).join("");
   const links = (cs.links||[]).map(l=>`<a class="link-btn" href="${l.href}" target="_blank" rel="noopener">${l.label}</a>`).join("");
-  const hero = cs.hero ? `<img class="case__hero" src="${cs.hero}" alt="${cs.title} hero" onerror="this.style.display='none'">` : "";
+  const heroSrc = cs.hero || cs.thumb || "";
+  const hero = heroSrc
+    ? `<img class="case__hero" src="${heroSrc}" alt="${cs.title} preview" loading="lazy" onerror="this.style.display='none'">`
+    : "";
   const video = cs.video ? renderVideo(cs.video) : "";
-  const role = cs.role ? `<p class="case__summary"><strong>Role:</strong> ${cs.role}</p>` : "";
   const badge = cs.status === "live"
     ? `<span class="status-badge status-badge--live">Live</span>`
     : (cs.status === "prototype" ? `<span class="status-badge">Prototype</span>` : "");
+  const meta = [
+    cs.role ? `<div class="case__meta-item"><span class="case__meta-label">Role</span><span>${cs.role}</span></div>` : "",
+    cs.year ? `<div class="case__meta-item"><span class="case__meta-label">Year</span><span>${cs.year}</span></div>` : "",
+    cs.type ? `<div class="case__meta-item"><span class="case__meta-label">Type</span><span>${cs.type}</span></div>` : ""
+  ].filter(Boolean).join("");
+  const section = (label, body) => body
+    ? `<section class="case__block"><h4 class="case__block-title">${label}</h4><p class="case__block-body">${body}</p></section>`
+    : "";
+  const highlights = (cs.highlights||[]).map(h => `
+    <div class="case__stat">
+      <strong class="case__stat-value">${h.value}</strong>
+      <span class="case__stat-label">${h.label}</span>
+    </div>`).join("");
   return `
-    <article class="case">
-      <div>${hero}${video}</div>
-      <div>
+    <article class="case case--rich">
+      <div class="case__media">
+        ${hero}${video}
+      </div>
+      <div class="case__body">
         <div class="case__heading">
           <h3 class="case__title">${cs.title}</h3>
           ${badge}
         </div>
         <p class="case__summary">${cs.summary}</p>
-        ${role}
+        ${meta ? `<div class="case__meta">${meta}</div>` : ""}
+        ${highlights ? `<div class="case__stats">${highlights}</div>` : ""}
         <div class="pills">${pills}</div>
-        ${bullets ? `<ul class="case__bullets">${bullets}</ul>` : ""}
-        ${links ? `<div class="link-row" style="margin-top:12px">${links}</div>` : ""}
+        ${section("The problem", cs.problem)}
+        ${section("What I built", cs.solution)}
+        ${bullets ? `<section class="case__block"><h4 class="case__block-title">Highlights</h4><ul class="case__bullets">${bullets}</ul></section>` : ""}
+        ${section("Outcome", cs.outcome)}
+        ${links ? `<div class="link-row case__actions">${links}</div>` : ""}
       </div>
     </article>`;
 }
@@ -881,32 +902,53 @@ const CASE_A = {
   title:"Horror Mission HUD",
   summary:"Cinematic, moment-to-moment HUD for objectives, markers, and state transitions in a horror FPS.",
   role:"UI/UX · Blueprints + UMG/CommonUI",
-  stack:["UE5","UMG/CommonUI","Blueprints","HUD"],
+  year:"2025",
+  type:"Game UI",
+  stack:["UE5","UMG/CommonUI","Blueprints","HUD","Materials"],
   status:"prototype",
+  problem:"Horror games die when the HUD feels like a spreadsheet. Players need guidance that stays diegetic, readable in the dark, and cheap on frame time.",
+  solution:"A state-driven mission HUD with timed objective beats, distance-gated markers, and screen-edge hints — all budgeted for 60fps+ on mid-range hardware.",
+  outcome:"A reusable horror HUD pattern with cinematic transitions that still respects a hard performance budget.",
+  highlights:[
+    { value:"60fps+", label:"HUD budget target" },
+    { value:"UMG", label:"CommonUI widgets" },
+    { value:"Diegetic", label:"Marker language" }
+  ],
   points:[
     "Objective pipeline with timed beats and diegetic transitions.",
     "Marker system with distance-gated hints and screen-edge indicators.",
-    "Budgeted animation curves + lightweight materials to stay 60fps+.",
-    "Cinematic feel with smooth transitions and responsive feedback.",
-    "Data-driven design for easy iteration and polish."
+    "Budgeted animation curves + lightweight materials.",
+    "Data-driven design for fast iteration and polish passes."
   ],
   hero:"assets/images/cases/Demo.png",
+  thumb:"assets/images/thumb-hud.svg",
   video:"assets/videos/Horror.mp4",
   links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/HorrorFPS" }]
 };
 const CASE_B = {
   title:"Will Tool — Dynamic PDF Builder",
-  summary:"React app that generates legally structured PDFs from smart forms — live MVP on Vercel.",
+  summary:"React app that turns smart forms into legally structured PDFs — live MVP clients can click through today.",
   role:"Frontend Lead · Full product slice",
-  stack:["React","TypeScript","PDF","Forms","Vercel"],
+  year:"2025",
+  type:"Client MVP",
+  stack:["React","TypeScript","PDF","Forms","Validation","Vercel"],
   status:"live",
+  problem:"Legal document intake was slow, error-prone, and hard to turn into a clean printable PDF without manual cleanup.",
+  solution:"A schema-driven question graph with autofill, validation, and a printer-friendly export pipeline that assembles structured PDFs from form state.",
+  outcome:"A deployable MVP on Vercel that demonstrates the full intake → PDF path for stakeholders.",
+  highlights:[
+    { value:"Live", label:"Vercel MVP" },
+    { value:"Schema", label:"Question graph" },
+    { value:"PDF", label:"Export pipeline" }
+  ],
   points:[
     "Composable question graph → schema-backed output.",
     "Autofill + validation + printer-friendly themes.",
     "Export pipeline with embedded signatures (prototype).",
-    "Deployed as a production MVP clients can click through."
+    "Production-ready demo path for client walkthroughs."
   ],
   hero:"assets/images/cases/willtool.png",
+  thumb:"assets/images/thumb-willtool.svg",
   video:"",
   links:[
     { label:"Open live demo →", href:"https://mvp-tool-will-form-generator.vercel.app" },
@@ -915,35 +957,60 @@ const CASE_B = {
 };
 const CASE_C = {
   title:"Hack & Slash ARPG UI",
-  summary:"Reusable CommonUI menu scaffolding with rotators, EnhancedInput, and animation hooks.",
+  summary:"Reusable CommonUI menu scaffolding with rotators, EnhancedInput, and animation hooks for an action RPG.",
   role:"Gameplay UI · UE5 (C++/BP)",
+  year:"2025",
+  type:"Game UI",
   stack:["UE5","C++","Blueprints","CommonUI","EnhancedInput","HUD"],
   status:"prototype",
+  problem:"ARPG menus get brittle fast — inventory, skills, and equipment each want their own navigation rules, skins, and input paths.",
+  solution:"A slot-based CommonUI framework with data-driven options, EnhancedInput mapping, rotators, and style assets so menus stay consistent and skinnable.",
+  outcome:"A reusable menu foundation that can grow with combat systems without rewriting focus and input every time.",
+  highlights:[
+    { value:"CommonUI", label:"Menu system" },
+    { value:"C++/BP", label:"Hybrid stack" },
+    { value:"Input", label:"EnhancedInput" }
+  ],
   points:[
     "Slot-based widgets with data-driven options.",
     "Controller/keyboard navigation rules and sound cues.",
-    "Skinning via style assets and data tables.",
     "Rotators for inventory, skills, and equipment.",
-    "EnhancedInput for flexible key mapping.",
+    "Skinning via style assets and data tables.",
     "Animation hooks for cinematic transitions."
   ],
   hero:"assets/images/cases/Equipped Axe.png",
+  thumb:"assets/images/thumb-commonui.svg",
   video:"assets/videos/A Basic Dungeon.mp4",
   links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/SlashRPG" }]
 };
 const CASE_W4D = {
   title:"Whts4dinner.com",
-  summary:"My flagship shipped product — a smart recipe finder and meal-planning web app answering “what’s for dinner?” in seconds.",
+  summary:"My flagship shipped product — a smart recipe finder and meal-planning web app that answers “what’s for dinner?” in seconds.",
   role:"Founder · Design · Build · Ship",
-  stack:["React","TypeScript","Tailwind","OAuth","Supabase","Vercel","Product Design"],
+  year:"2025–26",
+  type:"SaaS product",
+  stack:["React","TypeScript","Tailwind","Supabase","OAuth","Spoonacular API","Stripe","Vercel"],
   status:"live",
-  points:[
-    "End-to-end product: discovery, planning flows, auth, and production hosting.",
-    "OAuth sign-in with real user accounts and persisted preferences.",
-    "Recipe search + “what’s for dinner?” decision flows tuned for speed.",
-    "Designed, developed, deployed and maintained solo — full product lifecycle.",
-    "Live at whts4dinner.com with ongoing iteration from real usage."
+  problem:"People waste time staring at the fridge. Recipe sites are bloated, and planning dinner from ingredients on hand is still annoying.",
+  solution:"A fast meal-planning product with recipe search, ingredient-aware discovery, OAuth accounts, serverless API proxying (Spoonacular), caching, and production auth via Supabase — designed, built, and shipped solo.",
+  outcome:"A live consumer product at whts4dinner.com with real accounts, ongoing iteration, and a full founder lifecycle from idea → deploy → maintain.",
+  highlights:[
+    { value:"Live", label:"Production SaaS" },
+    { value:"Solo", label:"Full lifecycle" },
+    { value:"OAuth", label:"Real accounts" },
+    { value:"API", label:"Cached proxy" }
   ],
+  points:[
+    "End-to-end product: discovery, planning flows, auth, and hosting.",
+    "Supabase auth (magic link + Google OAuth) with persisted preferences.",
+    "Serverless Spoonacular proxy so API keys never hit the browser.",
+    "Client + server caching for snappy recipe search.",
+    "Stripe-ready billing path for paid tiers.",
+    "Designed, developed, deployed and maintained solo."
+  ],
+  hero:"assets/images/thumb-w4d.svg",
+  thumb:"assets/images/thumb-w4d.svg",
+  video:"",
   links:[
     { label:"Visit whts4dinner.com →", href:"https://whts4dinner.com" },
     { label:"GitHub →", href:"https://github.com/KraToSza1/whats-4-dinner" }
@@ -951,17 +1018,28 @@ const CASE_W4D = {
 };
 const CASE_D = {
   title:"Farmily — Mobile Foundations",
-  summary:"Expo/React Native foundations for a farm-produce ordering app with auth and payments plan.",
+  summary:"Expo/React Native foundations for a farm-produce ordering app with auth and a PayFast payments plan.",
   role:"Mobile · React Native (Expo)",
-  stack:["React Native","Expo","Auth","PayFast"],
+  year:"2024–25",
+  type:"Mobile prototype",
+  stack:["React Native","Expo","TypeScript","Auth","PayFast"],
   status:"prototype",
+  problem:"Farm produce ordering needed a mobile-first flow — browse, auth, and pay — without waiting for a full native team.",
+  solution:"An Expo app skeleton with protected routes, theming, reusable components, and a clear PayFast integration plan.",
+  outcome:"A solid mobile foundation ready to grow into a full ordering product.",
+  highlights:[
+    { value:"Expo", label:"Cross-platform" },
+    { value:"Auth", label:"Protected routes" },
+    { value:"PayFast", label:"Payments plan" }
+  ],
   points:[
     "Auth flow + protected screens.",
-    "Theming and icons; responsive components.",
+    "Theming, icons, and responsive components.",
     "Payments integration plan (PayFast).",
-    "Built as a mobile product foundation for farm produce orders."
+    "Built as a product foundation for farm produce orders."
   ],
   hero:"assets/images/cases/2.jpg",
+  thumb:"assets/images/thumb-farmily.svg",
   video:"",
   links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/Farmilly_Mobile_App" }]
 };
@@ -969,13 +1047,26 @@ const CASE_STORIQ = {
   title:"StorIQ Location SEO Builder",
   summary:"Facility location page production cockpit — generate and ship SEO-ready location pages at scale.",
   role:"Full-stack product build",
+  year:"2026",
+  type:"Internal / ops tool",
   stack:["React","TypeScript","SEO","Content Ops","Vercel"],
   status:"live",
-  points:[
-    "Production cockpit for facility / location page generation.",
-    "Structured content workflows aimed at local SEO consistency.",
-    "Shipped as a live internal-style tool on Vercel."
+  problem:"Multi-location businesses drown in near-duplicate location pages. Manual SEO copy doesn’t scale and quality drifts.",
+  solution:"A production cockpit that structures facility/location content, keeps local SEO fields consistent, and speeds page generation for publishing workflows.",
+  outcome:"A live tooling surface teams can use to produce location pages without starting from a blank doc every time.",
+  highlights:[
+    { value:"SEO", label:"Location pages" },
+    { value:"Ops", label:"Content cockpit" },
+    { value:"Live", label:"On Vercel" }
   ],
+  points:[
+    "Structured workflows for facility / location page generation.",
+    "Consistency checks aimed at local SEO fields and messaging.",
+    "Shipped as a usable production-style tool, not just a mock."
+  ],
+  hero:"assets/images/thumb-storiq.svg",
+  thumb:"assets/images/thumb-storiq.svg",
+  video:"",
   links:[
     { label:"Open live app →", href:"https://storiq-location-seo-builder.vercel.app" },
     { label:"GitHub →", href:"https://github.com/KraToSza1/storiq-location-seo-builder" }
@@ -985,13 +1076,26 @@ const CASE_FORGE = {
   title:"ForgeQuest AI",
   summary:"Personalized Unreal learning through build / break / fix quests — AI-guided practice for game developers.",
   role:"Product · AI UX · Web",
+  year:"2026",
+  type:"EdTech / AI",
   stack:["React","TypeScript","AI","UE5 Learning","Vercel"],
   status:"live",
-  points:[
-    "Quest-style learning loops: build, break, and fix Unreal concepts.",
-    "Personalized practice paths for aspiring UE developers.",
-    "Shipped web experience focused on retention and clarity."
+  problem:"Learning Unreal from long courses is passive. People need short, active quests that force them to build, break, and repair systems.",
+  solution:"A web learning experience that turns UE concepts into quest loops — build something, break it on purpose, then fix it — with personalized practice paths.",
+  outcome:"A live ForgeQuest experience focused on retention, clarity, and hands-on Unreal practice.",
+  highlights:[
+    { value:"Build", label:"Quest loop" },
+    { value:"Break", label:"Failure practice" },
+    { value:"Fix", label:"Retention" }
   ],
+  points:[
+    "Quest-style learning loops for Unreal concepts.",
+    "Personalized practice paths for aspiring UE developers.",
+    "Shipped web UX tuned for clarity and repeat sessions."
+  ],
+  hero:"assets/images/thumb-forge.svg",
+  thumb:"assets/images/thumb-forge.svg",
+  video:"",
   links:[
     { label:"Open ForgeQuest →", href:"https://forgequest-ai-web.vercel.app" },
     { label:"GitHub →", href:"https://github.com/KraToSza1/forgequest-ai" }
@@ -999,15 +1103,29 @@ const CASE_FORGE = {
 };
 const CASE_QUOTE = {
   title:"QuotePilot AI",
-  summary:"Lead, quote & follow-up PWA for service SMEs — turn enquiries into quotes without the spreadsheet chaos.",
+  summary:"Lead, quote & follow-up PWA for service SMEs — capture leads, send quotes, follow up, get paid.",
   role:"Product · PWA · SME tooling",
-  stack:["React","TypeScript","PWA","AI Assist","Vercel"],
+  year:"2026",
+  type:"SaaS / PWA",
+  stack:["React","TypeScript","PWA","Supabase","AI Assist","Vercel"],
   status:"live",
-  points:[
-    "Lead capture → quote → follow-up pipeline for service businesses.",
-    "Mobile-friendly PWA so teams can quote on the go.",
-    "AI-assisted drafting to cut time-to-quote."
+  problem:"Quote-driven service SMEs lose work in WhatsApp threads and spreadsheets. Enterprise CRMs are too heavy for “send quote → chase payment.”",
+  solution:"A focused PWA: capture enquiries, draft/send quotes (with AI assist), schedule follow-ups, and keep the pipeline visible on mobile and desktop.",
+  outcome:"A live pilot product with marketing site, auth, and an `/app` workspace aimed at real service businesses.",
+  highlights:[
+    { value:"PWA", label:"Mobile quoting" },
+    { value:"AI", label:"Draft assist" },
+    { value:"SME", label:"No heavy CRM" }
   ],
+  points:[
+    "Lead → quote → follow-up pipeline without enterprise CRM bloat.",
+    "Mobile-friendly PWA so teams can quote on site.",
+    "AI-assisted drafting to cut time-to-quote.",
+    "Public marketing pages + authenticated app workspace."
+  ],
+  hero:"assets/images/thumb-quote.svg",
+  thumb:"assets/images/thumb-quote.svg",
+  video:"",
   links:[
     { label:"Open QuotePilot →", href:"https://quote-pilot-ai.vercel.app" },
     { label:"GitHub →", href:"https://github.com/KraToSza1/QuotePilot-AI" }
@@ -1015,15 +1133,28 @@ const CASE_QUOTE = {
 };
 const CASE_CANTEEN = {
   title:"Elize's Canteen (MiniSME)",
-  summary:"Corporate canteen ordering experience for MiniSME — menus, orders, and a clean staff-facing flow.",
+  summary:"Corporate canteen ordering experience for MiniSME — menus, orders, and a clean staff-facing daily flow.",
   role:"Frontend · Product UI",
+  year:"2026",
+  type:"SME product demo",
   stack:["React","TypeScript","Vite","Vercel"],
   status:"live",
-  points:[
-    "Canteen menu browsing and order flow for a real SME context.",
-    "Clean operational UI aimed at daily staff use.",
-    "Deployed as a live MiniSME demo product."
+  problem:"Office canteens need a simple digital menu/order path staff will actually use — not a bloated restaurant platform.",
+  solution:"A focused MiniSME canteen UI: browse the menu, place orders, and keep the operational surface clean for everyday use.",
+  outcome:"A live demo product that shows how a small SME tool can feel polished and practical.",
+  highlights:[
+    { value:"SME", label:"Real context" },
+    { value:"UI", label:"Daily ops" },
+    { value:"Live", label:"Demo product" }
   ],
+  points:[
+    "Menu browsing and order flow for a corporate canteen.",
+    "Operational UI aimed at daily staff use.",
+    "Deployed MiniSME demo on Vercel."
+  ],
+  hero:"assets/images/thumb-canteen.svg",
+  thumb:"assets/images/thumb-canteen.svg",
+  video:"",
   links:[
     { label:"Open live demo →", href:"https://mini-sme-elizes-canteen.vercel.app" },
     { label:"GitHub →", href:"https://github.com/KraToSza1/MiniSME-elizes-canteen" }

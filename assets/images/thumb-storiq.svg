@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <rect width="800" height="450" fill="#0b0c10"/>
+  <rect x="40" y="36" width="720" height="378" rx="18" fill="#10141c" stroke="#2f6f8f"/>
+  <rect x="70" y="90" width="280" height="260" rx="10" fill="#15202c" stroke="#3d8fb0"/>
+  <rect x="90" y="120" width="240" height="16" rx="4" fill="#8ad8ff" opacity=".75"/>
+  <rect x="90" y="155" width="200" height="10" rx="3" fill="#263455"/>
+  <rect x="90" y="180" width="220" height="10" rx="3" fill="#263455"/>
+  <rect x="90" y="205" width="180" height="10" rx="3" fill="#263455"/>
+  <rect x="90" y="250" width="240" height="70" rx="8" fill="#1a2a38" stroke="#5dffb0"/>
+  <rect x="380" y="90" width="340" height="80" rx="10" fill="#15202c" stroke="#3d8fb0"/>
+  <rect x="380" y="190" width="340" height="80" rx="10" fill="#15202c" stroke="#3d8fb0"/>
+  <rect x="380" y="290" width="340" height="60" rx="10" fill="#15202c" stroke="#ffe081"/>
+  <text x="60" y="430" fill="#cfe1ff" font-family="Segoe UI,sans-serif" font-size="20">StorIQ  Location SEO Production Cockpit</text>
+</svg>

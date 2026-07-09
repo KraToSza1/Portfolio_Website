@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <rect width="800" height="450" fill="#0b0c10"/>
+  <rect x="40" y="36" width="720" height="378" rx="18" fill="#10141c" stroke="#3a4f7a"/>
+  <rect x="70" y="80" width="220" height="280" rx="12" fill="#151c2c" stroke="#4a6aa8"/>
+  <rect x="90" y="110" width="180" height="14" rx="4" fill="#8ad8ff" opacity=".7"/>
+  <rect x="90" y="140" width="160" height="10" rx="3" fill="#263455"/>
+  <rect x="90" y="165" width="140" height="10" rx="3" fill="#263455"/>
+  <rect x="90" y="220" width="180" height="48" rx="8" fill="#1e2a44" stroke="#ffe081"/>
+  <rect x="330" y="80" width="390" height="180" rx="12" fill="#151c2c" stroke="#4a6aa8"/>
+  <rect x="360" y="110" width="120" height="100" rx="8" fill="#1a2438" stroke="#8ad8ff"/>
+  <rect x="500" y="110" width="120" height="100" rx="8" fill="#1a2438" stroke="#ffe081"/>
+  <rect x="640" y="110" width="50" height="100" rx="8" fill="#1a2438" stroke="#5dffb0"/>
+  <rect x="330" y="280" width="390" height="80" rx="12" fill="#151c2c" stroke="#4a6aa8"/>
+  <text x="60" y="430" fill="#cfe1ff" font-family="Segoe UI,sans-serif" font-size="20">QuotePilot AI  Lead · Quote · Follow-up</text>
+</svg>

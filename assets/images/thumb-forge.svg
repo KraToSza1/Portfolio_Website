@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <rect width="800" height="450" fill="#0b0c10"/>
+  <rect x="40" y="36" width="720" height="378" rx="18" fill="#141018" stroke="#6a3a7a"/>
+  <path d="M400 90l40 70h-80z" fill="none" stroke="#c084fc" stroke-width="3"/>
+  <rect x="120" y="200" width="160" height="140" rx="12" fill="#1c1424" stroke="#c084fc"/>
+  <rect x="320" y="200" width="160" height="140" rx="12" fill="#1c1424" stroke="#ffe081"/>
+  <rect x="520" y="200" width="160" height="140" rx="12" fill="#1c1424" stroke="#8ad8ff"/>
+  <text x="145" y="275" fill="#c084fc" font-family="Segoe UI,sans-serif" font-size="22">BUILD</text>
+  <text x="350" y="275" fill="#ffe081" font-family="Segoe UI,sans-serif" font-size="22">BREAK</text>
+  <text x="565" y="275" fill="#8ad8ff" font-family="Segoe UI,sans-serif" font-size="22">FIX</text>
+  <text x="60" y="430" fill="#cfe1ff" font-family="Segoe UI,sans-serif" font-size="20">ForgeQuest AI  Unreal Learning Quests</text>
+</svg>
