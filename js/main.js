@@ -770,7 +770,7 @@ function renderLinksRow(){
       <a class="link-btn" href="${LINKS.resume}" target="_blank" rel="noopener">${ICONS.resume}Resume</a>
       <a class="link-btn" href="${LINKS.github}" target="_blank" rel="noopener">${ICONS.github}GitHub</a>
       <a class="link-btn" href="${LINKS.linkedin}" target="_blank" rel="noopener">${ICONS.linkedin}LinkedIn</a>
-      <a class="link-btn" href="${LINKS.w4d}" target="_blank" rel="noopener">${ICONS.w4d}Whats4Dinner</a>
+      <a class="link-btn" href="${LINKS.w4d}" target="_blank" rel="noopener">${ICONS.w4d}Whts4dinner</a>
       <a class="link-btn" href="${LINKS.email}">${ICONS.email}Email</a>
     </div>`;
 }
@@ -919,7 +919,7 @@ const CASE_C = {
   links:[]
 };
 const CASE_W4D = {
-  title:"Whats4Dinner.com",
+  title:"Whts4dinner.com",
   summary:"My own shipped product: a live meal-planning and recipe web app, running in production right now.",
   role:"Design · Build · Ship (solo founder)",
   stack:["React","TypeScript","OAuth","Product Design","Deployment"],
@@ -1108,7 +1108,7 @@ const aboutHTML = `
           </p>
           <p class="about__bio-text">
             I also ship my own products — like
-            <a href="https://whts4dinner.com" target="_blank" rel="noopener"><strong class="highlight">Whats4Dinner.com</strong></a>,
+            <a href="https://whts4dinner.com" target="_blank" rel="noopener"><strong class="highlight">Whts4dinner.com</strong></a>,
             a live meal-planning app I designed, built and run solo.
           </p>
         </div>
@@ -1123,7 +1123,7 @@ const aboutHTML = `
             <div class="about__detail-item">
               <div class="detail-item__years">2025</div>
               <div class="detail-item__desc">
-                <strong>Whats4Dinner.com — Founder &amp; Developer</strong><br>
+                <strong>Whts4dinner.com — Founder &amp; Developer</strong><br>
                 Designed, built and shipped a live meal-planning web app with OAuth accounts — running in production.
               </div>
             </div>
@@ -1285,7 +1285,7 @@ function openArcadePanel(){
 // ---------- Projects (rich details) ----------
 const PROJECTS = [
   {
-    title:"Whats4Dinner.com",
+    title:"Whts4dinner.com",
     summary:"Live meal-planning web app — recipe discovery, sign-in, and “what’s for dinner?” answered in seconds.",
     requires:["React","TypeScript","OAuth","API design","Deployment"],
     does:[
@@ -1472,7 +1472,7 @@ const ROOMS = [
     { name: NAMES[3], px: 42, py: 74, r: 40, planet: PLANETS.mint,   label: "Solar System →",     action: () => setRoom(1), warp: "theme-emerald" },
   ]},
   { targets: [
-    { name: "Verdis", px:50, py:44, r:44, planet: PLANETS.mint, label:"Whats4Dinner.com", action: () => openLanding("Whats4Dinner.com — Live Product", caseStudyHTML(CASE_W4D)), warp: "theme-emerald", noSprite: true, ringTilt: 0.3 },
+    { name: "Verdis", px:50, py:44, r:44, planet: PLANETS.mint, label:"Whts4dinner.com", action: () => openLanding("Whts4dinner.com — Live Product", caseStudyHTML(CASE_W4D)), warp: "theme-emerald", noSprite: true, ringTilt: 0.3 },
     { name: NAMES[1], px:28, py:30, r:42, planet: PLANETS.aqua,   label:"Case Study A", action: () => openLanding("Case Study A", caseStudyHTML(CASE_A)), warp: "theme-cyan",   ringTilt:  0.22 },
     { name: NAMES[4], px:72, py:30, r:48, planet: PLANETS.coral,  label:"Case Study B", action: () => openLanding("Case Study B", caseStudyHTML(CASE_B)), warp: "theme-magma" },
     { name: NAMES[8], px:30, py:72, r:44, planet: PLANETS.violet, label:"Case Study C", action: () => openLanding("Case Study C", caseStudyHTML(CASE_C)), warp: "theme-violet", ringTilt: -0.28 },
