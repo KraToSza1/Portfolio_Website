@@ -1,0 +1,21 @@
+# Keep the Vercel upload lean — none of this is needed at runtime.
+node_modules
+src
+.git
+.claude
+.vscode
+.idea
+
+# Dead migration notes / docs
+MIGRATION_COMPLETE.md
+MIGRATION_GUIDE.md
+PROJECT_STRUCTURE.md
+
+# Font "guide" Word docs shipped with the free fonts (not used by the site)
+assets/fonts/**/*.doc
+assets/fonts/**/*.txt
+assets/fonts/**/*.jpg
+
+# Tooling configs
+.eslintrc.json
+.prettierrc.json
