@@ -1257,10 +1257,10 @@ function workWithMeHTML(){
 // ---------- Arcade (retro FPS, lazy-loaded) ----------
 function arcadeHTML(){
   return `
-    <p>A complete retro FPS I built from scratch in a canvas — raycast walls, three
-    weapons, four demon breeds, exploding barrels, keycards and a boss fight across
-    three levels. No engine, no libraries, no image files: everything is code,
-    the same rendering tech behind the 1993 classics.</p>
+    <p>A complete retro FPS I built from scratch in a canvas — raycast walls, sliding
+    doors, three weapons, six demon breeds, exploding barrels, keycards and a boss
+    fight across four levels. No engine, no libraries, no image files: everything is
+    code, the same rendering tech behind the 1993 classics.</p>
     <div class="arcade">
       <canvas id="arcade-canvas" width="320" height="200" tabindex="0" aria-label="Retro FPS game"></canvas>
       <div class="arcade__controls">

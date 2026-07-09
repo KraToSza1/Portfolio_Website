@@ -1,88 +1,133 @@
 // js/arcade.js — "INFERNO" — a complete retro FPS built from scratch.
-// Raycast renderer (DDA, textured walls, sprite billboards, per-column
-// z-clipping) + full game: title screen, 3 weapons, 4 enemy types incl. a
-// boss, projectiles, exploding barrels, keycards, pickups, particles,
-// minimap, synthesized sound, score/tally screens, persistent hi-score.
+// Raycast renderer (DDA, textured walls, sliding doors, sprite billboards,
+// per-column z-clipping) + full game: title screen, 3 weapons, 6 enemy types
+// incl. a boss, projectiles, exploding barrels, keycards, auto + locked doors,
+// pickups, particles, minimap, synthesized sound, score/tally screens,
+// persistent hi-score, 4 big levels.
 // No libraries, no image assets. API: window.initArcade(id) / window.destroyArcade().
 (function () {
   "use strict";
 
   // ============================ LEVELS ============================
   // walls: # brick · T tech · S slime · M metal · X exit(needs key)
+  //        D auto sliding door · G gold-locked door (needs keycard)
   // floor: . or space
-  // P player · E imp · C caster · U brute · Z boss
-  // h health · a bullets · s shells · c cells · k keycard
-  // W shotgun pickup · Q plasma pickup · B exploding barrel
+  // enemies: E imp · C caster · U brute · F wraith · R gunner · Z boss
+  // pickups: h health · a bullets · s shells · c cells · k keycard
+  //          W shotgun · Q plasma · B exploding barrel
   const LEVELS = [
     {
-      name: "E1: HANGAR OF REGRET", par: 75,
+      name: "E1: HANGAR OF REGRET", par: 110,
       rows: [
-        "################",
-        "#P.....#...a..h#",
-        "#......#.......#",
-        "#..E...#..E....#",
-        "#......T....B..#",
-        "###T####.......#",
-        "#....B.#####T###",
-        "#..a...S.......#",
-        "#..E...S..E..k.#",
-        "#......S.......#",
-        "#h.....S.......#",
-        "####.###..E....#",
-        "#..W.......B...#",
-        "#..E...........X",
-        "#..a........h..#",
-        "################"
+        "########################",
+        "#P.....#......#....h...#",
+        "#......D......D....E...#",
+        "#..E...#..B...#........#",
+        "#......#..E...#...s....#",
+        "###D########......####D#",
+        "#....#....F...#...a...k#",
+        "#..W.#....#...D........#",
+        "#..E.D....#...#...E....#",
+        "#....#..B.#...#........#",
+        "#....#....#.h.#...B....#",
+        "####.#####D###....###D##",
+        "#......#.......E......h#",
+        "#..h...#..B.......E....#",
+        "#..E...D...........a...#",
+        "#......#....s.........X#",
+        "#..a.B.#....#.........##",
+        "#......#....#..k...##..#",
+        "####D###....#####..D...#",
+        "#....E.............E...#",
+        "########################"
       ]
     },
     {
-      name: "E2: THE GOLD FOUNDRY", par: 120,
+      name: "E2: THE GOLD FOUNDRY", par: 150,
       rows: [
-        "####################",
-        "#P.......#.....C..h#",
-        "#....E...#.........#",
-        "#.........T...E....#",
-        "####T###..#....B...#",
-        "#......#..####..####",
-        "#..C...M....a......#",
-        "#......#..E....s...#",
-        "#..s...#......###S##",
-        "###.####..h...S....#",
-        "#....B....C...S..E.#",
-        "#..h..........S....#",
-        "#......E...Q..S..c.#",
-        "#..................X",
-        "#..a......E....k.h.#",
-        "####################"
+        "##########################",
+        "#P.....#.....C....#.....h#",
+        "#......D..........D......#",
+        "#..E...#....B.....#...R..#",
+        "#......#....E.....#.....k#",
+        "###D#######....######D####",
+        "#....#....s........#.....#",
+        "#..s.#....D....F...#..a..#",
+        "#..E.#....#........D..E..#",
+        "#....#....#####S####.....#",
+        "###.D#....#.......#..###D#",
+        "#...##....G.......#....C.#",
+        "#..C.#....#....B..#......#",
+        "#....#....#.......#..s...#",
+        "#..a.#....#.......###D####",
+        "###D########..F.........h#",
+        "#......E..#....#....E....#",
+        "#..h......D....#....D....#",
+        "#.........#....#........G#",
+        "#...B..R..#.B..#..a.....X#",
+        "####.#####.####.####.###.#",
+        "#..................E....##",
+        "##########################"
       ]
     },
     {
-      name: "E3: THRONE OF CINDER", par: 180,
+      name: "E4: THE MAW", par: 200,
       rows: [
-        "####################",
-        "#P.......#....C...h#",
-        "#...U....#.........#",
-        "#......#.#...####..#",
-        "#..s...#.....#..c..#",
-        "####.###..####..####",
-        "#..c...#..........s#",
-        "#..U...#..C....U...#",
-        "#......#...........#",
-        "###.####....h......#",
-        "#........B.........#",
-        "#..M...........M...#",
-        "#..................#",
-        "#.....B..Z...B.....#",
-        "#..................#",
-        "#..M...........M...#",
-        "#....s...h....c....#",
-        "#..................#",
-        "#h.......a........c#",
-        "####################"
+        "############################",
+        "#P.....#......h......#.....#",
+        "#......D.............D.....#",
+        "#..R...#...B....B....#..U..#",
+        "#......#.....F.......#....k#",
+        "###D########....######D#####",
+        "#.....#....s...c...#.......#",
+        "#..s..#....D.......#....a..#",
+        "#..U..#....#...F...D....C..#",
+        "#.....#....#.......#.......#",
+        "###.D######S##S#####..D#####",
+        "#...##....#......#....#....#",
+        "#..C.#....G......#....D..R.#",
+        "#....#....#..Q...#....#....#",
+        "#..a.#....#......#....#..s.#",
+        "###D########..F...####D#####",
+        "#........#........#...E...h#",
+        "#..h..R..D...B....#...#....#",
+        "#........#........#...#..c.#",
+        "#..B..E..#...F....#...#...X#",
+        "####.#####.######.####D##.##",
+        "#.................E.......##",
+        "############################"
+      ]
+    },
+    {
+      name: "E3: THRONE OF CINDER", par: 220,
+      rows: [
+        "######################",
+        "#P.......#.....C....h#",
+        "#...U....D...........#",
+        "#......#.#...####....#",
+        "#..s...#.....#..c....#",
+        "###D###...####...#####",
+        "#..c...#.........R..s#",
+        "#..U...D..C....U.....#",
+        "#......#.............#",
+        "####.###R....h...##D##",
+        "#........B..........s#",
+        "#..M...........M....c#",
+        "#...................a#",
+        "#...B...F.Z.F....B...#",
+        "#...................h#",
+        "#..M...........M....c#",
+        "#........B..........s#",
+        "####D####....#####..##",
+        "#....s..h.F....c....a#",
+        "#...................R#",
+        "######################"
       ]
     }
   ];
-  const WALLS = { "#": 1, "T": 2, "S": 3, "M": 4, "X": 5 };
+  const WALLS = { "#": 1, "T": 2, "S": 3, "M": 4, "X": 5, "D": 6, "G": 7 };
+  const DOOR_SPEED = 2.2;   // openness units per second
+  const DOOR_HOLD = 4;      // seconds a door stays open
 
   // ============================ CONFIG ============================
   // Base ("chrome") space: HUD/menus are authored in 320x200 coordinates and
@@ -108,11 +153,16 @@
               pal: { body: "#3a2050", skin: "#5a3a80", eye: "#c88aff" } },
     brute:  { hp: 90,  sp: 1.05, scale: 1.28, mdmg: [18, 26], mrange: 1.15, score: 250,
               pal: { body: "#2f4032", skin: "#48604a", eye: "#a6ffbf" } },
+    wraith: { hp: 16,  sp: 2.7,  scale: 0.9,  mdmg: [6, 10],  mrange: 0.95, score: 150, ghost: true,
+              pal: { body: "#3e5a6e", skin: "#7da8c0", eye: "#d5f4ff" } },
+    gunner: { hp: 40,  sp: 1.4,  scale: 1.05, mdmg: [6, 10],  mrange: 0.9,  score: 200,
+              ranged: { cd: 1.15, speed: 7, dmg: [6, 10], hold: 5.5 },
+              pal: { body: "#4a3a20", skin: "#8a6b3a", eye: "#ffb04a" } },
     boss:   { hp: 420, sp: 0.95, scale: 2.15, mdmg: [22, 30], mrange: 1.4,  score: 1000, boss: true,
               ranged: { cd: 1.5, speed: 4.6, dmg: [12, 18], hold: 7, spread: 3 },
               pal: { body: "#5a1010", skin: "#8a1f14", eye: "#ffd75e" } }
   };
-  const ECHARS = { E: "imp", C: "caster", U: "brute", Z: "boss" };
+  const ECHARS = { E: "imp", C: "caster", U: "brute", Z: "boss", F: "wraith", R: "gunner" };
 
   // ============================ AUDIO (synth) ============================
   let actx = null;
@@ -245,7 +295,30 @@
       g.fillStyle = "#8ad8ff"; g.fillRect(20, 38, 24, 14);
       g.fillStyle = "#0c0d12"; g.fillRect(29, 41, 6, 8); // keyhole
     });
-    const light = [null, brick, tech, slime, metal, exit].map(function (t) { return t && polish(t); });
+    const door = mkTex(TEX, function (g) {
+      g.fillStyle = "#20303f"; g.fillRect(0, 0, 64, 64);
+      g.fillStyle = "#2c4356"; g.fillRect(3, 2, 58, 60);
+      g.fillStyle = "#12202b"; g.fillRect(30, 2, 4, 60);      // centre seam (slides apart)
+      g.fillStyle = "#8ad8ff"; g.fillRect(8, 8, 48, 4);       // hazard stripe
+      g.fillStyle = "#12202b";
+      for (let i = 0; i < 6; i++) g.fillRect(10 + i * 8, 8, 4, 4);
+      g.fillStyle = "#8ad8ff";                                 // arrows pointing to seam
+      g.beginPath(); g.moveTo(20, 34); g.lineTo(26, 30); g.lineTo(26, 38); g.fill();
+      g.beginPath(); g.moveTo(44, 34); g.lineTo(38, 30); g.lineTo(38, 38); g.fill();
+      g.fillStyle = "#3a5568"; g.fillRect(3, 2, 58, 2); g.fillRect(3, 58, 58, 2);
+    });
+    const gold = mkTex(TEX, function (g) {
+      g.fillStyle = "#3a2e10"; g.fillRect(0, 0, 64, 64);
+      g.fillStyle = "#5e4718"; g.fillRect(3, 2, 58, 60);
+      g.fillStyle = "#8a6b2a"; g.fillRect(6, 6, 52, 52);
+      g.fillStyle = "#2a2008"; g.fillRect(30, 2, 4, 60);      // seam
+      g.fillStyle = "#ffd75e"; g.fillRect(8, 8, 48, 4);
+      // big keyhole medallion
+      g.fillStyle = "#ffd75e"; g.beginPath(); g.arc(32, 32, 10, 0, 7); g.fill();
+      g.fillStyle = "#2a2008"; g.beginPath(); g.arc(32, 30, 3.5, 0, 7); g.fill();
+      g.fillRect(30, 30, 4, 10);
+    });
+    const light = [null, brick, tech, slime, metal, exit, door, gold].map(function (t) { return t && polish(t); });
     return { light: light, dark: [null].concat(light.slice(1).map(darken)) };
   }
 
@@ -287,6 +360,73 @@
         g.fillStyle = "#e33"; g.fillRect(28, 16, 2, 2); g.fillRect(35, 16, 2, 2);
         g.fillStyle = "#2a0a06"; g.fillRect(28, 23, 9, 3);
         if (pose === 2) { g.fillStyle = "#fff"; g.fillRect(28, 23, 2, 3); g.fillRect(34, 23, 2, 3); }
+      });
+    }
+    return [frame(0), frame(1), frame(2), frame(3), frame(4)];
+  }
+
+  // WRAITH — a floating spectral skull-ghost (translucency applied at draw time)
+  function buildWraith(pal) {
+    function frame(pose) {
+      return mkTex(TEX, function (g) {
+        if (pose === 4) {
+          g.fillStyle = pal.body; g.globalAlpha = 0.4;
+          g.beginPath(); g.ellipse(32, 40, 16, 6, 0, 0, 7); g.fill();
+          g.globalAlpha = 1; return;
+        }
+        // wispy trailing tail
+        g.fillStyle = pal.body;
+        g.beginPath();
+        g.moveTo(20, 30);
+        g.quadraticCurveTo(14, 52, 22 + (pose === 1 ? 4 : 0), 60);
+        g.quadraticCurveTo(32, 50, 42 - (pose === 1 ? 4 : 0), 60);
+        g.quadraticCurveTo(50, 52, 44, 30);
+        g.fill();
+        // hooded head
+        g.fillStyle = pose === 3 ? "#c0d8e8" : pal.skin;
+        g.beginPath(); g.ellipse(32, 26, 15, 17, 0, 0, 7); g.fill();
+        g.fillStyle = "#0a1016";
+        g.beginPath(); g.ellipse(32, 30, 11, 13, 0, 0, 7); g.fill(); // hood shadow
+        // glowing eyes
+        g.fillStyle = pose === 2 ? "#fff" : pal.eye;
+        g.fillRect(25, 26, 5, 6); g.fillRect(35, 26, 5, 6);
+        g.fillStyle = "#8ad8ff"; g.fillRect(26, 27, 2, 3); g.fillRect(36, 27, 2, 3);
+        // claws when attacking
+        if (pose === 2) {
+          g.fillStyle = pal.skin;
+          g.fillRect(12, 34, 5, 12); g.fillRect(47, 34, 5, 12);
+        }
+      });
+    }
+    return [frame(0), frame(1), frame(2), frame(3), frame(4)];
+  }
+
+  // GUNNER — armoured demon soldier with a shoulder cannon
+  function buildGunner(pal) {
+    function frame(pose) {
+      return mkTex(TEX, function (g) {
+        if (pose === 4) {
+          g.fillStyle = "#2a2010"; g.beginPath(); g.ellipse(32, 56, 20, 6, 0, 0, 7); g.fill();
+          g.fillStyle = pal.body; g.beginPath(); g.ellipse(32, 53, 12, 5, 0, 0, 7); g.fill();
+          g.fillStyle = "#5a6b7a"; g.fillRect(40, 48, 16, 5); // dropped gun
+          return;
+        }
+        g.fillStyle = "#3a2e18";
+        g.fillRect(24, 46, 7, 16); g.fillRect(33, 46, 7, 16);
+        // armoured torso
+        g.fillStyle = pose === 3 ? "#c0a070" : pal.body;
+        g.fillRect(20, 22, 24, 26);
+        g.fillStyle = "#5a6b7a"; g.fillRect(20, 22, 24, 5); // chest plate
+        g.fillStyle = "#8d99b8"; g.fillRect(22, 30, 20, 2); g.fillRect(22, 38, 20, 2);
+        // head
+        g.fillStyle = pose === 3 ? "#d0b080" : pal.skin;
+        g.beginPath(); g.ellipse(30, 16, 8, 8, 0, 0, 7); g.fill();
+        g.fillStyle = pose === 2 ? "#fff" : pal.eye;
+        g.fillRect(26, 14, 3, 4); g.fillRect(32, 14, 3, 4);
+        // shoulder cannon (muzzle flashes on attack)
+        g.fillStyle = "#4a5464"; g.fillRect(40, 20, 16, 8);
+        g.fillStyle = "#2a3038"; g.fillRect(52, 21, 6, 6);
+        if (pose === 2) { g.fillStyle = "#ffd75e"; g.beginPath(); g.arc(58, 24, 5, 0, 7); g.fill(); }
       });
     }
     return [frame(0), frame(1), frame(2), frame(3), frame(4)];
@@ -345,25 +485,31 @@
   // ============================ PARSE ============================
   function parseLevel(idx) {
     const rows = LEVELS[idx].rows;
-    const map = [], enemies = [], items = [], barrels = [];
+    const map = [], enemies = [], items = [], barrels = [], doors = {};
     let px = 1.5, py = 1.5;
     for (let y = 0; y < rows.length; y++) {
       const line = rows[y], row = [];
       for (let x = 0; x < line.length; x++) {
         const ch = line[x];
-        row.push(WALLS[ch] || 0);
+        const wv = WALLS[ch] || 0;
+        row.push(wv);
+        if (wv === 6 || wv === 7) {
+          // door: open = 0 (shut) .. 1 (fully retracted); gold doors need the key
+          doors[y * 1000 + x] = { x: x, y: y, open: 0, target: 0, gold: wv === 7, hold: 0 };
+        }
         if (ch === "P") { px = x + 0.5; py = y + 0.5; }
         else if (ECHARS[ch]) {
           const cfg = ETYPES[ECHARS[ch]];
           enemies.push({ type: ECHARS[ch], cfg: cfg, x: x + 0.5, y: y + 0.5, hp: cfg.hp,
-                         state: "idle", animT: 0, atkT: 1 + Math.random(), painT: 0, roared: false });
+                         state: "idle", animT: 0, atkT: 1 + Math.random(), painT: 0, roared: false,
+                         phase: 0, blink: 0 });
         }
         else if ("hasckWQ".indexOf(ch) >= 0) items.push({ x: x + 0.5, y: y + 0.5, kind: ch });
         else if (ch === "B") barrels.push({ x: x + 0.5, y: y + 0.5, hp: 12, dead: false });
       }
       map.push(row);
     }
-    return { map: map, enemies: enemies, items: items, barrels: barrels,
+    return { map: map, enemies: enemies, items: items, barrels: barrels, doors: doors,
              px: px, py: py, w: rows[0].length, h: rows.length,
              name: LEVELS[idx].name, par: LEVELS[idx].par,
              totKills: enemies.length, totItems: items.length };
@@ -383,7 +529,9 @@
       imp: buildDemon(ETYPES.imp.pal),
       caster: buildDemon(ETYPES.caster.pal),
       brute: buildDemon(ETYPES.brute.pal),
-      boss: buildDemon(ETYPES.boss.pal)
+      boss: buildDemon(ETYPES.boss.pal),
+      wraith: buildWraith(ETYPES.wraith.pal),
+      gunner: buildGunner(ETYPES.gunner.pal)
     };
     this.items = buildItems();
     this.keys = {};
@@ -511,16 +659,60 @@
     if (y < 0 || y >= this.L.h || x < 0 || x >= this.L.w) return 1;
     return this.L.map[y | 0][x | 0];
   };
+  Game.prototype.doorAt = function (mx, my) {
+    return this.L.doors[my * 1000 + mx] || null;
+  };
+  // blocks movement / sight? doors count as solid until nearly open
+  Game.prototype.solidAt = function (x, y) {
+    const v = this.wallAt(x, y);
+    if (v === 0) return false;
+    if (v === 6 || v === 7) {
+      const d = this.doorAt(x | 0, y | 0);
+      return !d || d.open < 0.85;
+    }
+    return true;
+  };
+  // touching a door tile opens it (auto doors always, gold doors need the key)
+  Game.prototype.bumpDoors = function (x, y, byPlayer) {
+    for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) {
+      const d = this.doorAt((x | 0) + ox, (y | 0) + oy);
+      if (!d) continue;
+      if (d.gold && !this.hasKey) {
+        if (byPlayer && this.msgT <= 0) { this.say("A GOLD DOOR — FIND THE KEYCARD", 1.4); SFX.nokey(); }
+        continue;
+      }
+      if (d.gold && byPlayer && d.open === 0 && d.target === 0) SFX.key();
+      d.target = 1; d.hold = DOOR_HOLD;
+    }
+  };
+  Game.prototype.updateDoors = function (dt) {
+    const doors = this.L.doors;
+    for (const k in doors) {
+      const d = doors[k];
+      if (d.target > 0) { d.hold -= dt; if (d.hold <= 0 && !this.nearEntity(d.x + 0.5, d.y + 0.5, 1.1)) d.target = 0; }
+      if (d.open < d.target) d.open = Math.min(d.target, d.open + DOOR_SPEED * dt);
+      else if (d.open > d.target) d.open = Math.max(d.target, d.open - DOOR_SPEED * dt);
+    }
+  };
+  Game.prototype.nearEntity = function (x, y, r) {
+    if (Math.hypot(this.px - x, this.py - y) < r) return true;
+    for (let i = 0; i < this.L.enemies.length; i++) {
+      const e = this.L.enemies[i];
+      if (e.state !== "dead" && Math.hypot(e.x - x, e.y - y) < r) return true;
+    }
+    return false;
+  };
   Game.prototype.tryMove = function (nx, ny) {
     const R = 0.22;
-    if (!this.wallAt(nx + (nx > this.px ? R : -R), this.py)) this.px = nx;
-    if (!this.wallAt(this.px, ny + (ny > this.py ? R : -R))) this.py = ny;
+    this.bumpDoors(nx, this.py, true); this.bumpDoors(this.px, ny, true);
+    if (!this.solidAt(nx + (nx > this.px ? R : -R), this.py)) this.px = nx;
+    if (!this.solidAt(this.px, ny + (ny > this.py ? R : -R))) this.py = ny;
   };
   Game.prototype.los = function (x0, y0, x1, y1) {
     const d = Math.hypot(x1 - x0, y1 - y0), steps = Math.ceil(d / 0.15);
     for (let i = 1; i < steps; i++) {
       const t = i / steps;
-      if (this.wallAt(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t)) return false;
+      if (this.solidAt(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t)) return false;
     }
     return true;
   };
@@ -665,6 +857,7 @@
     const ml = Math.hypot(mvx, mvy);
     if (ml > 0.001) { this.tryMove(this.px + (mvx / ml) * sp, this.py + (mvy / ml) * sp); moved = true; }
     this.bob += dt * (moved ? 9 : 2);
+    this.updateDoors(dt);
 
     // pickups
     for (let i = this.L.items.length - 1; i >= 0; i--) {
@@ -700,7 +893,9 @@
       if (e.state === "pain") { e.painT -= dt; if (e.painT <= 0) e.state = "chase"; continue; }
       const ex = this.px - e.x, ey = this.py - e.y;
       const dist = Math.hypot(ex, ey);
-      const sees = dist < 10 && this.los(e.x, e.y, this.px, this.py);
+      // wraiths phase through walls, so they always "see" you within range
+      const sees = e.cfg.ghost ? (dist < 12) : (dist < 10 && this.los(e.x, e.y, this.px, this.py));
+      if (e.cfg.ghost) e.blink = (e.blink + dt) % 1e6;
       if (e.state === "idle") { if (sees) { e.state = "chase"; if (e.cfg.boss && !e.roared) { e.roared = true; this.say("THE CINDER KING AWAKENS", 2.2); SFX.roar(); this.shake = 0.6; } } else continue; }
       e.animT += dt * 5;
       e.atkT = Math.max(0, e.atkT - dt);
@@ -738,7 +933,7 @@
     for (let i = this.projs.length - 1; i >= 0; i--) {
       const p = this.projs[i];
       p.x += p.vx * dt; p.y += p.vy * dt;
-      if (this.wallAt(p.x, p.y)) {
+      if (this.solidAt(p.x, p.y)) {
         this.spawnParts(p.x, p.y, 4, p.player ? "#8ad8ff" : "#ff8a50", 1.2);
         this.projs.splice(i, 1); continue;
       }
@@ -783,8 +978,11 @@
   Game.prototype.stepEnemy = function (e, ux, uy, dt) {
     const s = e.cfg.sp * dt, R = 0.3;
     const nx = e.x + ux * s, ny = e.y + uy * s;
-    if (!this.wallAt(nx + (nx > e.x ? R : -R), e.y)) e.x = nx;
-    if (!this.wallAt(e.x, ny + (ny > e.y ? R : -R))) e.y = ny;
+    // wraiths phase through walls; everyone else opens doors by bumping them
+    if (e.cfg.ghost) { e.x = nx; e.y = ny; return; }
+    this.bumpDoors(nx, e.y, false); this.bumpDoors(e.x, ny, false);
+    if (!this.solidAt(nx + (nx > e.x ? R : -R), e.y)) e.x = nx;
+    if (!this.solidAt(e.x, ny + (ny > e.y ? R : -R))) e.y = ny;
   };
 
   // ============================ RENDER ============================
@@ -816,10 +1014,23 @@
       if (rdx < 0) { stepX = -1; sdx = (this.px - mapX) * ddx; } else { stepX = 1; sdx = (mapX + 1 - this.px) * ddx; }
       if (rdy < 0) { stepY = -1; sdy = (this.py - mapY) * ddy; } else { stepY = 1; sdy = (mapY + 1 - this.py) * ddy; }
       let hit = 0, side = 0, guard = 0;
-      while (!hit && guard++ < 80) {
+      while (!hit && guard++ < 96) {
         if (sdx < sdy) { sdx += ddx; mapX += stepX; side = 0; } else { sdy += ddy; mapY += stepY; side = 1; }
         if (mapY < 0 || mapY >= L.h || mapX < 0 || mapX >= L.w) { hit = 1; break; }
-        if (L.map[mapY][mapX] > 0) hit = L.map[mapY][mapX];
+        const v = L.map[mapY][mapX];
+        if (v > 0) {
+          if (v === 6 || v === 7) {
+            // sliding door: panels retract to the sides, ray passes through the growing centre gap
+            const dr = L.doors[mapY * 1000 + mapX];
+            const o = dr ? dr.open : 0;
+            const pd = side === 0 ? (mapX - this.px + (1 - stepX) / 2) / (rdx || 1e-9)
+                                  : (mapY - this.py + (1 - stepY) / 2) / (rdy || 1e-9);
+            let wx = side === 0 ? this.py + pd * rdy : this.px + pd * rdx; wx -= wx | 0;
+            const pan = 0.5 * (1 - o);
+            if (wx > pan && wx < 1 - pan) continue; // open gap
+            hit = v;
+          } else hit = v;
+        }
       }
       const dist = side === 0 ? (mapX - this.px + (1 - stepX) / 2) / (rdx || 1e-9)
                               : (mapY - this.py + (1 - stepY) / 2) / (rdy || 1e-9);
@@ -865,7 +1076,7 @@
       if (trY <= 0.1) continue;
       const sx = ((W / 2) * (1 + trX / trY)) | 0;
       let size = Math.abs((VIEW_H / trY) | 0);
-      let img, yOff = 0;
+      let img, yOff = 0, alpha = 1;
       if (sp.e) {
         const e = sp.e;
         const frames = this.sprites[e.type];
@@ -875,6 +1086,10 @@
             : frames[(e.animT | 0) % 2];
         size = (size * e.cfg.scale) | 0;
         yOff = e.cfg.scale > 1 ? -(size * (e.cfg.scale - 1) * 0.18) : 0;
+        if (e.cfg.ghost && e.state !== "dead") {
+          alpha = 0.5 + 0.22 * Math.sin(e.blink * 6);       // spectral shimmer
+          yOff -= size * (0.06 + 0.04 * Math.sin(e.blink * 3)); // float
+        }
       } else if (sp.barrel) {
         img = this.items.B;
         size = (size * 0.8) | 0;
@@ -887,11 +1102,13 @@
       const y0 = ((VIEW_H - size) / 2 + yOff) | 0;
       const x0 = sx - (size >> 1);
       const colW = Math.max(1, (size / 48) | 0); // finer strips = cleaner wall clipping
+      if (alpha < 1) g.globalAlpha = alpha;
       for (let cx = Math.max(0, x0); cx < Math.min(W, x0 + size); cx += colW) {
         if (this.zbuf[cx] <= trY) continue;
         const u = ((cx - x0) / size) * TEX;
         g.drawImage(img, u, 0, Math.max(1, (colW / size) * TEX), TEX, cx, y0, colW, size);
       }
+      if (alpha < 1) g.globalAlpha = 1;
     }
 
     // ---- projectiles (glowing orbs) ----
@@ -1004,7 +1221,10 @@
     for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) {
       const v = L.map[y][x];
       if (!v) continue;
-      g.fillStyle = v === 5 ? "#ffd75e" : "rgba(150,175,230,0.5)";
+      g.fillStyle = v === 5 ? "#ffd75e"
+                  : v === 7 ? "#ffcf5e"                    // gold door
+                  : v === 6 ? "rgba(138,216,255,0.7)"     // auto door
+                  : "rgba(150,175,230,0.5)";
       g.fillRect(ox + x * sc, oy + y * sc, sc, sc);
     }
     for (let i = 0; i < L.enemies.length; i++) {
@@ -1164,7 +1384,7 @@
     g.font = "bold 8px monospace"; g.fillStyle = "#8d99b8";
     g.fillText("WASD MOVE · ARROWS/MOUSE TURN · SPACE/CLICK FIRE", BW / 2, 148);
     g.fillText("1-3 WEAPONS · M MAP · P PAUSE · R RETRY", BW / 2, 160);
-    g.fillText("3 LEVELS · FIND THE GOLD KEYCARD · SLAY THE CINDER KING", BW / 2, 172);
+    g.fillText("4 LEVELS · 6 DEMON BREEDS · OPEN THE DOORS · SLAY THE CINDER KING", BW / 2, 172);
     if (this.hi > 0) { g.fillStyle = "#ffd75e"; g.fillText("HI-SCORE " + this.hi, BW / 2, 188); }
     g.restore();
   };
