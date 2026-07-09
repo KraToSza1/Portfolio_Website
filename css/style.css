@@ -613,7 +613,7 @@ a:focus-visible,
 
 .about__content-grid{
   display:grid;
-  grid-template-columns:minmax(240px, 340px) 1fr;
+  grid-template-columns:minmax(200px, 260px) 1fr;
   gap:clamp(20px,3vw,34px);
   align-items:start;
 }
@@ -623,6 +623,7 @@ a:focus-visible,
 .about__profile-image{
   margin:0;
   position:relative;
+  width:min(100%, 200px);
   border-radius:var(--radius-lg);
   overflow:hidden;
   border:1px solid var(--line-strong);
@@ -631,7 +632,7 @@ a:focus-visible,
 }
 .about__portrait{
   display:block;width:100%;aspect-ratio:1/1.08;
-  object-fit:cover;object-position:center 30%;
+  object-fit:cover;object-position:center 22%;
 }
 .about__profile-image::after{
   content:"";
@@ -751,7 +752,7 @@ a:focus-visible,
 }
 @media (max-width:560px){
   .about__left-column{grid-template-columns:1fr}
-  .about__profile-image{max-width:260px}
+  .about__profile-image{width:min(100%, 180px)}
   .about__detail-item{grid-template-columns:64px 1fr}
 }
 

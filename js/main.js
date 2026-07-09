@@ -1633,8 +1633,8 @@ const aboutHTML = `
             class="about__portrait"
             src="${PROFILE_SRC}"
             alt="Illustrated portrait of Raymond Van Der Walt in a creative developer workspace"
-            width="680"
-            height="850"
+            width="200"
+            height="216"
             onerror="this.style.display='none'"
             decoding="async"
           />
