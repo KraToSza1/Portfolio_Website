@@ -21,6 +21,7 @@ let soundMuted = false;
 try { soundMuted = localStorage.getItem("rvdw-sound-muted") === "1"; } catch {}
 
 function applySoundState(){
+  window.__RVDW_MUTED = soundMuted; // read by the arcade module
   if (bgMusic)  bgMusic.muted  = soundMuted;
   if (shootSfx) shootSfx.muted = soundMuted;
   if (bgMusic){
@@ -286,6 +287,81 @@ resizeAll();
 try {
   matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`).addEventListener("change", onResize, { passive:true });
 } catch { /* some browsers don't support this exact query */ }
+
+// ========================== WARP FX (built from scratch) ==========================
+// Self-contained hyperspace effect. Design goals:
+//  - runs on ANY canvas-capable browser: no Path2D, no exotic APIs,
+//    zero allocations in the hot loop (no GC hitches)
+//  - constant cost: exactly 3 batched strokes + 1 glow blit per frame,
+//    regardless of star count or warp speed
+//  - time-based motion (identical feel at 30fps or 144fps)
+//  - perspective model: particles accelerate outward from a vanishing
+//    point, streak length grows with speed and distance (like real
+//    light-speed footage), depth sold via 3 brightness/width layers
+const WarpFX = (function () {
+  const LAYERS = [
+    { w: 1.0, a: 0.20, sp: 0.55 },  // far: thin + faint + slow
+    { w: 1.9, a: 0.32, sp: 0.85 },  // mid
+    { w: 3.0, a: 0.46, sp: 1.25 }   // near: thick + bright + fast
+  ];
+  const COUNT = 216; // divisible by 3 layers
+  const parts = [];
+  function seed() {
+    parts.length = 0;
+    for (let i = 0; i < COUNT; i++) {
+      parts.push({
+        ang: Math.random() * Math.PI * 2,
+        dist: 0.05 + Math.pow(Math.random(), 0.6) // 0..1 normalized radius
+      });
+    }
+  }
+  seed();
+
+  function render(ctx, cx, cy, maxR, intensity, dt, tint) {
+    const k = Math.max(0, Math.min(1, intensity));
+    if (k <= 0.01) return;
+
+    // vanishing-point glow (cached sprite, grows with speed)
+    const glow = getWarpGlow();
+    const gr = maxR * (0.35 + 0.45 * k);
+    ctx.globalAlpha = 0.6 * k;
+    ctx.drawImage(glow, cx - gr, cy - gr, gr * 2, gr * 2);
+    ctx.globalAlpha = 1;
+
+    if (reduceMotion) return; // glow only — no rushing streaks
+
+    const dtn = Math.min(3, dt / 16.7); // time-normalized step
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter"; // overlaps build a bright core
+    ctx.lineCap = "round";
+
+    for (let L = 0; L < 3; L++) {
+      const lay = LAYERS[L];
+      ctx.strokeStyle = "rgba(" + tint[0] + "," + tint[1] + "," + tint[2] + "," +
+                        (lay.a * (0.3 + 0.7 * k)).toFixed(3) + ")";
+      ctx.lineWidth = lay.w * (0.5 + 1.7 * k);
+      ctx.beginPath();
+      for (let i = L; i < COUNT; i += 3) {
+        const p = parts[i];
+        // perspective: speed scales with distance from the vanishing point
+        p.dist += (0.0025 + p.dist * 0.065 * lay.sp * k) * dtn;
+        if (p.dist > 1.08) {           // recycle in place — no allocation
+          p.dist = 0.03 + Math.random() * 0.14;
+          p.ang = Math.random() * Math.PI * 2;
+        }
+        const streak = Math.min(0.34, 0.015 + p.dist * 0.38 * k);
+        const d1 = Math.max(0.004, p.dist - streak);
+        const ca = Math.cos(p.ang), sa = Math.sin(p.ang);
+        ctx.moveTo(cx + ca * p.dist * maxR, cy + sa * p.dist * maxR);
+        ctx.lineTo(cx + ca * d1 * maxR, cy + sa * d1 * maxR);
+      }
+      ctx.stroke(); // ONE stroke per layer
+    }
+    ctx.restore();
+  }
+
+  return { render: render, reseed: seed };
+})();
 
 // ========================== STARFIELD ==========================
 let starSpeed = CONFIG.STARS.IDLE_SPEED;
@@ -585,63 +661,9 @@ function renderStars(dt = 16.7) {
     }
     bctx.globalAlpha = 1;
   } else {
-    // --- WARP STREAKS — hyperspace tunnel ---
-    // PERF: this used to be one stroke() call PER STAR (420 path
-    // rasterizations/frame) — the thing that was killing the warp.
-    // Streaks are now grouped into a handful of alpha/width buckets and
-    // stroked as ONE Path2D each (~10 strokes total), drawn additively
-    // so overlapping lines build up a bright light-speed core.
-    const minSide = Math.min(bgW, bgH);
+    // --- WARP — rendered by the WarpFX module (3 strokes + 1 blit total) ---
     const speedNorm = Math.min(1, starSpeed / CONFIG.STARS.WARP_SPEED);
-
-    // soft glow at the vanishing point — sells the "tunnel" read
-    if (speedNorm > 0.15) {
-      const gk = (speedNorm - 0.15) / 0.85;
-      const glow = getWarpGlow();
-      const gr = minSide * (0.45 + 0.5 * gk);
-      bctx.globalAlpha = 0.55 * gk;
-      bctx.drawImage(glow, cx - gr, cy - gr, gr * 2, gr * 2);
-      bctx.globalAlpha = 1;
-    }
-
-    const buckets = new Map();
-    for (let k = 0; k < stars.length; k += step) {
-      const s = stars[k];
-      s.x += s.x * starSpeed + parallaxX * 40;
-      s.y += s.y * starSpeed + parallaxY * 40;
-      if (s.x*s.x + s.y*s.y > (bgW*bgW + bgH*bgH)) resetStar(s);
-
-      // Distance from center: fade lengths/alpha near the center to avoid white-out
-      const dist = Math.hypot(s.x, s.y);
-      const centerFade = Math.min(1, dist / (minSide * 0.36)); // 0 in core → 1 outward
-
-      const len   = Math.min(22, 1 + starSpeed * 620) * (0.25 + 0.75 * centerFade);
-      const alpha = Math.min(0.34, 0.08 + starSpeed * 0.6) * centerFade;
-      const width = Math.max(0.6, starSpeed * 16 * (0.2 + 0.8 * centerFade));
-
-      const aQ = Math.min(7, Math.round(alpha * 20)); // 0..7 alpha buckets
-      if (!aQ) continue;                              // fully faded — skip
-      const wQ = Math.min(5, Math.round(width));      // 1px width buckets
-      const key = aQ * 8 + wQ;
-      let path = buckets.get(key);
-      if (!path) { path = new Path2D(); buckets.set(key, path); }
-      path.moveTo(cx + s.x, cy + s.y);
-      path.lineTo(
-        cx + s.x - (s.x * starSpeed * len),
-        cy + s.y - (s.y * starSpeed * len)
-      );
-    }
-
-    bctx.save();
-    bctx.globalCompositeOperation = "lighter";
-    bctx.lineCap = "round";
-    for (const [key, path] of buckets) {
-      const aQ = (key / 8) | 0, wQ = key % 8;
-      bctx.strokeStyle = `rgba(${starTint[0]},${starTint[1]},${starTint[2]},${aQ / 20})`;
-      bctx.lineWidth = Math.max(0.6, wQ);
-      bctx.stroke(path);
-    }
-    bctx.restore();
+    WarpFX.render(bctx, cx, cy, Math.hypot(bgW, bgH) * 0.56, speedNorm, dt, starTint);
   }
   updateMeteors(bctx);
 }
@@ -893,6 +915,19 @@ const CASE_C = {
   video:"assets/videos/A Basic Dungeon.mp4",
   links:[]
 };
+const CASE_W4D = {
+  title:"Whats4Dinner.com",
+  summary:"My own shipped product: a live meal-planning and recipe web app, running in production right now.",
+  role:"Design · Build · Ship (solo founder)",
+  stack:["React","TypeScript","OAuth","Product Design","Deployment"],
+  points:[
+    "Built end-to-end and running live at whts4dinner.com.",
+    "OAuth sign-in with real user accounts.",
+    "Recipe discovery and “what’s for dinner?” planning flows.",
+    "Designed, developed, deployed and maintained solo — the full product lifecycle."
+  ],
+  links:[{ label:"Visit whts4dinner.com →", href:"https://whts4dinner.com" }]
+};
 const CASE_D = {
   title:"Farmily — Mobile Foundations",
   summary:"Expo/React Native app skeleton with auth and payments plan.",
@@ -1063,10 +1098,15 @@ const aboutHTML = `
             using UE5, React, TypeScript, and Canvas/WebGL.
           </p>
           <p class="about__bio-text">
-            I love <strong class="highlight">tuning feel</strong>, building 
-            <strong class="highlight">micro-feedback</strong>, and keeping 
-            <strong class="highlight">frame time lean</strong> so polish never costs performance. 
+            I love <strong class="highlight">tuning feel</strong>, building
+            <strong class="highlight">micro-feedback</strong>, and keeping
+            <strong class="highlight">frame time lean</strong> so polish never costs performance.
             I collaborate tightly with design, wire UI to real game states, and ship clean, maintainable systems.
+          </p>
+          <p class="about__bio-text">
+            I also ship my own products — like
+            <a href="https://whts4dinner.com" target="_blank" rel="noopener"><strong class="highlight">Whats4Dinner.com</strong></a>,
+            a live meal-planning app I designed, built and run solo.
           </p>
         </div>
       </div>
@@ -1078,7 +1118,14 @@ const aboutHTML = `
           <div class="about__detail-section">
             <h4 class="about__detail-title">Experience</h4>
             <div class="about__detail-item">
-              <div class="detail-item__years">2022-24</div>
+              <div class="detail-item__years">2025</div>
+              <div class="detail-item__desc">
+                <strong>Whats4Dinner.com — Founder &amp; Developer</strong><br>
+                Designed, built and shipped a live meal-planning web app with OAuth accounts — running in production.
+              </div>
+            </div>
+            <div class="about__detail-item">
+              <div class="detail-item__years">2022-25</div>
               <div class="detail-item__desc">
                 <strong>Frontend &amp; Game Developer</strong><br>
                 Building cinematic UI systems, HUDs, and performance-first web experiences with UE5, React, and WebGL.
@@ -1183,9 +1230,9 @@ const aboutHTML = `
   </div>
 `;
 
-// ---------- Services (Hire Me planet) ----------
+// ---------- Work With Me (services + contact merged into one panel) ----------
 const SERVICES = SITE.services || {};
-function servicesHTML(){
+function workWithMeHTML(){
   const tiers = (SERVICES.tiers || []).map(t => `
     <article class="price-card${t.featured ? " price-card--featured" : ""}">
       ${t.featured ? `<div class="price-card__flag">Most popular</div>` : ""}
@@ -1200,11 +1247,34 @@ function servicesHTML(){
     <div class="price-grid">${tiers}</div>
     ${includes ? `<p class="subhead">Every project includes</p><div class="badges">${includes}</div>` : ""}
     ${SERVICES.note ? `<p class="input-help" style="margin-top:12px">${SERVICES.note}</p>` : ""}
-    <div class="link-row" style="margin-top:16px">
-      <button class="btn" id="svc-contact" type="button">Start a project</button>
-      <a class="link-btn" href="${LINKS.email}">${ICONS.email}Email me</a>
-      <a class="link-btn" href="${LINKS.linkedin}" target="_blank" rel="noopener">${ICONS.linkedin}LinkedIn</a>
+    <p class="subhead" style="margin-top:20px">Start your project</p>
+    ${CONTACT_HTML}`;
+}
+
+// ---------- Arcade (retro FPS, lazy-loaded) ----------
+function arcadeHTML(){
+  return `
+    <p>A tiny retro FPS I built from scratch in a canvas — raycast walls, angry demons,
+    two levels. No engine, no libraries: the same kind of rendering tech behind the
+    1993 classics, running live in your browser.</p>
+    <div class="arcade">
+      <canvas id="arcade-canvas" width="320" height="200" tabindex="0" aria-label="Retro FPS game"></canvas>
+      <div class="arcade__controls">
+        <span><strong>WASD / ↑↓</strong> move</span>
+        <span><strong>←→ or mouse</strong> turn</span>
+        <span><strong>Space / click</strong> shoot</span>
+        <span><strong>R</strong> restart</span>
+      </div>
     </div>`;
+}
+function openArcadePanel(){
+  openLanding("Inferno — Retro FPS", arcadeHTML());
+  if (window.initArcade) { window.initArcade("arcade-canvas"); return; }
+  const s = document.createElement("script");
+  s.src = "js/arcade.js";
+  s.onload = () => { if (window.initArcade) window.initArcade("arcade-canvas"); };
+  s.onerror = () => { const el = document.getElementById("landing-body"); if (el) el.insertAdjacentHTML("beforeend", "<p>Couldn't load the game module.</p>"); };
+  document.head.appendChild(s);
 }
 
 // ---------- Projects (rich details) ----------
@@ -1392,11 +1462,12 @@ const ROOMS = [
     { name: NAMES[7], px: 47, py: 42, r: 36, planet: PLANETS.aqua,   label: "Projects",        action: () => openLanding("Projects", projectsHTML()), warp: "theme-cyan",   ringTilt:  0.32 },
     { name: NAMES[9], px: 60, py: 18, r: 34, planet: PLANETS.violet, label: "Certifications",  action: () => openLanding("Certifications", certificationsHTML()), warp: "theme-violet", ringTilt: -0.38 },
     { name: SKILLS_PLANET.name, px: 75, py: 68, r: SKILLS_PLANET.r, planet: SKILLS_PLANET.planet, label: SKILLS_PLANET.label, action: () => openLanding("Skills", renderSkillsHTML()), asteroids: SKILLS_PLANET.asteroids, warp: WARP_THEME[skillsCfg.palette || "violet"] || "theme-violet" },
-    { name: NAMES[6], px: 78, py: 22, r: 40, planet: PLANETS.coral,  label: "Contact",         action: () => openLanding("Contact", CONTACT_HTML), warp: "theme-magma" },
-    { name: "Aurum", px: 14, py: 70, r: 40, planet: PLANETS.amber, label: "Hire Me", action: () => openLanding("Hire Me — Web Design", servicesHTML()), warp: "theme-magma", noSprite: true },
+    { name: "Aurum", px: 78, py: 22, r: 42, planet: PLANETS.amber, label: "Work With Me", action: () => openLanding("Work With Me", workWithMeHTML()), warp: "theme-magma", noSprite: true },
+    { name: "Inferno", px: 14, py: 70, r: 40, planet: PLANETS.coral, label: "Arcade", action: () => openArcadePanel(), warp: "theme-magma", noSprite: true },
     { name: NAMES[3], px: 42, py: 74, r: 40, planet: PLANETS.mint,   label: "Solar System →",     action: () => setRoom(1), warp: "theme-emerald" },
   ]},
   { targets: [
+    { name: "Verdis", px:50, py:44, r:44, planet: PLANETS.mint, label:"Whats4Dinner.com", action: () => openLanding("Whats4Dinner.com — Live Product", caseStudyHTML(CASE_W4D)), warp: "theme-emerald", noSprite: true, ringTilt: 0.3 },
     { name: NAMES[1], px:28, py:30, r:42, planet: PLANETS.aqua,   label:"Case Study A", action: () => openLanding("Case Study A", caseStudyHTML(CASE_A)), warp: "theme-cyan",   ringTilt:  0.22 },
     { name: NAMES[4], px:72, py:30, r:48, planet: PLANETS.coral,  label:"Case Study B", action: () => openLanding("Case Study B", caseStudyHTML(CASE_B)), warp: "theme-magma" },
     { name: NAMES[8], px:30, py:72, r:44, planet: PLANETS.violet, label:"Case Study C", action: () => openLanding("Case Study C", caseStudyHTML(CASE_C)), warp: "theme-violet", ringTilt: -0.28 },
@@ -1848,8 +1919,13 @@ function ensureLanding(){
       <div id="landing-body"></div>
     </div>`;
   document.body.appendChild(landing);
-  landing.querySelector(".landing__close").addEventListener("click", () => { landing.hidden = true; });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && landing && !landing.hidden) landing.hidden = true; });
+  landing.querySelector(".landing__close").addEventListener("click", closeLanding);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && landing && !landing.hidden) closeLanding(); });
+}
+function closeLanding(){
+  if (!landing) return;
+  landing.hidden = true;
+  if (window.destroyArcade) window.destroyArcade(); // stop the game loop if running
 }
 function setLandingBackgroundByPlanet(t){
   ensureLanding();
@@ -1875,14 +1951,12 @@ function refreshSkillBars(){
 
 function openLanding(title, html){
   ensureLanding();
+  if (window.destroyArcade) window.destroyArcade(); // leaving the arcade for another panel
   landing.querySelector("#landing-title").textContent = title;
   landing.querySelector("#landing-body").innerHTML = html;
   landing.hidden = false;
   if (landing.querySelector("#contact-form")) bindContactForm();
   if (landing.querySelector(".skills")) refreshSkillBars();
-  // "Start a project" on the services panel jumps to the contact form
-  const svcBtn = landing.querySelector("#svc-contact");
-  if (svcBtn) svcBtn.addEventListener("click", () => openLanding("Contact", CONTACT_HTML), { once: true });
 }
 
 // ========================== INPUT ==========================
@@ -1897,7 +1971,7 @@ document.addEventListener("mousemove", (e) => {
 // Shared "fly to planet and open it" behaviour (canvas click, keyboard, quick nav)
 function engageTarget(t){
   if (cam.active || cam.arriving || ship.moving) return;
-  if (landing && !landing.hidden) landing.hidden = true;
+  if (landing && !landing.hidden) closeLanding();
   const tx = toPx(t.px, width), ty = toPx(t.py, height);
   const ring = document.createElement("div");
   ring.className = "flash"; ring.style.left = tx + "px"; ring.style.top = ty + "px";
@@ -1919,6 +1993,7 @@ ui.addEventListener("click", (e) => {
 
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Enter" || cam.active || cam.arriving || ship.moving) return;
+  if (landing && !landing.hidden) return; // don't hijack keys while a panel is open
   if (lastHoveredIndex < 0) return;
   engageTarget(TARGETS[lastHoveredIndex]);
   noteInput();

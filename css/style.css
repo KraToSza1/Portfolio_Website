@@ -884,6 +884,35 @@ a:focus-visible,
 }
 
 /* ==========================================================================
+   ARCADE (retro FPS)
+   ========================================================================== */
+.arcade{
+  display:grid;gap:10px;
+  margin-top:14px;
+}
+.arcade canvas{
+  width:100%;
+  aspect-ratio:16/10;
+  display:block;
+  background:#000;
+  border:1px solid var(--line-strong);
+  border-radius:10px;
+  outline:none;
+  cursor:crosshair;
+  /* chunky retro pixels — never smooth the upscale */
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+  box-shadow:0 18px 50px rgba(0,0,0,.5), 0 0 40px rgba(255,93,82,.08);
+}
+.arcade canvas:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.arcade__controls{
+  display:flex;flex-wrap:wrap;gap:8px 18px;
+  color:var(--ink-dim);
+  font-size:.82rem;
+}
+.arcade__controls strong{color:var(--gold);font-weight:600}
+
+/* ==========================================================================
    MISC COMPONENTS
    ========================================================================== */
 .video-wrap{
