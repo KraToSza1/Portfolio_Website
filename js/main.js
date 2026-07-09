@@ -858,32 +858,135 @@ function casePreviewGallery(cs){
   if (!shots.length) return `<div class="case__preview-empty">Preview coming soon</div>`;
 
   const main = shots[0];
+  const listAttr = shots.map(s => encodeURIComponent(s)).join("|");
   const thumbs = shots.map((src, i) => `
-    <button type="button" class="case__thumb${i === 0 ? " is-active" : ""}" data-preview-src="${src}" aria-label="Show preview ${i + 1}">
+    <button type="button" class="case__thumb${i === 0 ? " is-active" : ""}" data-preview-src="${src}" data-preview-index="${i}" aria-label="Show preview ${i + 1}">
       <img src="${src}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'">
     </button>`).join("");
 
   return `
-    <div class="case__gallery" data-case-gallery>
-      <div class="case__preview-frame">
+    <div class="case__gallery" data-case-gallery data-preview-list="${listAttr}">
+      <button type="button" class="case__preview-frame" data-open-lightbox aria-label="Open preview fullscreen">
         <img class="case__hero" src="${main}" alt="${cs.title} preview" loading="lazy" decoding="async"
           onerror="this.onerror=null;this.src='${cs.thumb || fallback || ""}';">
-      </div>
+        <span class="case__zoom-hint" aria-hidden="true">Click to enlarge</span>
+      </button>
       ${shots.length > 1 ? `<div class="case__thumbs">${thumbs}</div>` : ""}
     </div>`;
+}
+
+let lightbox;
+let lightboxState = { srcs: [], index: 0 };
+
+function ensureLightbox(){
+  if (lightbox) return lightbox;
+  lightbox = document.createElement("div");
+  lightbox.id = "preview-lightbox";
+  lightbox.hidden = true;
+  lightbox.setAttribute("role", "dialog");
+  lightbox.setAttribute("aria-modal", "true");
+  lightbox.setAttribute("aria-label", "Image preview");
+  lightbox.innerHTML = `
+    <div class="lightbox__backdrop" data-lightbox-close></div>
+    <div class="lightbox__dialog">
+      <button type="button" class="lightbox__close" data-lightbox-close aria-label="Close preview">×</button>
+      <button type="button" class="lightbox__nav lightbox__nav--prev" data-lightbox-prev aria-label="Previous image">‹</button>
+      <figure class="lightbox__figure">
+        <img class="lightbox__img" alt="Project preview">
+        <figcaption class="lightbox__caption"></figcaption>
+      </figure>
+      <button type="button" class="lightbox__nav lightbox__nav--next" data-lightbox-next aria-label="Next image">›</button>
+    </div>`;
+  document.body.appendChild(lightbox);
+
+  lightbox.addEventListener("click", (e) => {
+    if (e.target.closest("[data-lightbox-close]")) closeLightbox();
+    else if (e.target.closest("[data-lightbox-prev]")) stepLightbox(-1);
+    else if (e.target.closest("[data-lightbox-next]")) stepLightbox(1);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (!lightbox || lightbox.hidden) return;
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeLightbox(); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); stepLightbox(-1); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); stepLightbox(1); }
+  }, true);
+
+  return lightbox;
+}
+
+function renderLightbox(){
+  if (!lightbox) return;
+  const { srcs, index } = lightboxState;
+  const img = lightbox.querySelector(".lightbox__img");
+  const caption = lightbox.querySelector(".lightbox__caption");
+  const prev = lightbox.querySelector("[data-lightbox-prev]");
+  const next = lightbox.querySelector("[data-lightbox-next]");
+  const src = srcs[index] || "";
+  img.src = src;
+  caption.textContent = srcs.length > 1 ? `${index + 1} / ${srcs.length}` : "";
+  const multi = srcs.length > 1;
+  prev.hidden = !multi;
+  next.hidden = !multi;
+}
+
+function openLightbox(srcs, index = 0){
+  const list = (srcs || []).filter(Boolean);
+  if (!list.length) return;
+  ensureLightbox();
+  lightboxState = { srcs: list, index: Math.max(0, Math.min(index, list.length - 1)) };
+  renderLightbox();
+  lightbox.hidden = false;
+  document.documentElement.classList.add("lightbox-open");
+  lightbox.querySelector(".lightbox__close")?.focus?.();
+}
+
+function closeLightbox(){
+  if (!lightbox || lightbox.hidden) return;
+  lightbox.hidden = true;
+  document.documentElement.classList.remove("lightbox-open");
+  const img = lightbox.querySelector(".lightbox__img");
+  if (img) img.removeAttribute("src");
+}
+
+function stepLightbox(delta){
+  const { srcs } = lightboxState;
+  if (!srcs.length) return;
+  lightboxState.index = (lightboxState.index + delta + srcs.length) % srcs.length;
+  renderLightbox();
 }
 
 function bindCaseGalleries(root){
   root?.querySelectorAll?.("[data-case-gallery]")?.forEach(gallery => {
     const hero = gallery.querySelector(".case__hero");
+    const list = (gallery.getAttribute("data-preview-list") || "")
+      .split("|")
+      .map(s => { try { return decodeURIComponent(s); } catch { return s; } })
+      .filter(Boolean);
+
+    const setActive = (src, index) => {
+      if (hero && src) hero.src = src;
+      gallery.querySelectorAll(".case__thumb").forEach(b => b.classList.remove("is-active"));
+      const active = gallery.querySelector(`.case__thumb[data-preview-index="${index}"]`);
+      active?.classList.add("is-active");
+    };
+
     gallery.querySelectorAll(".case__thumb").forEach(btn => {
       btn.addEventListener("click", () => {
         const src = btn.getAttribute("data-preview-src");
-        if (!src || !hero) return;
-        hero.src = src;
-        gallery.querySelectorAll(".case__thumb").forEach(b => b.classList.remove("is-active"));
-        btn.classList.add("is-active");
+        const index = Number(btn.getAttribute("data-preview-index") || 0);
+        setActive(src, index);
       });
+      btn.addEventListener("dblclick", () => {
+        const index = Number(btn.getAttribute("data-preview-index") || 0);
+        openLightbox(list, index);
+      });
+    });
+
+    gallery.querySelector("[data-open-lightbox]")?.addEventListener("click", () => {
+      const currentSrc = hero?.getAttribute("src") || list[0];
+      const index = Math.max(0, list.indexOf(currentSrc));
+      openLightbox(list, index === -1 ? 0 : index);
     });
   });
 }
@@ -2308,10 +2411,15 @@ function ensureLanding(){
     </div>`;
   document.body.appendChild(landing);
   landing.querySelector(".landing__close").addEventListener("click", closeLanding);
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && landing && !landing.hidden) closeLanding(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (lightbox && !lightbox.hidden) return; // lightbox owns Escape
+    if (landing && !landing.hidden) closeLanding();
+  });
 }
 function closeLanding(){
   if (!landing) return;
+  closeLightbox();
   landing.hidden = true;
   if (window.destroyArcade) window.destroyArcade(); // stop the game loop if running
 }

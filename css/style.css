@@ -823,15 +823,41 @@ a:focus-visible,
 .case__media{display:grid;gap:12px;min-width:0}
 .case__gallery{display:grid;gap:10px}
 .case__preview-frame{
+  appearance:none;display:block;width:100%;padding:0;margin:0;cursor:zoom-in;
   position:relative;border-radius:12px;overflow:hidden;
   border:1px solid var(--line);
   background:linear-gradient(160deg,#10141c,#0a0f1f);
   box-shadow:0 10px 28px rgba(0,0,0,.28);
   min-height:160px;
+  transition:border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.case__preview-frame:hover{
+  border-color:rgba(138,216,255,.45);
+  transform:translateY(-1px);
+  box-shadow:0 14px 34px rgba(0,0,0,.35), 0 0 0 1px rgba(138,216,255,.15);
+}
+.case__preview-frame:focus-visible{
+  outline:2px solid rgba(138,216,255,.65);
+  outline-offset:2px;
 }
 .case__hero{
   display:block;width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top center;
   background:linear-gradient(160deg,#10141c,#0a0f1f);
+  pointer-events:none;
+}
+.case__zoom-hint{
+  position:absolute;right:10px;bottom:10px;
+  padding:5px 10px;border-radius:999px;
+  font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:#d5efff;background:rgba(4,8,18,.72);
+  border:1px solid rgba(138,216,255,.35);
+  opacity:0;transform:translateY(4px);
+  transition:opacity .15s ease, transform .15s ease;
+  pointer-events:none;
+}
+.case__preview-frame:hover .case__zoom-hint,
+.case__preview-frame:focus-visible .case__zoom-hint{
+  opacity:1;transform:translateY(0);
 }
 .case__preview-empty{
   display:grid;place-items:center;aspect-ratio:16/9;border-radius:12px;
@@ -854,6 +880,76 @@ a:focus-visible,
 .case__thumb.is-active{
   opacity:1;border-color:rgba(138,216,255,.55);
   box-shadow:0 0 0 1px rgba(138,216,255,.25);
+}
+
+/* Preview lightbox */
+html.lightbox-open{overflow:hidden}
+#preview-lightbox{
+  position:fixed;inset:0;z-index:80;
+  display:grid;place-items:center;
+  padding:clamp(12px,3vw,28px);
+}
+#preview-lightbox[hidden]{display:none}
+.lightbox__backdrop{
+  position:absolute;inset:0;
+  background:rgba(2,4,10,.82);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.lightbox__dialog{
+  position:relative;z-index:1;
+  width:min(1120px,100%);
+  max-height:min(92vh,100%);
+  display:grid;place-items:center;
+}
+.lightbox__figure{
+  margin:0;width:100%;
+  display:grid;gap:10px;justify-items:center;
+}
+.lightbox__img{
+  display:block;max-width:100%;max-height:min(78vh,860px);
+  width:auto;height:auto;object-fit:contain;
+  border-radius:14px;border:1px solid rgba(255,255,255,.14);
+  background:#070b14;
+  box-shadow:0 24px 80px rgba(0,0,0,.55);
+  animation:lightboxIn .22s ease both;
+}
+.lightbox__caption{
+  font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-dim);
+}
+.lightbox__close,
+.lightbox__nav{
+  appearance:none;border:1px solid rgba(255,255,255,.18);
+  background:rgba(10,14,24,.82);color:var(--ink);
+  cursor:pointer;transition:background .15s ease, border-color .15s ease, transform .12s ease;
+}
+.lightbox__close{
+  position:absolute;top:-6px;right:-6px;z-index:2;
+  width:44px;height:44px;border-radius:999px;
+  font-size:1.6rem;line-height:1;
+}
+.lightbox__close:hover,
+.lightbox__nav:hover{
+  background:rgba(255,224,129,.12);
+  border-color:rgba(255,224,129,.4);
+}
+.lightbox__nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:46px;height:46px;border-radius:999px;
+  font-size:1.8rem;line-height:1;
+}
+.lightbox__nav--prev{left:clamp(0px,1vw,8px)}
+.lightbox__nav--next{right:clamp(0px,1vw,8px)}
+.lightbox__nav:active{transform:translateY(-50%) scale(.96)}
+@keyframes lightboxIn{
+  from{opacity:0;transform:scale(.97)}
+  to{opacity:1;transform:scale(1)}
+}
+@media (max-width:720px){
+  .lightbox__nav{width:40px;height:40px;font-size:1.5rem}
+  .lightbox__close{top:0;right:0}
+  .case__zoom-hint{opacity:.9;transform:none}
 }
 .case__media .video-wrap{
   border-radius:12px;overflow:hidden;border:1px solid var(--line);
@@ -1125,7 +1221,7 @@ button.link-btn{
   .crawl{animation:none;transform:none}
   .warp{transition:none}
   .skill__fill{animation:none;width:var(--w)}
-  .card--project,.status-badge--live::before{animation:none}
+  .card--project,.status-badge--live::before,.lightbox__img{animation:none}
   #landing:not([hidden]) .landing__panel{animation:none}
 }
 
