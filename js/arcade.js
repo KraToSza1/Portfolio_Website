@@ -580,11 +580,124 @@
     canvas.addEventListener("mousedown", this._md);
     addEventListener("mouseup", this._mu);
     addEventListener("mousemove", this._mm);
+    this.bindTouchControls();
     canvas.focus();
 
     this.loop = this.loop.bind(this);
     this._raf = requestAnimationFrame(this.loop);
   }
+
+  Game.prototype.bindTouchControls = function () {
+    const self = this;
+    const root = document.getElementById("arcade-touch");
+    if (!root) return;
+    this._touchRoot = root;
+    root.setAttribute("aria-hidden", "false");
+
+    const setKey = (k, on) => {
+      if (!k) return;
+      self.keys[k] = !!on;
+      if (on) self.press(k);
+    };
+
+    // Virtual stick → WASD
+    const stick = root.querySelector("[data-stick]");
+    const knob = root.querySelector("[data-stick-knob]");
+    let stickId = null;
+    const stickCenter = () => {
+      const r = stick.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2, max: Math.min(r.width, r.height) * 0.34 };
+    };
+    const applyStick = (clientX, clientY) => {
+      const c = stickCenter();
+      let dx = clientX - c.x, dy = clientY - c.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const clamped = Math.min(len, c.max);
+      dx = (dx / len) * clamped; dy = (dy / len) * clamped;
+      if (knob) {
+        knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+      }
+      const nx = dx / c.max, ny = dy / c.max;
+      setKey("w", ny < -0.28);
+      setKey("s", ny > 0.28);
+      setKey("a", nx < -0.28);
+      setKey("d", nx > 0.28);
+    };
+    const resetStick = () => {
+      stickId = null;
+      setKey("w", false); setKey("a", false); setKey("s", false); setKey("d", false);
+      if (knob) knob.style.transform = "translate(-50%, -50%)";
+    };
+    stick?.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      stick.setPointerCapture?.(e.pointerId);
+      stickId = e.pointerId;
+      applyStick(e.clientX, e.clientY);
+    }, { passive: false });
+    stick?.addEventListener("pointermove", (e) => {
+      if (stickId !== e.pointerId) return;
+      e.preventDefault();
+      applyStick(e.clientX, e.clientY);
+    }, { passive: false });
+    const endStick = (e) => {
+      if (stickId !== null && e.pointerId !== stickId) return;
+      resetStick();
+    };
+    stick?.addEventListener("pointerup", endStick);
+    stick?.addEventListener("pointercancel", endStick);
+
+    // Look pad → rotate + tap to start/advance menus
+    const look = root.querySelector("[data-look]");
+    let lookId = null, lookX = 0;
+    look?.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      look.setPointerCapture?.(e.pointerId);
+      lookId = e.pointerId;
+      lookX = e.clientX;
+      if (self.mode !== "play") self.press(" ");
+    }, { passive: false });
+    look?.addEventListener("pointermove", (e) => {
+      if (lookId !== e.pointerId || self.mode !== "play") return;
+      e.preventDefault();
+      const dx = e.clientX - lookX;
+      lookX = e.clientX;
+      self.rotate(dx * 0.0085);
+    }, { passive: false });
+    const endLook = (e) => {
+      if (lookId !== null && e.pointerId !== lookId) return;
+      lookId = null;
+    };
+    look?.addEventListener("pointerup", endLook);
+    look?.addEventListener("pointercancel", endLook);
+
+    // Fire hold
+    const fire = root.querySelector("[data-touch-fire]");
+    const fireDown = (e) => {
+      e.preventDefault();
+      audio();
+      if (self.mode !== "play") { self.press(" "); return; }
+      self.mdown = true;
+      self.tryFire();
+    };
+    const fireUp = () => { self.mdown = false; };
+    fire?.addEventListener("pointerdown", fireDown, { passive: false });
+    fire?.addEventListener("pointerup", fireUp);
+    fire?.addEventListener("pointercancel", fireUp);
+    fire?.addEventListener("pointerleave", fireUp);
+
+    // Weapon / map buttons
+    root.querySelectorAll("[data-touch-key]").forEach((btn) => {
+      const key = btn.getAttribute("data-touch-key");
+      btn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        setKey(key, true);
+      }, { passive: false });
+      btn.addEventListener("pointerup", () => setKey(key, false));
+      btn.addEventListener("pointercancel", () => setKey(key, false));
+    });
+
+    this._resetTouch = resetStick;
+  };
 
   Game.prototype.setResolution = function (s) {
     SCALE = s;
@@ -1500,6 +1613,7 @@
     removeEventListener("mousemove", this._mm);
     removeEventListener("mouseup", this._mu);
     this.canvas.removeEventListener("mousedown", this._md);
+    if (this._resetTouch) try { this._resetTouch(); } catch (e) {}
     if (document.pointerLockElement === this.canvas && document.exitPointerLock) {
       try { document.exitPointerLock(); } catch (e) {}
     }

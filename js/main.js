@@ -1747,13 +1747,29 @@ function arcadeHTML(){
     fight across four levels. No engine, no libraries, no image files: everything is
     code, the same rendering tech behind the 1993 classics.</p>
     <div class="arcade">
-      <canvas id="arcade-canvas" width="320" height="200" tabindex="0" aria-label="Retro FPS game"></canvas>
+      <div class="arcade__stage">
+        <canvas id="arcade-canvas" width="320" height="200" tabindex="0" aria-label="Retro FPS game"></canvas>
+        <div class="arcade__touch" id="arcade-touch" aria-hidden="true">
+          <div class="arcade__stick" id="arcade-stick" data-stick>
+            <div class="arcade__stick-base"></div>
+            <div class="arcade__stick-knob" data-stick-knob></div>
+            <span class="arcade__stick-label">Move</span>
+          </div>
+          <div class="arcade__actions">
+            <button type="button" class="arcade__btn" data-touch-key="1" aria-label="Pistol">1</button>
+            <button type="button" class="arcade__btn" data-touch-key="2" aria-label="Shotgun">2</button>
+            <button type="button" class="arcade__btn" data-touch-key="3" aria-label="Plasma">3</button>
+            <button type="button" class="arcade__btn arcade__btn--map" data-touch-key="m" aria-label="Map">Map</button>
+            <button type="button" class="arcade__btn arcade__btn--fire" data-touch-fire aria-label="Fire">Fire</button>
+          </div>
+          <div class="arcade__look" id="arcade-look" data-look>
+            <span class="arcade__look-label">Drag to aim</span>
+          </div>
+        </div>
+      </div>
       <div class="arcade__controls">
-        <span><strong>WASD / ↑↓</strong> move</span>
-        <span><strong>Mouse / ←→</strong> aim</span>
-        <span><strong>Hold click / Space</strong> fire</span>
-        <span><strong>1–3</strong> weapons</span>
-        <span><strong>M</strong> map · <strong>P</strong> pause · <strong>R</strong> retry</span>
+        <span><strong>Desktop:</strong> WASD move · mouse aim · click/space fire · 1–3 weapons · M map · P pause</span>
+        <span class="arcade__controls-mobile"><strong>Mobile:</strong> left stick move · right pad aim · Fire button · 1–3 weapons</span>
       </div>
     </div>`;
 }
