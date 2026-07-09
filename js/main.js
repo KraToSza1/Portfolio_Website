@@ -851,14 +851,48 @@ function renderVideo(url){
 }
 
 // ---------- Case studies ----------
+function casePreviewGallery(cs){
+  const shots = Array.isArray(cs.previews) ? cs.previews.filter(Boolean) : [];
+  const fallback = cs.hero || cs.thumb || "";
+  if (!shots.length && fallback) shots.push(fallback);
+  if (!shots.length) return `<div class="case__preview-empty">Preview coming soon</div>`;
+
+  const main = shots[0];
+  const thumbs = shots.map((src, i) => `
+    <button type="button" class="case__thumb${i === 0 ? " is-active" : ""}" data-preview-src="${src}" aria-label="Show preview ${i + 1}">
+      <img src="${src}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'">
+    </button>`).join("");
+
+  return `
+    <div class="case__gallery" data-case-gallery>
+      <div class="case__preview-frame">
+        <img class="case__hero" src="${main}" alt="${cs.title} preview" loading="lazy" decoding="async"
+          onerror="this.onerror=null;this.src='${cs.thumb || fallback || ""}';">
+      </div>
+      ${shots.length > 1 ? `<div class="case__thumbs">${thumbs}</div>` : ""}
+    </div>`;
+}
+
+function bindCaseGalleries(root){
+  root?.querySelectorAll?.("[data-case-gallery]")?.forEach(gallery => {
+    const hero = gallery.querySelector(".case__hero");
+    gallery.querySelectorAll(".case__thumb").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const src = btn.getAttribute("data-preview-src");
+        if (!src || !hero) return;
+        hero.src = src;
+        gallery.querySelectorAll(".case__thumb").forEach(b => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+      });
+    });
+  });
+}
+
 function caseStudyHTML(cs){
   const pills = (cs.stack||cs.tags||[]).map(t=>`<span class="pill">${t}</span>`).join("");
   const bullets = (cs.points||cs.bullets||[]).map(b=>`<li>${b}</li>`).join("");
   const links = (cs.links||[]).map(l=>`<a class="link-btn" href="${l.href}" target="_blank" rel="noopener">${l.label}</a>`).join("");
-  const heroSrc = cs.hero || cs.thumb || "";
-  const hero = heroSrc
-    ? `<img class="case__hero" src="${heroSrc}" alt="${cs.title} preview" loading="lazy" onerror="this.style.display='none'">`
-    : "";
+  const gallery = casePreviewGallery(cs);
   const video = cs.video ? renderVideo(cs.video) : "";
   const badge = cs.status === "live"
     ? `<span class="status-badge status-badge--live">Live</span>`
@@ -879,7 +913,7 @@ function caseStudyHTML(cs){
   return `
     <article class="case case--rich">
       <div class="case__media">
-        ${hero}${video}
+        ${gallery}${video}
       </div>
       <div class="case__body">
         <div class="case__heading">
@@ -922,6 +956,11 @@ const CASE_A = {
   ],
   hero:"assets/images/cases/Demo.png",
   thumb:"assets/images/thumb-hud.svg",
+  previews:[
+    "assets/images/cases/Demo.png",
+    "assets/images/cases/1.jpg",
+    "assets/images/cases/3.jpg"
+  ],
   video:"assets/videos/Horror.mp4",
   links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/HorrorFPS" }]
 };
@@ -947,8 +986,14 @@ const CASE_B = {
     "Export pipeline with embedded signatures (prototype).",
     "Production-ready demo path for client walkthroughs."
   ],
-  hero:"assets/images/cases/willtool.png",
+  hero:"assets/images/cases/previews/will/01-home.jpg",
   thumb:"assets/images/thumb-willtool.svg",
+  previews:[
+    "assets/images/cases/previews/will/01-home.jpg",
+    "assets/images/cases/previews/will/02-scroll.jpg",
+    "assets/images/cases/previews/will/03-mobile.jpg",
+    "assets/images/cases/willtool.png"
+  ],
   video:"",
   links:[
     { label:"Open live demo →", href:"https://mvp-tool-will-form-generator.vercel.app" },
@@ -980,6 +1025,11 @@ const CASE_C = {
   ],
   hero:"assets/images/cases/Equipped Axe.png",
   thumb:"assets/images/thumb-commonui.svg",
+  previews:[
+    "assets/images/cases/Equipped Axe.png",
+    "assets/images/cases/4.jpg",
+    "assets/images/cases/1.jpg"
+  ],
   video:"assets/videos/A Basic Dungeon.mp4",
   links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/SlashRPG" }]
 };
@@ -1008,8 +1058,13 @@ const CASE_W4D = {
     "Stripe-ready billing path for paid tiers.",
     "Designed, developed, deployed and maintained solo."
   ],
-  hero:"assets/images/thumb-w4d.svg",
+  hero:"assets/images/cases/previews/w4d/01-home.jpg",
   thumb:"assets/images/thumb-w4d.svg",
+  previews:[
+    "assets/images/cases/previews/w4d/01-home.jpg",
+    "assets/images/cases/previews/w4d/02-search.jpg",
+    "assets/images/cases/previews/w4d/03-mobile.jpg"
+  ],
   video:"",
   links:[
     { label:"Visit whts4dinner.com →", href:"https://whts4dinner.com" },
@@ -1040,6 +1095,11 @@ const CASE_D = {
   ],
   hero:"assets/images/cases/2.jpg",
   thumb:"assets/images/thumb-farmily.svg",
+  previews:[
+    "assets/images/cases/2.jpg",
+    "assets/images/thumb-farmily.svg",
+    "assets/images/cases/3.jpg"
+  ],
   video:"",
   links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/Farmilly_Mobile_App" }]
 };
@@ -1064,8 +1124,13 @@ const CASE_STORIQ = {
     "Consistency checks aimed at local SEO fields and messaging.",
     "Shipped as a usable production-style tool, not just a mock."
   ],
-  hero:"assets/images/thumb-storiq.svg",
+  hero:"assets/images/cases/previews/storiq/01-home.jpg",
   thumb:"assets/images/thumb-storiq.svg",
+  previews:[
+    "assets/images/cases/previews/storiq/01-home.jpg",
+    "assets/images/cases/previews/storiq/02-scroll.jpg",
+    "assets/images/cases/previews/storiq/03-mobile.jpg"
+  ],
   video:"",
   links:[
     { label:"Open live app →", href:"https://storiq-location-seo-builder.vercel.app" },
@@ -1093,8 +1158,13 @@ const CASE_FORGE = {
     "Personalized practice paths for aspiring UE developers.",
     "Shipped web UX tuned for clarity and repeat sessions."
   ],
-  hero:"assets/images/thumb-forge.svg",
+  hero:"assets/images/cases/previews/forge/01-home.jpg",
   thumb:"assets/images/thumb-forge.svg",
+  previews:[
+    "assets/images/cases/previews/forge/01-home.jpg",
+    "assets/images/cases/previews/forge/02-scroll.jpg",
+    "assets/images/cases/previews/forge/03-mobile.jpg"
+  ],
   video:"",
   links:[
     { label:"Open ForgeQuest →", href:"https://forgequest-ai-web.vercel.app" },
@@ -1123,8 +1193,13 @@ const CASE_QUOTE = {
     "AI-assisted drafting to cut time-to-quote.",
     "Public marketing pages + authenticated app workspace."
   ],
-  hero:"assets/images/thumb-quote.svg",
+  hero:"assets/images/cases/previews/quote/01-home.jpg",
   thumb:"assets/images/thumb-quote.svg",
+  previews:[
+    "assets/images/cases/previews/quote/01-home.jpg",
+    "assets/images/cases/previews/quote/02-features.jpg",
+    "assets/images/cases/previews/quote/03-pricing.jpg"
+  ],
   video:"",
   links:[
     { label:"Open QuotePilot →", href:"https://quote-pilot-ai.vercel.app" },
@@ -1152,8 +1227,13 @@ const CASE_CANTEEN = {
     "Operational UI aimed at daily staff use.",
     "Deployed MiniSME demo on Vercel."
   ],
-  hero:"assets/images/thumb-canteen.svg",
+  hero:"assets/images/cases/previews/canteen/01-home.jpg",
   thumb:"assets/images/thumb-canteen.svg",
+  previews:[
+    "assets/images/cases/previews/canteen/01-home.jpg",
+    "assets/images/cases/previews/canteen/02-scroll.jpg",
+    "assets/images/cases/previews/canteen/03-mobile.jpg"
+  ],
   video:"",
   links:[
     { label:"Open live demo →", href:"https://mini-sme-elizes-canteen.vercel.app" },
@@ -2265,6 +2345,7 @@ function openLanding(title, html){
   landing.hidden = false;
   if (landing.querySelector("#contact-form")) bindContactForm();
   if (landing.querySelector(".skills")) refreshSkillBars();
+  bindCaseGalleries(landing);
   landing.querySelectorAll("[data-case]").forEach(btn => {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-case");
