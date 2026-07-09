@@ -858,11 +858,17 @@ function caseStudyHTML(cs){
   const hero = cs.hero ? `<img class="case__hero" src="${cs.hero}" alt="${cs.title} hero" onerror="this.style.display='none'">` : "";
   const video = cs.video ? renderVideo(cs.video) : "";
   const role = cs.role ? `<p class="case__summary"><strong>Role:</strong> ${cs.role}</p>` : "";
+  const badge = cs.status === "live"
+    ? `<span class="status-badge status-badge--live">Live</span>`
+    : (cs.status === "prototype" ? `<span class="status-badge">Prototype</span>` : "");
   return `
     <article class="case">
       <div>${hero}${video}</div>
       <div>
-        <h3 class="case__title">${cs.title}</h3>
+        <div class="case__heading">
+          <h3 class="case__title">${cs.title}</h3>
+          ${badge}
+        </div>
         <p class="case__summary">${cs.summary}</p>
         ${role}
         <div class="pills">${pills}</div>
@@ -872,10 +878,11 @@ function caseStudyHTML(cs){
     </article>`;
 }
 const CASE_A = {
-  title:"NDA (Horror) Mission HUD",
-  summary:"Cinematic, moment-to-moment HUD for objectives, markers, and state transitions.",
+  title:"Horror Mission HUD",
+  summary:"Cinematic, moment-to-moment HUD for objectives, markers, and state transitions in a horror FPS.",
   role:"UI/UX · Blueprints + UMG/CommonUI",
   stack:["UE5","UMG/CommonUI","Blueprints","HUD"],
+  status:"prototype",
   points:[
     "Objective pipeline with timed beats and diegetic transitions.",
     "Marker system with distance-gated hints and screen-edge indicators.",
@@ -885,27 +892,33 @@ const CASE_A = {
   ],
   hero:"assets/images/cases/Demo.png",
   video:"assets/videos/Horror.mp4",
-  links:[]
+  links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/HorrorFPS" }]
 };
 const CASE_B = {
-  title:"Will Tool MVP Dynamic PDF Builder",
-  summary:"React app that generates legally structured PDFs from smart forms.",
-  role:"Frontend Lead",
-  stack:["React","TypeScript","PDF","Forms"],
+  title:"Will Tool — Dynamic PDF Builder",
+  summary:"React app that generates legally structured PDFs from smart forms — live MVP on Vercel.",
+  role:"Frontend Lead · Full product slice",
+  stack:["React","TypeScript","PDF","Forms","Vercel"],
+  status:"live",
   points:[
     "Composable question graph → schema-backed output.",
     "Autofill + validation + printer-friendly themes.",
-    "Export pipeline with embedded signatures (prototype)."
+    "Export pipeline with embedded signatures (prototype).",
+    "Deployed as a production MVP clients can click through."
   ],
   hero:"assets/images/cases/willtool.png",
   video:"",
-  links:[]
+  links:[
+    { label:"Open live demo →", href:"https://mvp-tool-will-form-generator.vercel.app" },
+    { label:"GitHub →", href:"https://github.com/KraToSza1/MVP-Tool-Will-Form-Generator" }
+  ]
 };
 const CASE_C = {
-  title:"Hack & Slash ARPG",
-  summary:"Reusable menu scaffolding with rotators, input mapping (EnhancedInput), and animation hooks.",
-  role:"Gameplay UI · UE 5.3 (C++/BP)",
-  stack:["UE5.6","C++","Blueprints","CommonUI","EnhancedInput","Animation","HUD","Widgets","Rotators"],
+  title:"Hack & Slash ARPG UI",
+  summary:"Reusable CommonUI menu scaffolding with rotators, EnhancedInput, and animation hooks.",
+  role:"Gameplay UI · UE5 (C++/BP)",
+  stack:["UE5","C++","Blueprints","CommonUI","EnhancedInput","HUD"],
+  status:"prototype",
   points:[
     "Slot-based widgets with data-driven options.",
     "Controller/keyboard navigation rules and sound cues.",
@@ -916,34 +929,105 @@ const CASE_C = {
   ],
   hero:"assets/images/cases/Equipped Axe.png",
   video:"assets/videos/A Basic Dungeon.mp4",
-  links:[]
+  links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/SlashRPG" }]
 };
 const CASE_W4D = {
   title:"Whts4dinner.com",
-  summary:"My own shipped product: a live meal-planning and recipe web app, running in production right now.",
-  role:"Design · Build · Ship (solo founder)",
-  stack:["React","TypeScript","OAuth","Product Design","Deployment"],
+  summary:"My flagship shipped product — a smart recipe finder and meal-planning web app answering “what’s for dinner?” in seconds.",
+  role:"Founder · Design · Build · Ship",
+  stack:["React","TypeScript","Tailwind","OAuth","Supabase","Vercel","Product Design"],
+  status:"live",
   points:[
-    "Built end-to-end and running live at whts4dinner.com.",
-    "OAuth sign-in with real user accounts.",
-    "Recipe discovery and “what’s for dinner?” planning flows.",
-    "Designed, developed, deployed and maintained solo — the full product lifecycle."
+    "End-to-end product: discovery, planning flows, auth, and production hosting.",
+    "OAuth sign-in with real user accounts and persisted preferences.",
+    "Recipe search + “what’s for dinner?” decision flows tuned for speed.",
+    "Designed, developed, deployed and maintained solo — full product lifecycle.",
+    "Live at whts4dinner.com with ongoing iteration from real usage."
   ],
-  links:[{ label:"Visit whts4dinner.com →", href:"https://whts4dinner.com" }]
+  links:[
+    { label:"Visit whts4dinner.com →", href:"https://whts4dinner.com" },
+    { label:"GitHub →", href:"https://github.com/KraToSza1/whats-4-dinner" }
+  ]
 };
 const CASE_D = {
   title:"Farmily — Mobile Foundations",
-  summary:"Expo/React Native app skeleton with auth and payments plan.",
+  summary:"Expo/React Native foundations for a farm-produce ordering app with auth and payments plan.",
   role:"Mobile · React Native (Expo)",
-  stack:["React Native","Expo","Auth","Payments"],
+  stack:["React Native","Expo","Auth","PayFast"],
+  status:"prototype",
   points:[
     "Auth flow + protected screens.",
     "Theming and icons; responsive components.",
-    "Payments integration plan PayFast."
+    "Payments integration plan (PayFast).",
+    "Built as a mobile product foundation for farm produce orders."
   ],
   hero:"assets/images/cases/2.jpg",
   video:"",
-  links:[]
+  links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/Farmilly_Mobile_App" }]
+};
+const CASE_STORIQ = {
+  title:"StorIQ Location SEO Builder",
+  summary:"Facility location page production cockpit — generate and ship SEO-ready location pages at scale.",
+  role:"Full-stack product build",
+  stack:["React","TypeScript","SEO","Content Ops","Vercel"],
+  status:"live",
+  points:[
+    "Production cockpit for facility / location page generation.",
+    "Structured content workflows aimed at local SEO consistency.",
+    "Shipped as a live internal-style tool on Vercel."
+  ],
+  links:[
+    { label:"Open live app →", href:"https://storiq-location-seo-builder.vercel.app" },
+    { label:"GitHub →", href:"https://github.com/KraToSza1/storiq-location-seo-builder" }
+  ]
+};
+const CASE_FORGE = {
+  title:"ForgeQuest AI",
+  summary:"Personalized Unreal learning through build / break / fix quests — AI-guided practice for game developers.",
+  role:"Product · AI UX · Web",
+  stack:["React","TypeScript","AI","UE5 Learning","Vercel"],
+  status:"live",
+  points:[
+    "Quest-style learning loops: build, break, and fix Unreal concepts.",
+    "Personalized practice paths for aspiring UE developers.",
+    "Shipped web experience focused on retention and clarity."
+  ],
+  links:[
+    { label:"Open ForgeQuest →", href:"https://forgequest-ai-web.vercel.app" },
+    { label:"GitHub →", href:"https://github.com/KraToSza1/forgequest-ai" }
+  ]
+};
+const CASE_QUOTE = {
+  title:"QuotePilot AI",
+  summary:"Lead, quote & follow-up PWA for service SMEs — turn enquiries into quotes without the spreadsheet chaos.",
+  role:"Product · PWA · SME tooling",
+  stack:["React","TypeScript","PWA","AI Assist","Vercel"],
+  status:"live",
+  points:[
+    "Lead capture → quote → follow-up pipeline for service businesses.",
+    "Mobile-friendly PWA so teams can quote on the go.",
+    "AI-assisted drafting to cut time-to-quote."
+  ],
+  links:[
+    { label:"Open QuotePilot →", href:"https://quote-pilot-ai.vercel.app" },
+    { label:"GitHub →", href:"https://github.com/KraToSza1/QuotePilot-AI" }
+  ]
+};
+const CASE_CANTEEN = {
+  title:"Elize's Canteen (MiniSME)",
+  summary:"Corporate canteen ordering experience for MiniSME — menus, orders, and a clean staff-facing flow.",
+  role:"Frontend · Product UI",
+  stack:["React","TypeScript","Vite","Vercel"],
+  status:"live",
+  points:[
+    "Canteen menu browsing and order flow for a real SME context.",
+    "Clean operational UI aimed at daily staff use.",
+    "Deployed as a live MiniSME demo product."
+  ],
+  links:[
+    { label:"Open live demo →", href:"https://mini-sme-elizes-canteen.vercel.app" },
+    { label:"GitHub →", href:"https://github.com/KraToSza1/MiniSME-elizes-canteen" }
+  ]
 };
 
 // ---------- Certifications (richer) ----------
@@ -1107,9 +1191,9 @@ const aboutHTML = `
             I collaborate tightly with design, wire UI to real game states, and ship clean, maintainable systems.
           </p>
           <p class="about__bio-text">
-            I also ship my own products — like
+            I also ship my own products — flagship
             <a href="https://whts4dinner.com" target="_blank" rel="noopener"><strong class="highlight">Whts4dinner.com</strong></a>,
-            a live meal-planning app I designed, built and run solo.
+            plus live tools like QuotePilot, ForgeQuest AI, StorIQ, and Elize's Canteen.
           </p>
         </div>
       </div>
@@ -1121,17 +1205,24 @@ const aboutHTML = `
           <div class="about__detail-section">
             <h4 class="about__detail-title">Experience</h4>
             <div class="about__detail-item">
-              <div class="detail-item__years">2025</div>
+              <div class="detail-item__years">2025–26</div>
               <div class="detail-item__desc">
                 <strong>Whts4dinner.com — Founder &amp; Developer</strong><br>
-                Designed, built and shipped a live meal-planning web app with OAuth accounts — running in production.
+                Designed, built and shipped a live meal-planning web app with OAuth — running in production at whts4dinner.com.
               </div>
             </div>
             <div class="about__detail-item">
-              <div class="detail-item__years">2022-25</div>
+              <div class="detail-item__years">2025–26</div>
+              <div class="detail-item__desc">
+                <strong>Product builds — QuotePilot, ForgeQuest, StorIQ, MiniSME</strong><br>
+                Shipped AI/SME web tools and location SEO tooling end-to-end on Vercel.
+              </div>
+            </div>
+            <div class="about__detail-item">
+              <div class="detail-item__years">2022–25</div>
               <div class="detail-item__desc">
                 <strong>Frontend &amp; Game Developer</strong><br>
-                Building cinematic UI systems, HUDs, and performance-first web experiences with UE5, React, and WebGL.
+                Cinematic HUDs, CommonUI systems, and performance-first web experiences with UE5, React, and WebGL.
               </div>
             </div>
             <div class="about__detail-item">
@@ -1286,73 +1377,151 @@ function openArcadePanel(){
 const PROJECTS = [
   {
     title:"Whts4dinner.com",
-    summary:"Live meal-planning web app — recipe discovery, sign-in, and “what’s for dinner?” answered in seconds.",
-    requires:["React","TypeScript","OAuth","API design","Deployment"],
+    summary:"Flagship product — smart recipe finder & meal planning. “What’s for dinner?” answered in seconds.",
+    status:"live",
+    requires:["React","TypeScript","Tailwind","OAuth","Supabase","Vercel"],
     does:[
       "Recipe discovery and meal planning flows",
       "OAuth sign-in with real user accounts",
-      "Shipped, hosted and running in production"
+      "Shipped, hosted and iterated in production"
     ],
-    links:[{ label:"Visit live site", href:"https://whts4dinner.com" }]
+    links:[
+      { label:"Visit live site", href:"https://whts4dinner.com" },
+      { label:"Case study →", href:"#case-w4d", case:"W4D" }
+    ]
   },
   {
-    title:"NDA Signed Mission HUD",
+    title:"QuotePilot AI",
+    summary:"Lead, quote & follow-up PWA for service SMEs — cut time-to-quote.",
+    status:"live",
+    requires:["React","TypeScript","PWA","AI Assist","Vercel"],
+    does:[
+      "Enquiry → quote → follow-up pipeline",
+      "Mobile-friendly PWA for on-site quoting",
+      "AI-assisted draft quotes"
+    ],
+    links:[{ label:"Open live app", href:"https://quote-pilot-ai.vercel.app" }]
+  },
+  {
+    title:"ForgeQuest AI",
+    summary:"Personalized Unreal learning via build / break / fix quests.",
+    status:"live",
+    requires:["React","TypeScript","AI","UE5 Learning","Vercel"],
+    does:[
+      "Quest-style practice loops for UE concepts",
+      "Personalized learning paths",
+      "Shipped web learning experience"
+    ],
+    links:[{ label:"Open ForgeQuest", href:"https://forgequest-ai-web.vercel.app" }]
+  },
+  {
+    title:"StorIQ Location SEO Builder",
+    summary:"Facility location page production cockpit for SEO-ready pages at scale.",
+    status:"live",
+    requires:["React","TypeScript","SEO","Content Ops","Vercel"],
+    does:[
+      "Location page generation workflow",
+      "Consistent local SEO structure",
+      "Live production tooling"
+    ],
+    links:[{ label:"Open StorIQ", href:"https://storiq-location-seo-builder.vercel.app" }]
+  },
+  {
+    title:"Elize's Canteen (MiniSME)",
+    summary:"Corporate canteen ordering UI — menus and daily staff flows.",
+    status:"live",
+    requires:["React","TypeScript","Vite","Vercel"],
+    does:[
+      "Menu browsing + order flow",
+      "Operational UI for SME canteen use",
+      "Live MiniSME demo product"
+    ],
+    links:[{ label:"Open live demo", href:"https://mini-sme-elizes-canteen.vercel.app" }]
+  },
+  {
+    title:"Will Tool — Dynamic PDF",
+    summary:"Schema-driven forms that export legally structured PDFs.",
+    status:"live",
+    requires:["React","TypeScript","PDF","Forms","Vercel"],
+    does:[
+      "Schema-driven questions with validation + autofill",
+      "Printer-friendly themes",
+      "Live MVP clients can click through"
+    ],
+    links:[{ label:"Open live demo", href:"https://mvp-tool-will-form-generator.vercel.app" }]
+  },
+  {
+    title:"Horror Mission HUD",
     summary:"Cinematic HUD driving objectives, diegetic markers, and guided flow.",
+    status:"prototype",
     requires:["UE5","Blueprints","CommonUI","Materials/Shaders"],
     does:[
       "Objective/state machine → HUD states + timed beats",
       "Marker hints, distance gating, screen-edge arrows",
       "Strict frame-time budget for animations/materials"
     ],
-    links:[]
+    links:[{ label:"GitHub", href:"https://github.com/KraToSza1/HorrorFPS" }]
   },
   {
-    title:"Will Tool MVP — Dynamic PDF",
-    summary:"Form flows that export legally structured PDFs.",
-    requires:["HTML","CSS/Tailwind","JavaScript","React","TypeScript","Node"],
-    does:[
-      "Schema-driven questions with validation + autofill",
-      "Accessible components, printer-friendly themes",
-      "PDF assembly pipeline (prototype signatures)"
-    ],
-    links:[]
-  },
-  {
-    title:"Common UI Menu Framework",
-    summary:"UE5 menu system with rotators, input mapping and styling.",
-    requires:["UE5.6","C++","Blueprints","CommonUI"],
+    title:"Hack & Slash ARPG UI",
+    summary:"UE5 CommonUI menus with rotators, EnhancedInput and styling.",
+    status:"prototype",
+    requires:["UE5","C++","Blueprints","CommonUI"],
     does:[
       "Slot-based widgets and data-driven options",
       "EnhancedInput navigation + sound cues",
       "Skins via style assets and data tables"
     ],
-    links:[]
+    links:[{ label:"GitHub", href:"https://github.com/KraToSza1/SlashRPG" }]
   },
   {
     title:"Farmily",
-    summary:"Expo/React Native app foundations with auth and payments plan.",
-    requires:["React Native","Expo","TypeScript","Auth","Stripe (plan)"],
+    summary:"Expo/React Native foundations for farm-produce orders with auth + payments plan.",
+    status:"prototype",
+    requires:["React Native","Expo","TypeScript","Auth","PayFast"],
     does:[
       "Auth flow + protected routes",
       "Responsive components + theming",
       "Payments integration plan"
     ],
-    links:[]
+    links:[{ label:"GitHub", href:"https://github.com/KraToSza1/Farmilly_Mobile_App" }]
   }
 ];
+
+const CASE_BY_KEY = {
+  W4D: CASE_W4D, A: CASE_A, B: CASE_B, C: CASE_C, D: CASE_D,
+  STORIQ: CASE_STORIQ, FORGE: CASE_FORGE, QUOTE: CASE_QUOTE, CANTEEN: CASE_CANTEEN
+};
+
 function projectsHTML(){
-  const cards = PROJECTS.map(p => `
-    <article class="card">
-      <h3 class="card__title">${p.title}</h3>
+  const cards = PROJECTS.map((p, i) => {
+    const badge = p.status === "live"
+      ? `<span class="status-badge status-badge--live">Live</span>`
+      : (p.status === "prototype" ? `<span class="status-badge">Prototype</span>` : "");
+    const linkHtml = (p.links||[]).map(l => {
+      if (l.case && CASE_BY_KEY[l.case]) {
+        return `<button type="button" class="link-btn" data-case="${l.case}">${l.label}</button>`;
+      }
+      return `<a class="link-btn" href="${l.href}" target="_blank" rel="noopener">${l.label}</a>`;
+    }).join("");
+    return `
+    <article class="card card--project" style="--card-i:${i}">
+      <div class="case__heading">
+        <h3 class="card__title">${p.title}</h3>
+        ${badge}
+      </div>
       <p class="card__desc">${p.summary}</p>
       <h4 class="card__sub">What it does</h4>
       <ul class="list">${p.does.map(d=>`<li>${d}</li>`).join("")}</ul>
-      <h4 class="card__sub">What it requires</h4>
-      <p class="case__summary">${p.requires.join(" · ")}</p>
-      ${p.links?.length ? `<div class="link-row">${p.links.map(l=>`<a class="link-btn" href="${l.href}" target="_blank" rel="noopener">${l.label}</a>`).join("")}</div>` : ""}
-    </article>
-  `).join("");
-  return `<div class="grid-cards">${cards}</div><p style="margin-top:12px">Want the source or a live demo? <a href="${LINKS.email}">Email me</a>.</p>`;
+      <h4 class="card__sub">Stack</h4>
+      <div class="pills">${p.requires.map(t=>`<span class="pill">${t}</span>`).join("")}</div>
+      ${linkHtml ? `<div class="link-row">${linkHtml}</div>` : ""}
+    </article>`;
+  }).join("");
+  return `
+    <p class="projects-intro">Shipped products, client tools, and game UI systems — live demos first.</p>
+    <div class="grid-cards">${cards}</div>
+    <p style="margin-top:12px">Want the source or a deeper walkthrough? <a href="${LINKS.email}">Email me</a> · or jump to <strong>Solar System →</strong> for full case studies.</p>`;
 }
 
 // ---------- Contact ----------
@@ -1472,12 +1641,15 @@ const ROOMS = [
     { name: NAMES[3], px: 42, py: 74, r: 40, planet: PLANETS.mint,   label: "Solar System →",     action: () => setRoom(1), warp: "theme-emerald" },
   ]},
   { targets: [
-    { name: "Verdis", px:50, py:44, r:44, planet: PLANETS.mint, label:"Whts4dinner.com", action: () => openLanding("Whts4dinner.com — Live Product", caseStudyHTML(CASE_W4D)), warp: "theme-emerald", noSprite: true, ringTilt: 0.3 },
-    { name: NAMES[1], px:28, py:30, r:42, planet: PLANETS.aqua,   label:"Case Study A", action: () => openLanding("Case Study A", caseStudyHTML(CASE_A)), warp: "theme-cyan",   ringTilt:  0.22 },
-    { name: NAMES[4], px:72, py:30, r:48, planet: PLANETS.coral,  label:"Case Study B", action: () => openLanding("Case Study B", caseStudyHTML(CASE_B)), warp: "theme-magma" },
-    { name: NAMES[8], px:30, py:72, r:44, planet: PLANETS.violet, label:"Case Study C", action: () => openLanding("Case Study C", caseStudyHTML(CASE_C)), warp: "theme-violet", ringTilt: -0.28 },
-    { name: NAMES[5], px:70, py:72, r:42, planet: PLANETS.mint,   label:"Case Study D", action: () => openLanding("Case Study D", caseStudyHTML(CASE_D)), warp: "theme-emerald" },
-    { name: NAMES[2], px:50, py:90, r:38, planet: PLANETS.amber,  label:"← Back",       action: () => setRoom(0), warp: "theme-magma" },
+    { name: "Verdis", px:50, py:42, r:46, planet: PLANETS.mint, label:"Whts4dinner", action: () => openLanding("Whts4dinner.com — Live Product", caseStudyHTML(CASE_W4D)), warp: "theme-emerald", noSprite: true, ringTilt: 0.3 },
+    { name: NAMES[4], px:22, py:22, r:40, planet: PLANETS.coral,  label:"QuotePilot", action: () => openLanding("QuotePilot AI", caseStudyHTML(CASE_QUOTE)), warp: "theme-magma", ringTilt: 0.18 },
+    { name: NAMES[8], px:78, py:20, r:40, planet: PLANETS.violet, label:"ForgeQuest", action: () => openLanding("ForgeQuest AI", caseStudyHTML(CASE_FORGE)), warp: "theme-violet", ringTilt: -0.22 },
+    { name: NAMES[1], px:18, py:55, r:38, planet: PLANETS.aqua,   label:"StorIQ", action: () => openLanding("StorIQ Location SEO Builder", caseStudyHTML(CASE_STORIQ)), warp: "theme-cyan", ringTilt: 0.2 },
+    { name: NAMES[7], px:82, py:55, r:38, planet: PLANETS.aqua,   label:"Will Tool", action: () => openLanding("Will Tool — Dynamic PDF", caseStudyHTML(CASE_B)), warp: "theme-cyan" },
+    { name: NAMES[5], px:32, py:78, r:36, planet: PLANETS.mint,   label:"Elize's Canteen", action: () => openLanding("Elize's Canteen", caseStudyHTML(CASE_CANTEEN)), warp: "theme-emerald", ringTilt: -0.15 },
+    { name: NAMES[6], px:68, py:78, r:36, planet: PLANETS.coral,  label:"Horror HUD", action: () => openLanding("Horror Mission HUD", caseStudyHTML(CASE_A)), warp: "theme-magma" },
+    { name: NAMES[9], px:50, py:68, r:34, planet: PLANETS.violet, label:"ARPG UI", action: () => openLanding("Hack & Slash ARPG UI", caseStudyHTML(CASE_C)), warp: "theme-violet", ringTilt: 0.25 },
+    { name: NAMES[2], px:50, py:92, r:34, planet: PLANETS.amber,  label:"← Back", action: () => setRoom(0), warp: "theme-magma" },
   ]},
 ];
 let TARGETS = ROOMS[currentRoom].targets;
@@ -1962,6 +2134,14 @@ function openLanding(title, html){
   landing.hidden = false;
   if (landing.querySelector("#contact-form")) bindContactForm();
   if (landing.querySelector(".skills")) refreshSkillBars();
+  landing.querySelectorAll("[data-case]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-case");
+      const cs = CASE_BY_KEY[key];
+      if (!cs) return;
+      openLanding(cs.title, caseStudyHTML(cs));
+    });
+  });
 }
 
 // ========================== INPUT ==========================
