@@ -1265,12 +1265,10 @@ function arcadeHTML(){
       <canvas id="arcade-canvas" width="320" height="200" tabindex="0" aria-label="Retro FPS game"></canvas>
       <div class="arcade__controls">
         <span><strong>WASD / ↑↓</strong> move</span>
-        <span><strong>←→ / mouse</strong> turn</span>
-        <span><strong>Space / click</strong> fire</span>
+        <span><strong>Mouse / ←→</strong> aim</span>
+        <span><strong>Hold click / Space</strong> fire</span>
         <span><strong>1–3</strong> weapons</span>
-        <span><strong>M</strong> map</span>
-        <span><strong>P</strong> pause</span>
-        <span><strong>R</strong> retry</span>
+        <span><strong>M</strong> map · <strong>P</strong> pause · <strong>R</strong> retry</span>
       </div>
     </div>`;
 }

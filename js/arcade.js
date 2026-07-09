@@ -200,18 +200,20 @@
     src.start();
   }
   const SFX = {
-    pistol:  function () { tone(300, 90, 0.09, "square", 0.07); noiseBurst(0.06, 0.05, 2200); },
-    shotgun: function () { noiseBurst(0.28, 0.16, 1100); tone(140, 50, 0.2, "triangle", 0.1); },
-    plasma:  function () { tone(680, 190, 0.12, "sawtooth", 0.06); },
-    hurt:    function () { tone(170, 60, 0.22, "sawtooth", 0.09); },
-    edie:    function () { tone(280, 45, 0.32, "square", 0.07); noiseBurst(0.15, 0.05, 700); },
-    boom:    function () { noiseBurst(0.5, 0.2, 500); tone(90, 30, 0.45, "sine", 0.16); },
-    pickup:  function () { tone(620, 990, 0.1, "sine", 0.06); },
-    key:     function () { tone(520, 780, 0.12, "sine", 0.07); tone(780, 1170, 0.14, "sine", 0.05); },
-    nokey:   function () { tone(120, 110, 0.16, "square", 0.07); },
-    switch:  function () { tone(220, 320, 0.05, "square", 0.04); },
-    fireball:function () { tone(420, 150, 0.18, "sawtooth", 0.045); },
-    roar:    function () { tone(90, 40, 0.7, "sawtooth", 0.14); noiseBurst(0.5, 0.08, 400); },
+    // punchy gunshots: sharp crack (noise) + tonal snap + low thump for body
+    pistol:  function () { noiseBurst(0.05, 0.24, 3400); tone(520, 110, 0.07, "square", 0.16); tone(150, 45, 0.08, "sine", 0.14); },
+    shotgun: function () { noiseBurst(0.10, 0.42, 3200); noiseBurst(0.34, 0.34, 1300); tone(95, 38, 0.30, "triangle", 0.24); },
+    plasma:  function () { tone(880, 230, 0.13, "sawtooth", 0.16); tone(1500, 500, 0.07, "square", 0.08); },
+    hurt:    function () { tone(180, 55, 0.24, "sawtooth", 0.13); noiseBurst(0.08, 0.08, 1200); },
+    edie:    function () { tone(300, 42, 0.34, "square", 0.11); noiseBurst(0.18, 0.09, 700); },
+    boom:    function () { noiseBurst(0.55, 0.34, 520); tone(85, 28, 0.5, "sine", 0.26); tone(200, 40, 0.3, "sawtooth", 0.12); },
+    pickup:  function () { tone(620, 990, 0.1, "sine", 0.09); },
+    key:     function () { tone(520, 780, 0.12, "sine", 0.1); tone(780, 1170, 0.14, "sine", 0.07); },
+    nokey:   function () { tone(120, 110, 0.16, "square", 0.09); },
+    switch:  function () { tone(240, 360, 0.05, "square", 0.07); noiseBurst(0.03, 0.05, 2600); },
+    fireball:function () { tone(440, 150, 0.18, "sawtooth", 0.08); },
+    roar:    function () { tone(95, 38, 0.8, "sawtooth", 0.2); noiseBurst(0.6, 0.14, 380); tone(60, 30, 0.7, "sine", 0.18); },
+    empty:   function () { tone(90, 80, 0.05, "square", 0.06); },
     step:    function () {}
   };
 
@@ -556,18 +558,27 @@
       self.press(k);
     };
     this._up = function (e) { self.keys[e.key.toLowerCase()] = false; };
-    this._click = function () {
-      if (self.mode === "play" && document.pointerLockElement !== canvas && canvas.requestPointerLock) {
-        try { canvas.requestPointerLock(); } catch (err) {}
-      }
-      self.press(" ");
+    // Mouse aim: hold the left button and move to turn (drag-look), or click to
+    // lock the pointer for full mouse-look. Holding also fires (auto weapons too).
+    this.mdown = false;
+    this._md = function (e) {
+      audio(); // unlock the audio context on the first user gesture
+      if (self.mode !== "play") { self.press(" "); return; }
+      self.mdown = true;
+      if (e && e.shiftKey && canvas.requestPointerLock) { try { canvas.requestPointerLock(); } catch (err) {} }
+      self.tryFire();
     };
+    this._mu = function () { self.mdown = false; };
     this._mm = function (e) {
-      if (self.mode === "play" && document.pointerLockElement === canvas) self.rotate(e.movementX * 0.0032);
+      if (self.mode !== "play") return;
+      const dx = e.movementX || 0;
+      if (document.pointerLockElement === canvas) self.rotate(dx * 0.0032);
+      else if (self.mdown) self.rotate(dx * 0.0052); // drag-look
     };
     addEventListener("keydown", this._down);
     addEventListener("keyup", this._up);
-    canvas.addEventListener("mousedown", this._click);
+    canvas.addEventListener("mousedown", this._md);
+    addEventListener("mouseup", this._mu);
     addEventListener("mousemove", this._mm);
     canvas.focus();
 
@@ -794,7 +805,11 @@
   Game.prototype.tryFire = function () {
     if (this.mode !== "play" || this.fireCd > 0) return;
     const w = WEAPONS[this.cur];
-    if (this[w.ammo] <= 0) { this.say("NO " + (w.ammo === "bullets" ? "BULLETS" : w.ammo.toUpperCase()), 1.1); SFX.nokey(); return; }
+    if (this[w.ammo] <= 0) {
+      this.fireCd = 0.5; // throttle the empty click when the fire button is held
+      this.say("NO " + (w.ammo === "bullets" ? "BULLETS" : w.ammo.toUpperCase()) + " — SWITCH (1-3) OR FIND AMMO", 1.1);
+      SFX.empty(); return;
+    }
     this[w.ammo]--;
     this.fireCd = w.rate;
     this.muzzle = 0.09;
@@ -842,8 +857,8 @@
     this.shake = Math.max(0, this.shake - dt * 1.6);
     if (this.msgT > 0) this.msgT -= dt;
 
-    // held-fire (plasma is auto)
-    if (this.keys[" "] && WEAPONS[this.cur].proj) this.tryFire();
+    // held-fire: mouse held always auto-fires; space auto-fires plasma
+    if (this.mdown || (this.keys[" "] && WEAPONS[this.cur].proj)) this.tryFire();
 
     // movement
     const sp = 3.1 * dt, rot = 2.5 * dt;
@@ -900,15 +915,25 @@
       e.animT += dt * 5;
       e.atkT = Math.max(0, e.atkT - dt);
 
+      // BOSS enrage: below 40% HP it speeds up, fires faster with a wider spread
+      let spMul = 1, rngCd = 1, rngSpread = 0;
+      if (e.cfg.boss) {
+        if (!e.enraged && e.hp <= e.cfg.hp * 0.4) {
+          e.enraged = true;
+          this.say("THE CINDER KING ENRAGES!", 2); SFX.roar(); this.shake = 0.7;
+        }
+        if (e.enraged) { spMul = 1.6; rngCd = 0.55; rngSpread = 2; }
+      }
+
       const rng = e.cfg.ranged;
       if (rng && sees && dist > e.cfg.mrange && dist < 9) {
         // hold distance & cast fireballs
-        if (dist > rng.hold) this.stepEnemy(e, ex / dist, ey / dist, dt);
+        if (dist > rng.hold) this.stepEnemy(e, (ex / dist) * spMul, (ey / dist) * spMul, dt);
         if (e.atkT <= 0) {
-          e.atkT = rng.cd;
+          e.atkT = rng.cd * rngCd;
           e.state = "attack";
           SFX.fireball();
-          const n = rng.spread || 1;
+          const n = (rng.spread || 1) + rngSpread;
           for (let f = 0; f < n; f++) {
             const spread = n > 1 ? (f - (n - 1) / 2) * 0.22 : 0;
             const a = Math.atan2(ey, ex) + spread;
@@ -919,7 +944,7 @@
         } else if (e.state === "attack" && e.atkT < rng.cd - 0.35) e.state = "chase";
       } else if (dist > e.cfg.mrange && sees) {
         e.state = "chase";
-        this.stepEnemy(e, ex / dist, ey / dist, dt);
+        this.stepEnemy(e, (ex / dist) * spMul, (ey / dist) * spMul, dt);
       } else if (dist <= e.cfg.mrange) {
         e.state = "attack";
         if (e.atkT <= 0) {
@@ -1161,6 +1186,7 @@
     g.restore();
 
     if (this.showMap) this.renderMap(g);
+    this.renderBossBar(g);
     this.renderHUD(g);
 
     // message
@@ -1248,26 +1274,82 @@
     g.restore();
   };
 
+  // segmented boss health bar — shown while the Cinder King is alive & awake
+  Game.prototype.renderBossBar = function (g) {
+    let boss = null;
+    for (let i = 0; i < this.L.enemies.length; i++) {
+      const e = this.L.enemies[i];
+      if (e.cfg.boss && e.roared && e.state !== "dead") { boss = e; break; }
+    }
+    if (!boss) return;
+    g.save(); g.scale(SCALE, SCALE);
+    const bw = 200, bx = (BW - bw) / 2, by = 10;
+    const frac = Math.max(0, boss.hp / boss.cfg.hp);
+    // frame
+    g.fillStyle = "rgba(4,5,11,0.8)"; g.fillRect(bx - 4, by - 3, bw + 8, 16);
+    g.strokeStyle = boss.enraged ? "#ff7043" : "#6a1414"; g.lineWidth = 1;
+    g.strokeRect(bx - 4, by - 3, bw + 8, 16);
+    // fill
+    g.fillStyle = "#2a0a0a"; g.fillRect(bx, by, bw, 7);
+    const grd = g.createLinearGradient(bx, 0, bx + bw, 0);
+    grd.addColorStop(0, "#ff5d52"); grd.addColorStop(1, boss.enraged ? "#ffd75e" : "#c9333f");
+    g.fillStyle = grd; g.fillRect(bx, by, (bw * frac) | 0, 7);
+    // segment ticks
+    g.fillStyle = "rgba(4,5,11,0.9)";
+    for (let s = 1; s < 10; s++) g.fillRect(bx + (bw * s / 10) | 0, by, 1, 7);
+    // label
+    g.font = "bold 8px monospace"; g.textAlign = "center"; g.textBaseline = "alphabetic";
+    g.fillStyle = boss.enraged ? "#ffd75e" : "#ff8a70";
+    g.fillText(boss.enraged ? "THE CINDER KING  —  ENRAGED" : "THE CINDER KING", BW / 2, by - 5);
+    g.textAlign = "left";
+    g.restore();
+  };
+
   Game.prototype.renderFace = function (g, x, y) {
-    // doomguy-style status face, 22x22
+    // detailed doom-marine status face, 22x22
     const hp = this.hp;
+    const hurt = this.dmgFlash > 0.3, grin = this.pickFlash > 0.25;
+    const cx = x + 11;
+    // backdrop
     g.fillStyle = "#0c0d12"; g.fillRect(x, y, 22, 22);
-    g.fillStyle = hp > 66 ? "#d8a678" : hp > 33 ? "#c08a60" : "#a06848";
-    g.fillRect(x + 3, y + 2, 16, 18);
-    g.fillStyle = "#7a4a28"; g.fillRect(x + 3, y + 2, 16, 4); // hair
-    if (hp <= 33) { g.fillStyle = "#a02020"; g.fillRect(x + 4, y + 5, 5, 3); g.fillRect(x + 14, y + 12, 4, 4); }
-    // eyes — track a bit with bob for life
-    const look = (Math.sin(this.bob * 0.5) * 1.5) | 0;
-    g.fillStyle = "#fff";
-    g.fillRect(x + 5, y + 8, 5, 3); g.fillRect(x + 12, y + 8, 5, 3);
-    g.fillStyle = "#12141c";
-    g.fillRect(x + 6 + look, y + 8, 2, 3); g.fillRect(x + 13 + look, y + 8, 2, 3);
-    // mouth
-    g.fillStyle = "#5a2418";
-    if (this.pickFlash > 0.25) g.fillRect(x + 7, y + 15, 8, 3);           // grin
-    else if (this.dmgFlash > 0.3) { g.fillStyle = "#3a0c08"; g.fillRect(x + 8, y + 14, 6, 4); } // ow
-    else if (hp <= 33) g.fillRect(x + 8, y + 16, 6, 2);
-    else g.fillRect(x + 7, y + 16, 8, 2);
+    // neck / shoulders
+    g.fillStyle = "#2f6a4a"; g.fillRect(x + 4, y + 19, 14, 3);
+    // head base + shading (skin darkens as HP drops)
+    const skin = hp > 66 ? "#d9a273" : hp > 33 ? "#c68a5c" : "#a86f4a";
+    const shade = hp > 66 ? "#b07e50" : hp > 33 ? "#9c6a40" : "#834f30";
+    g.fillStyle = skin; g.fillRect(x + 4, y + 4, 14, 16);
+    g.fillStyle = shade; g.fillRect(x + 14, y + 5, 4, 15);      // right-side shadow
+    g.fillRect(x + 4, y + 4, 14, 1);
+    // jaw
+    g.fillStyle = skin; g.fillRect(x + 5, y + 18, 12, 2);
+    // brown hair with a highlight
+    g.fillStyle = "#5a3418"; g.fillRect(x + 3, y + 2, 16, 5);
+    g.fillStyle = "#7a4a24"; g.fillRect(x + 4, y + 2, 6, 2);
+    g.fillRect(x + 3, y + 3, 16, 1);
+    // brow
+    g.fillStyle = "#4a2c14"; g.fillRect(x + 4, y + 8, 6, 1); g.fillRect(x + 12, y + 8, 6, 1);
+    // eyes (whites, blue iris tracking left/right slightly with head-bob)
+    const look = (Math.sin(this.bob * 0.5) * 1.4) | 0;
+    g.fillStyle = "#eef2ff"; g.fillRect(x + 5, y + 9, 5, 3); g.fillRect(x + 12, y + 9, 5, 3);
+    g.fillStyle = "#2b6fb0"; g.fillRect(x + 7 + look, y + 9, 2, 3); g.fillRect(x + 14 + look, y + 9, 2, 3);
+    g.fillStyle = "#0a0e16"; g.fillRect(x + 7 + look, y + 10, 1, 1); g.fillRect(x + 14 + look, y + 10, 1, 1);
+    // angry lowered brows when hurt or low HP
+    if (hurt || hp <= 33) { g.fillStyle = "#3a2010"; g.fillRect(x + 5, y + 8, 5, 2); g.fillRect(x + 12, y + 8, 5, 2); }
+    // nose
+    g.fillStyle = shade; g.fillRect(x + 10, y + 11, 2, 4);
+    // moustache/stubble
+    g.fillStyle = "#4a2c16"; g.fillRect(x + 6, y + 15, 10, 1);
+    // mouth reacts to state
+    if (grin) { g.fillStyle = "#eef2ff"; g.fillRect(x + 7, y + 16, 8, 2); }          // teeth grin
+    else if (hurt) { g.fillStyle = "#5a0c08"; g.fillRect(x + 8, y + 15, 6, 4); }     // open shout
+    else { g.fillStyle = "#3a1a10"; g.fillRect(x + 7, y + 16, 8, 2); }               // set jaw
+    // blood/wounds at low HP
+    if (hp <= 33) {
+      g.fillStyle = "#b02020";
+      g.fillRect(x + 5, y + 6, 4, 2); g.fillRect(x + 14, y + 13, 3, 4); g.fillRect(x + 6, y + 17, 2, 2);
+    } else if (hp <= 66) {
+      g.fillStyle = "#8a3020"; g.fillRect(x + 14, y + 12, 3, 2);
+    }
   };
 
   Game.prototype.renderHUD = function (g) {
@@ -1382,8 +1464,8 @@
     g.fillStyle = "#eef2ff"; g.font = "bold 11px monospace";
     g.fillText(Math.sin(t * 4) > -0.2 ? "CLICK OR PRESS SPACE TO ENTER HELL" : "", BW / 2, 116);
     g.font = "bold 8px monospace"; g.fillStyle = "#8d99b8";
-    g.fillText("WASD MOVE · ARROWS/MOUSE TURN · SPACE/CLICK FIRE", BW / 2, 148);
-    g.fillText("1-3 WEAPONS · M MAP · P PAUSE · R RETRY", BW / 2, 160);
+    g.fillText("WASD MOVE · MOVE MOUSE OR ARROWS TO AIM", BW / 2, 148);
+    g.fillText("HOLD CLICK / SPACE = FIRE · 1-3 WEAPONS · M MAP · P PAUSE", BW / 2, 160);
     g.fillText("4 LEVELS · 6 DEMON BREEDS · OPEN THE DOORS · SLAY THE CINDER KING", BW / 2, 172);
     if (this.hi > 0) { g.fillStyle = "#ffd75e"; g.fillText("HI-SCORE " + this.hi, BW / 2, 188); }
     g.restore();
@@ -1416,7 +1498,8 @@
     removeEventListener("keydown", this._down);
     removeEventListener("keyup", this._up);
     removeEventListener("mousemove", this._mm);
-    this.canvas.removeEventListener("mousedown", this._click);
+    removeEventListener("mouseup", this._mu);
+    this.canvas.removeEventListener("mousedown", this._md);
     if (document.pointerLockElement === this.canvas && document.exitPointerLock) {
       try { document.exitPointerLock(); } catch (e) {}
     }
