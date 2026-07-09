@@ -7,10 +7,30 @@ const ui = document.getElementById("fps-canvas");
 const uictx = ui.getContext("2d", { alpha: true });
 
 const intro = document.getElementById("intro");
+const introScroll = document.getElementById("intro-scroll");
 const warpOverlay = document.getElementById("warp");
 const startBtn = document.getElementById("start-button");
 const shootSfx = document.getElementById("sfx-shoot");
 const bgMusic = document.getElementById("bg-music");
+
+// Let people thumb-scroll the intro story; pause the crawl while reading.
+(() => {
+  if (!intro || !introScroll) return;
+  const crawlEl = intro.querySelector(".crawl");
+  let resumeTimer = 0;
+  const markReading = () => {
+    intro.classList.add("is-reading");
+    crawlEl?.classList.add("is-paused");
+    clearTimeout(resumeTimer);
+    // Keep paused after interaction — reading mode wins over auto-crawl
+    resumeTimer = setTimeout(() => {
+      // leave paused so scroll position stays readable
+    }, 0);
+  };
+  ["touchstart", "wheel", "pointerdown", "scroll"].forEach(evt => {
+    introScroll.addEventListener(evt, markReading, { passive: true });
+  });
+})();
 
 // set default SFX volume
 if (shootSfx) shootSfx.volume = 0.12;
@@ -905,6 +925,24 @@ function ensureLightbox(){
     else if (e.target.closest("[data-lightbox-next]")) stepLightbox(1);
   });
 
+  // Thumb-friendly swipe between previews
+  let touchX = 0, touchY = 0, swiping = false;
+  lightbox.addEventListener("touchstart", (e) => {
+    const t = e.changedTouches?.[0];
+    if (!t) return;
+    touchX = t.clientX; touchY = t.clientY; swiping = true;
+  }, { passive: true });
+  lightbox.addEventListener("touchend", (e) => {
+    if (!swiping) return;
+    swiping = false;
+    const t = e.changedTouches?.[0];
+    if (!t) return;
+    const dx = t.clientX - touchX;
+    const dy = t.clientY - touchY;
+    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy)) return;
+    stepLightbox(dx < 0 ? 1 : -1);
+  }, { passive: true });
+
   document.addEventListener("keydown", (e) => {
     if (!lightbox || lightbox.hidden) return;
     if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeLightbox(); }
@@ -959,16 +997,20 @@ function stepLightbox(delta){
 function bindCaseGalleries(root){
   root?.querySelectorAll?.("[data-case-gallery]")?.forEach(gallery => {
     const hero = gallery.querySelector(".case__hero");
+    const openBtn = gallery.querySelector("[data-open-lightbox]");
     const list = (gallery.getAttribute("data-preview-list") || "")
       .split("|")
       .map(s => { try { return decodeURIComponent(s); } catch { return s; } })
       .filter(Boolean);
+    let activeIndex = 0;
 
     const setActive = (src, index) => {
+      activeIndex = index;
       if (hero && src) hero.src = src;
       gallery.querySelectorAll(".case__thumb").forEach(b => b.classList.remove("is-active"));
       const active = gallery.querySelector(`.case__thumb[data-preview-index="${index}"]`);
       active?.classList.add("is-active");
+      active?.scrollIntoView?.({ inline: "center", block: "nearest", behavior: "smooth" });
     };
 
     gallery.querySelectorAll(".case__thumb").forEach(btn => {
@@ -977,17 +1019,30 @@ function bindCaseGalleries(root){
         const index = Number(btn.getAttribute("data-preview-index") || 0);
         setActive(src, index);
       });
-      btn.addEventListener("dblclick", () => {
-        const index = Number(btn.getAttribute("data-preview-index") || 0);
-        openLightbox(list, index);
-      });
     });
 
-    gallery.querySelector("[data-open-lightbox]")?.addEventListener("click", () => {
-      const currentSrc = hero?.getAttribute("src") || list[0];
-      const index = Math.max(0, list.indexOf(currentSrc));
-      openLightbox(list, index === -1 ? 0 : index);
+    openBtn?.addEventListener("click", () => {
+      openLightbox(list, activeIndex);
     });
+
+    // Swipe main preview left/right on touch devices
+    let tx = 0, ty = 0, tracking = false;
+    openBtn?.addEventListener("touchstart", (e) => {
+      const t = e.changedTouches?.[0];
+      if (!t) return;
+      tx = t.clientX; ty = t.clientY; tracking = true;
+    }, { passive: true });
+    openBtn?.addEventListener("touchend", (e) => {
+      if (!tracking || list.length < 2) { tracking = false; return; }
+      tracking = false;
+      const t = e.changedTouches?.[0];
+      if (!t) return;
+      const dx = t.clientX - tx;
+      const dy = t.clientY - ty;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+      const next = (activeIndex + (dx < 0 ? 1 : -1) + list.length) % list.length;
+      setActive(list[next], next);
+    }, { passive: true });
   });
 }
 
@@ -1015,10 +1070,7 @@ function caseStudyHTML(cs){
     </div>`).join("");
   return `
     <article class="case case--rich">
-      <div class="case__media">
-        ${gallery}${video}
-      </div>
-      <div class="case__body">
+      <header class="case__intro">
         <div class="case__heading">
           <h3 class="case__title">${cs.title}</h3>
           ${badge}
@@ -1027,6 +1079,11 @@ function caseStudyHTML(cs){
         ${meta ? `<div class="case__meta">${meta}</div>` : ""}
         ${highlights ? `<div class="case__stats">${highlights}</div>` : ""}
         <div class="pills">${pills}</div>
+      </header>
+      <div class="case__media">
+        ${gallery}${video}
+      </div>
+      <div class="case__body">
         ${section("The problem", cs.problem)}
         ${section("What I built", cs.solution)}
         ${bullets ? `<section class="case__block"><h4 class="case__block-title">Highlights</h4><ul class="case__bullets">${bullets}</ul></section>` : ""}
