@@ -2148,7 +2148,7 @@ function bindContactForm(){
       form.reset();
       try { window.va?.("event", { name: "contact_submit" }); } catch {}
     } catch (err) {
-      status.textContent = "Couldn’t reach the server. Opening your email app instead…";
+      status.textContent = "Email service is busy — opening your email app instead…";
       mailtoFallback();
     } finally {
       btn.disabled = false;
