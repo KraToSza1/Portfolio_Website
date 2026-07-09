@@ -8,28 +8,47 @@ const uictx = ui.getContext("2d", { alpha: true });
 
 const intro = document.getElementById("intro");
 const introScroll = document.getElementById("intro-scroll");
+const crawlPauseBtn = document.getElementById("crawl-pause");
 const warpOverlay = document.getElementById("warp");
 const startBtn = document.getElementById("start-button");
 const shootSfx = document.getElementById("sfx-shoot");
 const bgMusic = document.getElementById("bg-music");
 
-// Let people thumb-scroll the intro story; pause the crawl while reading.
+// Explicit Pause / Play for the intro crawl (plus auto-pause while scrolling).
 (() => {
-  if (!intro || !introScroll) return;
+  if (!intro) return;
   const crawlEl = intro.querySelector(".crawl");
-  let resumeTimer = 0;
-  const markReading = () => {
-    intro.classList.add("is-reading");
-    crawlEl?.classList.add("is-paused");
-    clearTimeout(resumeTimer);
-    // Keep paused after interaction — reading mode wins over auto-crawl
-    resumeTimer = setTimeout(() => {
-      // leave paused so scroll position stays readable
-    }, 0);
+  const labelEl = crawlPauseBtn?.querySelector("[data-pause-label]");
+  let crawlPaused = false;
+
+  const applyCrawlPause = (paused) => {
+    crawlPaused = !!paused;
+    intro.classList.toggle("is-reading", crawlPaused);
+    crawlEl?.classList.toggle("is-paused", crawlPaused);
+    if (crawlPauseBtn) {
+      crawlPauseBtn.setAttribute("aria-pressed", crawlPaused ? "true" : "false");
+      crawlPauseBtn.setAttribute("aria-label", crawlPaused ? "Play intro crawl" : "Pause intro crawl");
+      crawlPauseBtn.dataset.paused = crawlPaused ? "true" : "false";
+    }
+    if (labelEl) labelEl.textContent = crawlPaused ? "Play" : "Pause";
   };
-  ["touchstart", "wheel", "pointerdown", "scroll"].forEach(evt => {
-    introScroll.addEventListener(evt, markReading, { passive: true });
+
+  crawlPauseBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    applyCrawlPause(!crawlPaused);
   });
+
+  // Scrolling/touching the story also pauses so reading stays easy
+  if (introScroll) {
+    ["touchstart", "wheel", "scroll"].forEach(evt => {
+      introScroll.addEventListener(evt, () => {
+        if (!crawlPaused) applyCrawlPause(true);
+      }, { passive: true });
+    });
+  }
+
+  // Start unpaused; button is the clear control
+  applyCrawlPause(false);
 })();
 
 // set default SFX volume
