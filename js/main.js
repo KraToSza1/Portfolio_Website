@@ -1136,9 +1136,7 @@ const CASE_A = {
   hero:"assets/images/cases/Demo.png",
   thumb:"assets/images/thumb-hud.svg",
   previews:[
-    "assets/images/cases/Demo.png",
-    "assets/images/cases/1.jpg",
-    "assets/images/cases/3.jpg"
+    "assets/images/cases/Demo.png"
   ],
   video:"assets/videos/Horror.mp4",
   links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/HorrorFPS" }]
@@ -1205,9 +1203,7 @@ const CASE_C = {
   hero:"assets/images/cases/Equipped Axe.png",
   thumb:"assets/images/thumb-commonui.svg",
   previews:[
-    "assets/images/cases/Equipped Axe.png",
-    "assets/images/cases/4.jpg",
-    "assets/images/cases/1.jpg"
+    "assets/images/cases/Equipped Axe.png"
   ],
   video:"assets/videos/A Basic Dungeon.mp4",
   links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/SlashRPG" }]
@@ -1272,12 +1268,13 @@ const CASE_D = {
     "Payments integration plan (PayFast).",
     "Built as a product foundation for farm produce orders."
   ],
-  hero:"assets/images/cases/2.jpg",
+  hero:"assets/images/cases/1.jpg",
   thumb:"assets/images/thumb-farmily.svg",
   previews:[
-    "assets/images/cases/2.jpg",
-    "assets/images/thumb-farmily.svg",
-    "assets/images/cases/3.jpg"
+    "assets/images/cases/1.jpg",
+    "assets/images/cases/4.jpg",
+    "assets/images/cases/3.jpg",
+    "assets/images/cases/2.jpg"
   ],
   video:"",
   links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/Farmilly_Mobile_App" }]
@@ -2036,9 +2033,10 @@ const ROOMS = [
     { name: NAMES[8], px:78, py:20, r:40, planet: PLANETS.violet, label:"ForgeQuest", action: () => openLanding("ForgeQuest AI", caseStudyHTML(CASE_FORGE)), warp: "theme-violet", ringTilt: -0.22 },
     { name: NAMES[1], px:18, py:55, r:38, planet: PLANETS.aqua,   label:"StorIQ", action: () => openLanding("StorIQ Location SEO Builder", caseStudyHTML(CASE_STORIQ)), warp: "theme-cyan", ringTilt: 0.2 },
     { name: NAMES[7], px:82, py:55, r:38, planet: PLANETS.aqua,   label:"Will Tool", action: () => openLanding("Will Tool — Dynamic PDF", caseStudyHTML(CASE_B)), warp: "theme-cyan" },
-    { name: NAMES[5], px:32, py:78, r:36, planet: PLANETS.mint,   label:"Elize's Canteen", action: () => openLanding("Elize's Canteen", caseStudyHTML(CASE_CANTEEN)), warp: "theme-emerald", ringTilt: -0.15 },
-    { name: NAMES[6], px:68, py:78, r:36, planet: PLANETS.coral,  label:"Horror HUD", action: () => openLanding("Horror Mission HUD", caseStudyHTML(CASE_A)), warp: "theme-magma" },
-    { name: NAMES[9], px:50, py:68, r:34, planet: PLANETS.violet, label:"ARPG UI", action: () => openLanding("Hack & Slash ARPG UI", caseStudyHTML(CASE_C)), warp: "theme-violet", ringTilt: 0.25 },
+    { name: NAMES[5], px:28, py:78, r:34, planet: PLANETS.mint,   label:"Elize's Canteen", action: () => openLanding("Elize's Canteen", caseStudyHTML(CASE_CANTEEN)), warp: "theme-emerald", ringTilt: -0.15 },
+    { name: NAMES[0], px:50, py:78, r:36, planet: PLANETS.amber,  label:"Farmily", action: () => openLanding("Farmily — Mobile Foundations", caseStudyHTML(CASE_D)), warp: "theme-magma", ringTilt: 0.12 },
+    { name: NAMES[6], px:72, py:78, r:34, planet: PLANETS.coral,  label:"Horror HUD", action: () => openLanding("Horror Mission HUD", caseStudyHTML(CASE_A)), warp: "theme-magma" },
+    { name: NAMES[9], px:50, py:62, r:32, planet: PLANETS.violet, label:"ARPG UI", action: () => openLanding("Hack & Slash ARPG UI", caseStudyHTML(CASE_C)), warp: "theme-violet", ringTilt: 0.25 },
     { name: NAMES[2], px:50, py:92, r:34, planet: PLANETS.amber,  label:"← Back", action: () => setRoom(0), warp: "theme-magma" },
   ]},
 ];
