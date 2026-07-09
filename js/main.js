@@ -1452,35 +1452,61 @@ function normalizeCert(c){
     year: c.year || c.date || "",
     link: safeLink,
     skills: c.skills || [],
+    image: c.image || c.cover || "",
+    track: c.track || "",
+    profile: c.profile || "",
     status, pct
   };
 }
 
 function statusBadgeHTML(status, pct){
   if (status === "complete" || pct === 100) {
-    return `<div class="badges"><span class="badge">Completed</span></div>`;
+    return `<span class="status-badge status-badge--live">Completed</span>`;
   }
   if (status === "in-progress" || (typeof pct === "number" && pct < 100)) {
-    return `<div class="badges"><span class="badge">In progress${typeof pct === "number" ? ` · ${pct}%` : ""}</span></div>`;
+    return `<span class="status-badge">In progress${typeof pct === "number" ? ` · ${pct}%` : ""}</span>`;
   }
   if (status === "planned") {
-    return `<div class="badges"><span class="badge">Planned</span></div>`;
+    return `<span class="status-badge">Planned</span>`;
   }
   return "";
 }
 
 function progressBarHTML(pct){
   if (typeof pct !== "number" || pct >= 100) return "";
-  // Reuse the existing skill bar styles so no extra CSS is needed
-  return `<div class="skill__bar" style="margin-top:8px">
-            <div class="skill__fill ${skillBarClass()}" style="--w:${pct}%"></div>
+  return `<div class="cert__progress" aria-hidden="true">
+            <div class="cert__progress-fill" style="--w:${pct}%"></div>
           </div>`;
+}
+
+function certCardHTML(c){
+  const meta = [c.issuer, c.year].filter(Boolean).join(" · ");
+  const badge = statusBadgeHTML(c.status, c.pct);
+  const bar = progressBarHTML(c.pct);
+  const track = c.track ? `<span class="cert__track">${c.track}</span>` : "";
+  const img = c.image
+    ? `<img class="cert__cover" src="${c.image}" alt="" loading="lazy" decoding="async">`
+    : `<div class="cert__cover cert__cover--fallback" aria-hidden="true"></div>`;
+  const btn = c.link
+    ? `<a class="link-btn" href="${c.link}" target="_blank" rel="noopener">View credential</a>`
+    : "";
+
+  return `
+    <article class="cert-card${c.status === "complete" ? " cert-card--done" : ""}">
+      <div class="cert__media">${img}${badge}</div>
+      <div class="cert__body">
+        ${track}
+        <h3 class="cert__title">${c.name}</h3>
+        <p class="cert__meta">${meta}</p>
+        ${bar}
+        ${btn ? `<div class="link-row cert__actions">${btn}</div>` : ""}
+      </div>
+    </article>`;
 }
 
 function certificationsHTML(){
   const items = (SITE.certifications?.length ? SITE.certifications : RAW_CERTS)
     .map(normalizeCert)
-    // Sort: in-progress first, then completed, then others; tiebreaker by year desc
     .sort((a,b) => {
       const order = v => v.status==="complete" ? 0
                : v.status==="in-progress" ? 1
@@ -1490,26 +1516,35 @@ function certificationsHTML(){
       return by - ay;
     });
 
-  const cards = items.map(c => {
-    const meta = [c.issuer, c.year].filter(Boolean).join(" · ");
-    const skills = c.skills.length ? `<p class="card__sub">Skills</p><p class="case__summary">${c.skills.join(" · ")}</p>` : "";
-    const badge = statusBadgeHTML(c.status, c.pct);
-    const bar   = progressBarHTML(c.pct);
-    const btn   = c.link ? `<div class="link-row"><a class="link-btn" href="${c.link}" target="_blank" rel="noopener">View credential</a></div>` : "";
+  const done = items.filter(c => c.status === "complete" || c.pct === 100);
+  const active = items.filter(c => !(c.status === "complete" || c.pct === 100));
+  const profile = "https://www.udemy.com/user/raymond-van-der-walt/";
 
-    return `
-      <article class="card">
-        <h3 class="card__title">${c.name}</h3>
-        <p class="card__desc">${meta}</p>
-        ${skills}
-        ${badge}
-        ${bar}
-        ${btn}
-      </article>
-    `;
-  }).join("");
+  return `
+    <div class="certs">
+      <div class="certs__hero">
+        <div>
+          <p class="certs__kicker">Learning log</p>
+          <p class="certs__summary">
+            <strong>${done.length}</strong> completed ·
+            <strong>${active.length}</strong> in progress ·
+            formal IIE Higher Certificate + Udemy game/UI track
+          </p>
+        </div>
+        <a class="link-btn" href="${profile}" target="_blank" rel="noopener">Udemy profile →</a>
+      </div>
 
-  return `<div class="grid-cards">${cards}</div>`;
+      <section class="certs__section">
+        <h3 class="certs__heading">Completed</h3>
+        <div class="certs__grid">${done.map(certCardHTML).join("")}</div>
+      </section>
+
+      ${active.length ? `
+      <section class="certs__section">
+        <h3 class="certs__heading">In progress</h3>
+        <div class="certs__grid">${active.map(certCardHTML).join("")}</div>
+      </section>` : ""}
+    </div>`;
 }
 
 // ---------- About ----------
