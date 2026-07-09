@@ -6,7 +6,7 @@
    - Clean versioned caches + opt-in skipWaiting via postMessage
 */
 
-const VERSION  = "2026-07-08-v6";
+const VERSION  = "2026-07-10-v7";
 const PRECACHE = `rvdw-precache-${VERSION}`;
 const RUNTIME  = `rvdw-runtime-${VERSION}`;
 const DEBUG    = false;
@@ -21,7 +21,7 @@ const PRECACHE_URLS = [
   "css/style.css",
   "js/main.js",
   "js/ship3d.js",
-  "assets/images/profile.png",
+  "assets/images/about/raymond.png",
   "assets/images/station.png",
 ].map(p => new URL(p, BASE).href);
 
