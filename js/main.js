@@ -1614,7 +1614,7 @@ const aboutHTML = `
         <div class="contact-pill">
           <span class="contact-pill__icon">✉️</span>
           <span class="contact-pill__text">
-            <a href="mailto:${CONTACT_EMAIL}" class="contact-pill__link">${CONTACT_EMAIL}</a>
+            <a href="mailto:${CONTACT_EMAIL}" class="contact-pill__link">Email me</a>
           </span>
         </div>
         ${CONTACT_PHONE ? `<div class="contact-pill">
