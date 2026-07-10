@@ -3034,53 +3034,61 @@
   };
 
   Game.prototype.renderFace = function (g, x, y) {
-    // detailed doom-marine status face, 22x22
+    // Doom-style marine mugshot — 28×30, high contrast
     const hp = this.hp;
-    const hurt = this.dmgFlash > 0.3, grin = this.pickFlash > 0.25;
-    const cx = x + 11;
-    // backdrop
-    g.fillStyle = "#0c0d12"; g.fillRect(x, y, 22, 22);
-    // neck / shoulders
-    g.fillStyle = "#2f6a4a"; g.fillRect(x + 4, y + 19, 14, 3);
-    // head base + shading (skin darkens as HP drops)
-    const skin = hp > 66 ? "#d9a273" : hp > 33 ? "#c68a5c" : "#a86f4a";
-    const shade = hp > 66 ? "#b07e50" : hp > 33 ? "#9c6a40" : "#834f30";
-    g.fillStyle = skin; g.fillRect(x + 4, y + 4, 14, 16);
-    g.fillStyle = shade; g.fillRect(x + 14, y + 5, 4, 15);      // right-side shadow
-    g.fillRect(x + 4, y + 4, 14, 1);
-    // jaw
-    g.fillStyle = skin; g.fillRect(x + 5, y + 18, 12, 2);
-    // brown hair with a highlight
-    g.fillStyle = "#5a3418"; g.fillRect(x + 3, y + 2, 16, 5);
-    g.fillStyle = "#7a4a24"; g.fillRect(x + 4, y + 2, 6, 2);
-    g.fillRect(x + 3, y + 3, 16, 1);
-    // brow
-    g.fillStyle = "#4a2c14"; g.fillRect(x + 4, y + 8, 6, 1); g.fillRect(x + 12, y + 8, 6, 1);
-    // eyes (whites, blue iris tracking left/right slightly with head-bob)
-    const look = (Math.sin(this.bob * 0.5) * 1.4) | 0;
-    g.fillStyle = "#eef2ff"; g.fillRect(x + 5, y + 9, 5, 3); g.fillRect(x + 12, y + 9, 5, 3);
-    g.fillStyle = "#2b6fb0"; g.fillRect(x + 7 + look, y + 9, 2, 3); g.fillRect(x + 14 + look, y + 9, 2, 3);
-    g.fillStyle = "#0a0e16"; g.fillRect(x + 7 + look, y + 10, 1, 1); g.fillRect(x + 14 + look, y + 10, 1, 1);
-    // angry lowered brows when hurt or low HP
-    if (hurt || hp <= 33) { g.fillStyle = "#3a2010"; g.fillRect(x + 5, y + 8, 5, 2); g.fillRect(x + 12, y + 8, 5, 2); }
-    // nose
-    g.fillStyle = shade; g.fillRect(x + 10, y + 11, 2, 4);
-    // moustache/stubble
-    g.fillStyle = "#4a2c16"; g.fillRect(x + 6, y + 15, 10, 1);
-    // mouth reacts to state
-    if (grin) { g.fillStyle = "#eef2ff"; g.fillRect(x + 7, y + 16, 8, 2); }          // teeth grin
-    else if (hurt) { g.fillStyle = "#5a0c08"; g.fillRect(x + 8, y + 15, 6, 4); }     // open shout
-    else { g.fillStyle = "#3a1a10"; g.fillRect(x + 7, y + 16, 8, 2); }               // set jaw
-    // blood/wounds at low HP
-    if (hp <= 33) {
-      g.fillStyle = "#b02020";
-      g.fillRect(x + 5, y + 6, 4, 2); g.fillRect(x + 14, y + 13, 3, 4); g.fillRect(x + 6, y + 17, 2, 2);
-    } else if (hp <= 66) {
-      g.fillStyle = "#8a3020"; g.fillRect(x + 14, y + 12, 3, 2);
+    const hurt = this.dmgFlash > 0.25, grin = this.pickFlash > 0.2;
+    const low = hp <= 33, mid = hp <= 66;
+    const look = ((Math.sin(this.bob * 0.55) * 1.6) | 0);
+    const skin  = low ? "#9a6240" : mid ? "#c88858" : "#e0a878";
+    const shade = low ? "#6e4028" : mid ? "#a86840" : "#c08050";
+    const rim   = low ? "#4a2818" : "#5a3020";
+
+    g.fillStyle = "#070a12"; g.fillRect(x, y, 28, 30);
+    g.fillStyle = "#1e4a32"; g.fillRect(x + 2, y + 24, 24, 6);
+    g.fillStyle = "#2f6a4a"; g.fillRect(x + 4, y + 24, 20, 3);
+    g.fillStyle = "#3d8a5e"; g.fillRect(x + 6, y + 24, 4, 2); g.fillRect(x + 18, y + 24, 4, 2);
+    g.fillStyle = shade; g.fillRect(x + 10, y + 22, 8, 3);
+    g.fillStyle = skin; g.fillRect(x + 5, y + 5, 18, 18);
+    g.fillStyle = shade; g.fillRect(x + 18, y + 6, 5, 16);
+    g.fillRect(x + 5, y + 5, 18, 2);
+    g.fillStyle = skin; g.fillRect(x + 7, y + 20, 14, 3);
+    g.fillStyle = shade; g.fillRect(x + 17, y + 20, 4, 3);
+    g.fillStyle = "#2a180c"; g.fillRect(x + 4, y + 2, 20, 6);
+    g.fillStyle = "#4a2c14"; g.fillRect(x + 5, y + 2, 8, 3);
+    g.fillStyle = "#1a1008"; g.fillRect(x + 4, y + 7, 3, 8); g.fillRect(x + 21, y + 7, 3, 8);
+    g.fillStyle = shade; g.fillRect(x + 3, y + 10, 2, 5); g.fillRect(x + 23, y + 10, 2, 5);
+    const browY = (hurt || low) ? 8 : 9;
+    g.fillStyle = rim;
+    g.fillRect(x + 6, y + browY, 7, (hurt || low) ? 2 : 1);
+    g.fillRect(x + 15, y + browY, 7, (hurt || low) ? 2 : 1);
+    g.fillStyle = "#f4f7ff";
+    g.fillRect(x + 7, y + 10, 6, 4); g.fillRect(x + 16, y + 10, 6, 4);
+    g.fillStyle = "#1a5a9a";
+    g.fillRect(x + 9 + look, y + 10, 3, 4); g.fillRect(x + 18 + look, y + 10, 3, 4);
+    g.fillStyle = "#05080f";
+    g.fillRect(x + 10 + look, y + 11, 1, 2); g.fillRect(x + 19 + look, y + 11, 1, 2);
+    g.fillStyle = shade; g.fillRect(x + 13, y + 13, 3, 5);
+    g.fillStyle = rim; g.fillRect(x + 14, y + 16, 2, 1);
+    g.fillStyle = "#3a2414"; g.fillRect(x + 8, y + 18, 12, 2);
+    if (grin) {
+      g.fillStyle = "#1a0c08"; g.fillRect(x + 9, y + 20, 10, 3);
+      g.fillStyle = "#f0f4ff"; g.fillRect(x + 10, y + 20, 8, 2);
+    } else if (hurt) {
+      g.fillStyle = "#4a0808"; g.fillRect(x + 10, y + 19, 8, 5);
+      g.fillStyle = "#e8d0c0"; g.fillRect(x + 11, y + 20, 6, 1);
+    } else {
+      g.fillStyle = "#2a140c"; g.fillRect(x + 9, y + 20, 10, 2);
     }
+    if (low) {
+      g.fillStyle = "#c02020";
+      g.fillRect(x + 6, y + 6, 5, 2); g.fillRect(x + 19, y + 14, 3, 5); g.fillRect(x + 8, y + 21, 3, 2);
+      g.fillStyle = "#801010"; g.fillRect(x + 7, y + 7, 3, 1);
+    } else if (mid) {
+      g.fillStyle = "#a03828"; g.fillRect(x + 19, y + 13, 3, 3);
+    }
+    g.strokeStyle = "#3a4568"; g.lineWidth = 1; g.strokeRect(x + 0.5, y + 0.5, 27, 29);
   };
 
-  // small overlay strip above the HUD: active mod timers + daily/ghost badges
   Game.prototype.renderStatusStrip = function (g) {
     g.save(); g.scale(SCALE, SCALE);
     g.font = "bold 7px monospace"; g.textBaseline = "middle"; g.textAlign = "left";
@@ -3088,70 +3096,97 @@
     const mods = [["RAPID", this.mods.rapid, 20, "#ffd75e"], ["SPREAD", this.mods.spread, 20, "#ff9a50"], ["LIFE", this.mods.lifesteal, 15, "#63d97a"]];
     for (let i = 0; i < mods.length; i++) {
       const m = mods[i]; if (m[1] <= 0) continue;
-      const w = 34;
-      g.fillStyle = "rgba(4,5,11,0.6)"; g.fillRect(x, 4, w, 9);
-      g.fillStyle = m[3]; g.fillRect(x, 12, (w * m[1] / m[2]) | 0, 1);
-      g.fillText(m[0] + " " + Math.ceil(m[1]) + "s", x + 2, 8);
-      x += w + 3;
+      const ww = 42;
+      g.fillStyle = "rgba(4,5,11,0.78)"; g.fillRect(x, 3, ww, 11);
+      g.fillStyle = m[3]; g.fillRect(x, 13, (ww * m[1] / m[2]) | 0, 2);
+      g.fillStyle = "#f0f4ff"; g.fillText(m[0] + " " + Math.ceil(m[1]) + "s", x + 2, 9);
+      x += ww + 4;
     }
-    // badges (top-right)
     g.textAlign = "right";
     let bx = BW - 4;
-    if (dailyMode) { g.fillStyle = "#ff8a50"; g.fillText("DAILY #" + dailySeed, bx, 8); bx -= 66; }
-    if (this.ghostBest) { g.fillStyle = "#63d97a"; g.fillText("GHOST", bx, 8); bx -= 34; }
-    if (this.allyOn) { g.fillStyle = "#8ad8ff"; g.fillText("ALLY", bx, 8); }
+    if (dailyMode) { g.fillStyle = "#ff8a50"; g.fillText("DAILY #" + dailySeed, bx, 9); bx -= 70; }
+    if (this.ghostBest) { g.fillStyle = "#63d97a"; g.fillText("GHOST", bx, 9); bx -= 36; }
+    if (this.allyOn) { g.fillStyle = "#8ad8ff"; g.fillText("ALLY", bx, 9); }
     g.restore();
   };
 
   Game.prototype.renderHUD = function (g) {
-    g.save(); g.scale(SCALE, SCALE); // chrome space
-    g.fillStyle = "#0b0f1a"; g.fillRect(0, VIEW_B, BW, BHUD);
-    g.fillStyle = "#232c47"; g.fillRect(0, VIEW_B, BW, 1);
-    this.renderFace(g, 3, VIEW_B + 3);
-    g.font = "bold 8px monospace"; g.textBaseline = "middle"; g.textAlign = "left";
-    // HP
-    g.fillStyle = "#31121a"; g.fillRect(28, VIEW_B + 3, 44, 7);
-    g.fillStyle = this.hp > 35 ? "#c9333f" : "#ff7043";
-    g.fillRect(28, VIEW_B + 3, (44 * this.hp / 100) | 0, 7);
-    g.fillStyle = "#fff"; g.fillText(String(this.hp), 30, VIEW_B + 7);
-    // Armor
-    g.fillStyle = "#122033"; g.fillRect(28, VIEW_B + 12, 44, 6);
+    g.save(); g.scale(SCALE, SCALE);
+    const y0 = VIEW_B;
+    g.fillStyle = "#080c16"; g.fillRect(0, y0, BW, BHUD);
+    g.fillStyle = "#4a5578"; g.fillRect(0, y0, BW, 1);
+    g.fillStyle = "#161c2e"; g.fillRect(0, y0 + 1, BW, 1);
+
+    this.renderFace(g, 2, y0 + 3);
+
+    g.textBaseline = "middle"; g.textAlign = "left";
+    g.font = "bold 7px monospace"; g.fillStyle = "#a8b4d0"; g.fillText("HP", 34, y0 + 9);
+    g.fillStyle = "#31121a"; g.fillRect(48, y0 + 5, 48, 9);
+    g.fillStyle = this.hp > 35 ? "#e04040" : "#ff7043";
+    g.fillRect(48, y0 + 5, Math.max(0, (48 * this.hp / 100) | 0), 9);
+    g.fillStyle = "#ffffff"; g.font = "bold 9px monospace";
+    g.fillText(String(this.hp | 0), 50, y0 + 10);
+
+    g.font = "bold 7px monospace"; g.fillStyle = "#a8b4d0"; g.fillText("AR", 34, y0 + 23);
+    g.fillStyle = "#122033"; g.fillRect(48, y0 + 19, 48, 9);
     g.fillStyle = "#4a9ad8";
-    g.fillRect(28, VIEW_B + 12, (44 * (this.armor || 0) / 100) | 0, 6);
-    g.fillStyle = "#cfe8ff"; g.fillText(String(this.armor || 0), 30, VIEW_B + 15);
-    // ammo for current weapon
-    const w = WEAPONS[this.cur];
-    const ammoVal = w.ammo === "none" ? "INF" : String(this[w.ammo] || 0);
-    g.fillStyle = "#8d99b8"; g.fillText("AMMO", 76, VIEW_B + 8);
-    g.fillStyle = w.ammo === "none" ? "#88cc44" : "#ffd75e"; g.fillText(ammoVal, 104, VIEW_B + 8);
-    // weapon slots 1-6
+    g.fillRect(48, y0 + 19, Math.max(0, (48 * (this.armor || 0) / 100) | 0), 9);
+    g.fillStyle = "#e8f4ff"; g.font = "bold 9px monospace";
+    g.fillText(String((this.armor || 0) | 0), 50, y0 + 24);
+
+    g.fillStyle = "#2a3350"; g.fillRect(102, y0 + 4, 1, BHUD - 7);
+
+    const wpn = WEAPONS[this.cur];
+    const shortName = ({ PISTOL: "PISTOL", SHOTGUN: "SHOTGUN", PLASMA: "PLASMA", BFG: "BFG", CHAINSAW: "SAW", ROCKET: "ROCKET" })[wpn.name] || wpn.name;
+    const ammoVal = wpn.ammo === "none" ? "INF" : String(this[wpn.ammo] || 0);
+    g.font = "bold 7px monospace"; g.fillStyle = "#a8b4d0"; g.fillText("AMMO", 108, y0 + 9);
+    g.font = "bold 13px monospace";
+    g.fillStyle = wpn.ammo === "none" ? "#88cc44" : (Number(ammoVal) <= 8 && wpn.ammo !== "none" ? "#ff7043" : "#ffd75e");
+    g.fillText(ammoVal, 134, y0 + 10);
+    g.font = "bold 8px monospace"; g.fillStyle = "#d8e4ff"; g.fillText(shortName, 108, y0 + 24);
     for (let i = 0; i < 6; i++) {
-      const owned = this.owned[i];
-      g.fillStyle = i === this.cur ? "#ffd75e" : owned ? "#8ad8ff" : "#2a3350";
-      g.fillText(String(i + 1), 76 + i * 9, VIEW_B + 20);
+      const ox = 148 + i * 10;
+      const on = i === this.cur, owned = this.owned[i];
+      g.fillStyle = on ? "#ffd75e" : owned ? "#1a2840" : "#0e1420";
+      g.fillRect(ox, y0 + 19, 8, 10);
+      g.fillStyle = on ? "#1a1200" : owned ? "#8ad8ff" : "#3a4568";
+      g.font = "bold 8px monospace"; g.textAlign = "center";
+      g.fillText(String(i + 1), ox + 4, y0 + 24);
+      g.textAlign = "left";
     }
-    g.fillStyle = "#8d99b8"; g.fillText(w.name, 132, VIEW_B + 20);
-    // keycards (red / blue / yellow)
-    const kc = this.keycards, kcCol = ["#c9333f", "#3a6ad8", "#e0c020"], kcOwn = [kc.red, kc.blue, kc.yellow];
+
+    g.fillStyle = "#2a3350"; g.fillRect(212, y0 + 4, 1, BHUD - 7);
+
+    const kc = this.keycards, kcCol = ["#e04040", "#3a7ae8", "#e8c020"], kcOwn = [kc.red, kc.blue, kc.yellow];
+    g.font = "bold 7px monospace"; g.fillStyle = "#a8b4d0"; g.fillText("KEYS", 218, y0 + 9);
     for (let ki = 0; ki < 3; ki++) {
-      const kx = 124 + ki * 7;
-      if (kcOwn[ki]) { g.fillStyle = kcCol[ki]; g.fillRect(kx, VIEW_B + 3, 6, 9); g.fillStyle = "#0b0f1a"; g.fillRect(kx + 1, VIEW_B + 5, 4, 2); }
-      else { g.fillStyle = "#2a3350"; g.fillRect(kx, VIEW_B + 3, 6, 9); }
+      const kx = 242 + ki * 9;
+      if (kcOwn[ki]) {
+        g.fillStyle = kcCol[ki]; g.fillRect(kx, y0 + 5, 7, 9);
+        g.fillStyle = "rgba(0,0,0,0.35)"; g.fillRect(kx + 1, y0 + 7, 5, 2);
+      } else {
+        g.fillStyle = "#1a2030"; g.fillRect(kx, y0 + 5, 7, 9);
+        g.strokeStyle = "#3a4568"; g.strokeRect(kx + 0.5, y0 + 5.5, 6, 8);
+      }
     }
-    // mine count
-    if (this.mineCount > 0) { g.fillStyle = "#c9333f"; g.fillText("◆" + this.mineCount, 124, VIEW_B + 20); }
-    // kills
-    g.fillStyle = "#8d99b8"; g.fillText("K", 148, VIEW_B + 8);
-    g.fillStyle = "#8ad8ff"; g.fillText(this.kills + "/" + this.L.totKills, 156, VIEW_B + 8);
-    // level + precise time
-    g.fillStyle = "#8d99b8"; g.fillText("L" + (this.levelIdx + 1), 148, VIEW_B + 8 + 12);
+    g.font = "bold 8px monospace";
+    g.fillStyle = this.mineCount > 0 ? "#ff6a5e" : "#4a5578";
+    g.fillText("MINE x" + (this.mineCount || 0), 218, y0 + 24);
+
+    g.fillStyle = "#2a3350"; g.fillRect(272, y0 + 4, 1, BHUD - 7);
+
     const tm = this.time;
-    const tms = ((tm / 60) | 0) + ":" + ("0" + ((tm | 0) % 60)).slice(-2) + "." + (((tm * 10) | 0) % 10);
-    g.fillStyle = "#8ad8ff"; g.fillText(tms, 162, VIEW_B + 20);
-    // score
+    const tms = ((tm / 60) | 0) + ":" + ("0" + ((tm | 0) % 60)).slice(-2);
     g.textAlign = "right";
-    g.fillStyle = "#ffd75e"; g.fillText("SCORE " + this.score, BW - 5, VIEW_B + 8);
-    g.fillStyle = "#8d99b8"; g.fillText("HI " + Math.max(this.hi, this.score), BW - 5, VIEW_B + 20);
+    g.font = "bold 7px monospace"; g.fillStyle = "#a8b4d0";
+    g.fillText("SCORE", BW - 4, y0 + 8);
+    g.font = "bold 10px monospace"; g.fillStyle = "#ffd75e";
+    g.fillText(String(this.score), BW - 4, y0 + 17);
+    g.font = "bold 7px monospace"; g.fillStyle = "#8ad8ff";
+    g.fillText("L" + (this.levelIdx + 1) + " " + tms, BW - 4, y0 + 26);
+    g.fillStyle = "#cfe8ff";
+    g.fillText("K " + this.kills + "/" + this.L.totKills, BW - 4, y0 + 33);
+
     g.restore();
   };
 
