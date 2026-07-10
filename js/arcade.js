@@ -215,7 +215,7 @@
   // drawn through a scale transform. The 3D view renders at SCALE x that —
   // up to 960x600 — chosen from the display and stepped down automatically
   // if the device can't keep up.
-  const BW = 320, BH = 200, BHUD = 28, VIEW_B = BH - BHUD;
+  const BW = 320, BH = 200, BHUD = 36, VIEW_B = BH - BHUD;
   let SCALE = 2, W = BW * 2, H = BH * 2, VIEW_H = VIEW_B * 2;
   const FOV_PLANE = 0.66;
   const TEX = 128; // art is authored in 64-space and rendered at 2x
@@ -2822,16 +2822,22 @@
       g.restore();
     }
 
-    // big centered announcer text (fades + pops)
+    // big centered announcer text (fades + pops) — dark plate so it stays readable
     if (this.bigT > 0 && this.bigMsg) {
       g.save(); g.scale(SCALE, SCALE);
-      const a = Math.min(1, this.bigT / 0.6);
-      const pop = this.bigT > 1.9 ? (2.2 - this.bigT) / 0.3 : 1; // quick scale-in
+      const a = Math.min(1, this.bigT / 0.55);
+      const pop = this.bigT > 1.9 ? (2.2 - this.bigT) / 0.3 : 1;
+      const fs = 15 + pop * 3;
       g.globalAlpha = a;
+      g.font = "bold " + fs.toFixed(0) + "px monospace";
       g.textAlign = "center"; g.textBaseline = "middle";
-      g.font = "bold " + (14 + pop * 4).toFixed(0) + "px monospace";
-      g.fillStyle = "rgba(0,0,0,0.7)"; g.fillText(this.bigMsg, BW / 2 + 1, 56 + 1);
-      g.fillStyle = this.bigColor; g.fillText(this.bigMsg, BW / 2, 56);
+      const tw = Math.min(BW - 16, g.measureText(this.bigMsg).width + 24);
+      g.fillStyle = "rgba(4,6,14,0.82)";
+      g.fillRect((BW - tw) / 2, 46, tw, 22);
+      g.strokeStyle = "rgba(255,215,94,0.35)"; g.lineWidth = 1;
+      g.strokeRect((BW - tw) / 2 + 0.5, 46.5, tw - 1, 21);
+      g.fillStyle = "#000"; g.fillText(this.bigMsg, BW / 2 + 1, 58);
+      g.fillStyle = this.bigColor || "#ffd75e"; g.fillText(this.bigMsg, BW / 2, 57);
       g.globalAlpha = 1;
       g.restore();
     }
