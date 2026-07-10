@@ -1860,9 +1860,9 @@ function workWithMeHTML(){
 function arcadeHTML(){
   return `
     <p>A complete retro FPS I built from scratch in a canvas — raycast walls, sliding
-    doors, four distinct weapons (pistol, shotgun, plasma, BFG), eleven demon breeds,
-    armor, and five themed levels (hangar, swamp, catacombs, foundry, throne). No engine:
-    walls, demons, and viewmodels are all drawn in code.</p>
+    doors, four distinct weapons (pistol, shotgun, plasma, BFG), fifteen demon breeds,
+    armor, secret alcoves, themed props (swamp trees, crates, bone idols, slag), and five
+    levels that start quiet — then the horde wakes. No engine: drawn in code.</p>
     <div class="arcade">
       <div class="arcade__rotate">↻ Rotate your phone sideways for the best experience</div>
       <div class="arcade__stage" id="arcade-stage">
