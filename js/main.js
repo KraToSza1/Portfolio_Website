@@ -2184,7 +2184,7 @@ const ROOMS = [
     { name: NAMES[7], px: 47, py: 42, r: 36, planet: PLANETS.aqua,   label: "Projects",        action: () => openLanding("Projects", projectsHTML()), warp: "theme-cyan",   ringTilt:  0.32 },
     { name: NAMES[9], px: 60, py: 18, r: 34, planet: PLANETS.violet, label: "Certifications",  action: () => openLanding("Certifications", certificationsHTML()), warp: "theme-violet", ringTilt: -0.38 },
     { name: SKILLS_PLANET.name, px: 75, py: 68, r: SKILLS_PLANET.r, planet: SKILLS_PLANET.planet, label: SKILLS_PLANET.label, action: () => openLanding("Skills", renderSkillsHTML()), asteroids: SKILLS_PLANET.asteroids, warp: WARP_THEME[skillsCfg.palette || "violet"] || "theme-violet" },
-    { name: "Aurum", px: 78, py: 22, r: 42, planet: PLANETS.amber, label: "Work With Me", action: () => openLanding("Work With Me", workWithMeHTML()), warp: "theme-magma", noSprite: true },
+    { name: "Aurum", px: 78, py: 22, mobilePy: 48, r: 42, planet: PLANETS.amber, label: "Work With Me", action: () => openLanding("Work With Me", workWithMeHTML()), warp: "theme-magma", noSprite: true },
     { name: "Inferno", px: 14, py: 70, r: 40, planet: PLANETS.coral, label: "Arcade", action: () => openArcadePanel(), warp: "theme-magma", noSprite: true },
     { name: NAMES[3], px: 42, py: 74, r: 40, planet: PLANETS.mint,   label: "Solar System →",     action: () => setRoom(1), warp: "theme-emerald" },
   ]},
@@ -2198,10 +2198,23 @@ const ROOMS = [
     { name: NAMES[0], px:50, py:78, r:36, planet: PLANETS.amber,  label:"Farmily", action: () => openLanding("Farmily — Mobile Foundations", caseStudyHTML(CASE_D)), warp: "theme-magma", ringTilt: 0.12 },
     { name: NAMES[6], px:72, py:78, r:34, planet: PLANETS.coral,  label:"Horror HUD", action: () => openLanding("Horror Mission HUD", caseStudyHTML(CASE_A)), warp: "theme-magma" },
     { name: NAMES[9], px:50, py:62, r:32, planet: PLANETS.violet, label:"ARPG UI", action: () => openLanding("Hack & Slash ARPG UI", caseStudyHTML(CASE_C)), warp: "theme-violet", ringTilt: 0.25 },
-    { name: NAMES[2], px:50, py:92, r:34, planet: PLANETS.amber,  label:"← Back", action: () => setRoom(0), warp: "theme-magma" },
+    { name: NAMES[2], px:50, py:92, r:34, planet: PLANETS.amber,  label:"← Back", action: () => setRoom(0), warp: "theme-magma", hideOnMobile: true },
   ]},
 ];
 let TARGETS = ROOMS[currentRoom].targets;
+
+function isMobileLayout(){
+  return (typeof matchMedia === "function" && (
+    matchMedia("(max-width: 1099px)").matches || matchMedia("(pointer: coarse)").matches
+  )) || (typeof width === "number" && width < 720);
+}
+function visibleTargets(){
+  const mobile = isMobileLayout();
+  return TARGETS.filter(t => !(mobile && t.hideOnMobile));
+}
+function targetPy(t){
+  return (isMobileLayout() && typeof t.mobilePy === "number") ? t.mobilePy : t.py;
+}
 
 // ---------- image filename overrides (exact case) ----------
 const FILE_OVERRIDE = {
@@ -2661,8 +2674,9 @@ function drawTargets(){
   let hoveredIdx = -1;
 
   TARGETS.forEach((t, i) => {
+    if (isMobileLayout() && t.hideOnMobile) return;
     const x = toPx(t.px, width);
-    const y = toPx(t.py, height);
+    const y = toPx(targetPy(t), height);
     const r = t.r;
     let hovered = false;
     if (!warping && !ship.moving){
@@ -2891,7 +2905,7 @@ function engageTarget(t){
   if (cam.active || cam.arriving || ship.moving) return;
   if (typeof setNavOpen === "function") setNavOpen(false);
   if (landing && !landing.hidden) closeLanding();
-  const tx = toPx(t.px, width), ty = toPx(t.py, height);
+  const tx = toPx(t.px, width), ty = toPx(targetPy(t), height);
   const ring = document.createElement("div");
   ring.className = "flash"; ring.style.left = tx + "px"; ring.style.top = ty + "px";
   stage.appendChild(ring); ring.addEventListener("animationend", () => ring.remove(), { once: true });
@@ -2903,8 +2917,8 @@ ui.addEventListener("click", (e) => {
   if (cam.active || cam.arriving || ship.moving) return;
   const r = ui.getBoundingClientRect();
   const x = e.clientX - r.left, y = e.clientY - r.top;
-  for (const t of TARGETS) {
-    const tx = toPx(t.px, width), ty = toPx(t.py, height), rr = t.r;
+  for (const t of visibleTargets()) {
+    const tx = toPx(t.px, width), ty = toPx(targetPy(t), height), rr = t.r;
     if (Math.hypot(x - tx, y - ty) <= rr) { engageTarget(t); return; }
   }
   noteInput();
@@ -2937,6 +2951,20 @@ function buildQuickNav(){
   const wasOpen = quickNav.classList.contains("quick-nav--open");
   quickNav.innerHTML = "";
 
+  const bar = document.createElement("div");
+  bar.className = "quick-nav__bar";
+
+  // Mobile back arrow — shown in Solar System (room 1) instead of the Back planet
+  if (currentRoom > 0) {
+    const back = document.createElement("button");
+    back.type = "button";
+    back.className = "quick-nav__back";
+    back.setAttribute("aria-label", "Back to home");
+    back.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 5.3a1 1 0 0 1 0 1.4L9.4 12l5.3 5.3a1 1 0 1 1-1.4 1.4l-6-6a1 1 0 0 1 0-1.4l6-6a1 1 0 0 1 1.4 0z"/></svg>`;
+    back.addEventListener("click", () => { noteInput(); setNavOpen(false); setRoom(0); });
+    bar.appendChild(back);
+  }
+
   const toggle = document.createElement("button");
   toggle.type = "button";
   toggle.className = "quick-nav__toggle";
@@ -2944,10 +2972,11 @@ function buildQuickNav(){
   toggle.setAttribute("aria-label", "Open navigation");
   toggle.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg><span>Menu</span>`;
   toggle.addEventListener("click", () => setNavOpen(!quickNav.classList.contains("quick-nav--open")));
+  bar.appendChild(toggle);
 
   const list = document.createElement("div");
   list.className = "quick-nav__list";
-  TARGETS.forEach(t => {
+  visibleTargets().forEach(t => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "quick-nav__btn";
@@ -2956,7 +2985,7 @@ function buildQuickNav(){
     list.appendChild(b);
   });
 
-  quickNav.appendChild(toggle);
+  quickNav.appendChild(bar);
   quickNav.appendChild(list);
   quickNav.hidden = false;
 }
@@ -2965,8 +2994,10 @@ function buildQuickNav(){
 function maybeAutopilot(){
   if (ship.moving || cam.active || cam.arriving || autopilotLock) return;
   if (performance.now() - lastInputAt < CONFIG.AUTOPILOT_IDLE_MS) return;
-  const t = TARGETS[Math.floor(Math.random()*TARGETS.length)];
-  const tx = toPx(t.px, width), ty = toPx(t.py, height);
+  const pool = visibleTargets();
+  if (!pool.length) return;
+  const t = pool[Math.floor(Math.random()*pool.length)];
+  const tx = toPx(t.px, width), ty = toPx(targetPy(t), height);
   const ang = Math.random()*Math.PI*2, offset = t.r * (1.3 + Math.random()*0.6);
   const px = tx + Math.cos(ang)*offset, py = ty + Math.sin(ang)*offset;
   autopilotLock = true;
