@@ -1526,11 +1526,14 @@ button.link-btn{
 }
 .arcade__stick,
 .arcade__look,
-.arcade__actions{pointer-events:auto}
+.arcade__actions,
+.arcade__weapons,
+.arcade__btn--map{pointer-events:auto}
 .arcade__stick{
   position:absolute;left:10px;bottom:10px;
   width:118px;height:118px;
   touch-action:none;user-select:none;
+  z-index:3;
 }
 .arcade__stick-base{
   position:absolute;inset:0;border-radius:50%;
@@ -1552,19 +1555,45 @@ button.link-btn{
   bottom:-18px;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
   color:rgba(234,248,255,.75);white-space:nowrap;pointer-events:none;
 }
+/* Aim pad stays mid-right — clear of top weapons and bottom fire */
 .arcade__look{
-  position:absolute;right:10px;bottom:72px;
-  width:42%;max-width:180px;height:120px;
+  position:absolute;right:10px;bottom:78px;
+  width:38%;max-width:160px;height:96px;
   border-radius:18px;
   border:1px dashed rgba(138,216,255,.35);
   background:rgba(10,18,32,.28);
   touch-action:none;user-select:none;
+  z-index:2;
 }
 .arcade__look-label{bottom:8px}
+/* Map — top-left, compact */
+.arcade__btn--map{
+  position:absolute;left:8px;top:8px;
+  z-index:5;
+  min-width:44px;min-height:32px;
+  width:auto;padding:0 10px;
+  font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;
+  border-radius:10px;
+  background:rgba(12,18,32,.78);
+}
+/* Weapons 1–6 — top row, above aim pad so they stay tappable */
+.arcade__weapons{
+  position:absolute;left:50%;top:8px;
+  transform:translateX(-50%);
+  display:flex;gap:6px;
+  z-index:5;
+  padding:4px 6px;
+  border-radius:12px;
+  background:rgba(6,10,20,.45);
+}
+.arcade__weapons .arcade__btn{
+  min-width:36px;min-height:36px;width:36px;height:36px;
+  border-radius:10px;font-size:.8rem;padding:0;
+}
 .arcade__actions{
   position:absolute;right:10px;bottom:10px;
-  display:grid;grid-template-columns:repeat(6,40px);gap:6px;
-  align-items:end;
+  display:flex;gap:8px;align-items:end;
+  z-index:4;
 }
 .arcade__btn{
   appearance:none;border:1px solid rgba(255,255,255,.22);
@@ -1574,10 +1603,9 @@ button.link-btn{
   touch-action:manipulation;
   box-shadow:0 6px 16px rgba(0,0,0,.28);
 }
-.arcade__btn--map{grid-column:2 / span 2}
+.arcade__btn--fs{min-width:44px}
 .arcade__btn--fire{
-  grid-column:4 / span 3;
-  min-height:56px;
+  min-width:96px;min-height:56px;
   background:linear-gradient(180deg,#ff8a7a,#e24b3b);
   border-color:rgba(255,180,160,.55);
   color:#1a0a08;
@@ -1590,6 +1618,29 @@ button.link-btn{
   .arcade canvas{cursor:default}
   .arcade__stage{margin-bottom:8px}
 }
+/* Landscape phone: weapons clearly along the top, look pad lower */
+@media (pointer:coarse) and (orientation:landscape){
+  .arcade__btn--map{
+    left:6px;top:6px;
+    min-height:28px;min-width:40px;
+    font-size:.65rem;padding:0 8px;
+  }
+  .arcade__weapons{
+    top:6px;
+    gap:5px;
+  }
+  .arcade__weapons .arcade__btn{
+    min-width:34px;min-height:34px;width:34px;height:34px;
+  }
+  .arcade__look{
+    right:8px;bottom:70px;
+    width:34%;max-width:150px;height:88px;
+    top:auto;
+  }
+  .arcade__stick{left:8px;bottom:8px;width:100px;height:100px}
+  .arcade__stick-knob{width:38px;height:38px}
+  .arcade__btn--fire{min-height:50px;min-width:88px}
+}
 /* Never show touch chrome on fine-pointer desktops, even if the window is narrow */
 @media (pointer:fine){
   .arcade__touch{display:none !important}
@@ -1599,9 +1650,8 @@ button.link-btn{
 @media (max-width:520px){
   .arcade__stick{width:104px;height:104px}
   .arcade__stick-knob{width:40px;height:40px}
-  .arcade__look{width:46%;height:108px;bottom:68px}
-  .arcade__actions{grid-template-columns:repeat(4,40px);gap:6px}
-  .arcade__btn{min-width:40px;min-height:40px;font-size:.78rem}
+  .arcade__look{width:40%;height:90px;bottom:72px}
+  .arcade__weapons .arcade__btn{min-width:32px;min-height:32px;width:32px;height:32px;font-size:.75rem}
   .arcade__btn--fire{min-height:52px}
 }
 

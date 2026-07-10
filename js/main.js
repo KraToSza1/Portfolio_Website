@@ -1870,20 +1870,22 @@ function arcadeHTML(){
       <div class="arcade__stage" id="arcade-stage">
         <canvas id="arcade-canvas" width="320" height="200" tabindex="0" aria-label="Retro FPS game"></canvas>
         <div class="arcade__touch" id="arcade-touch" aria-hidden="true">
-          <div class="arcade__stick" id="arcade-stick" data-stick>
-            <div class="arcade__stick-base"></div>
-            <div class="arcade__stick-knob" data-stick-knob></div>
-            <span class="arcade__stick-label">Move</span>
-          </div>
-          <div class="arcade__actions">
+          <button type="button" class="arcade__btn arcade__btn--map" data-touch-key="m" aria-label="Map">Map</button>
+          <div class="arcade__weapons" role="group" aria-label="Weapons">
             <button type="button" class="arcade__btn" data-touch-key="1" aria-label="Pistol">1</button>
             <button type="button" class="arcade__btn" data-touch-key="2" aria-label="Shotgun">2</button>
             <button type="button" class="arcade__btn" data-touch-key="3" aria-label="Plasma">3</button>
             <button type="button" class="arcade__btn" data-touch-key="4" aria-label="BFG">4</button>
             <button type="button" class="arcade__btn" data-touch-key="5" aria-label="Chainsaw">5</button>
             <button type="button" class="arcade__btn" data-touch-key="6" aria-label="Rocket">6</button>
-            <button type="button" class="arcade__btn" data-touch-fs aria-label="Fullscreen">⛶</button>
-            <button type="button" class="arcade__btn arcade__btn--map" data-touch-key="m" aria-label="Map">Map</button>
+          </div>
+          <div class="arcade__stick" id="arcade-stick" data-stick>
+            <div class="arcade__stick-base"></div>
+            <div class="arcade__stick-knob" data-stick-knob></div>
+            <span class="arcade__stick-label">Move</span>
+          </div>
+          <div class="arcade__actions">
+            <button type="button" class="arcade__btn arcade__btn--fs" data-touch-fs aria-label="Fullscreen">⛶</button>
             <button type="button" class="arcade__btn arcade__btn--fire" data-touch-fire aria-label="Fire">Fire</button>
           </div>
           <div class="arcade__look" id="arcade-look" data-look>
@@ -2418,7 +2420,12 @@ const STATION = {
 function drawStation(){
   const x = toPx(STATION.px, width);
   const y = toPx(STATION.py, height);
-  const R = STATION.r * (STATION.scale || 1);
+  // Shrink on narrow / touch screens so it doesn't crowd Arcade & other planets
+  const mobile = (typeof matchMedia === "function" && (
+    matchMedia("(max-width: 720px)").matches || matchMedia("(pointer: coarse)").matches
+  )) || width < 720;
+  const scaleMul = mobile ? 0.55 : 1;
+  const R = STATION.r * (STATION.scale || 1) * scaleMul;
   const t = performance.now();
 
   STATION.rot += STATION.rotSpeed;
@@ -2666,8 +2673,8 @@ function drawTargets(){
     drawTargetPlanet(x, y, t, hovered, now);
   });
 
-  // Decorative station (draw after planets so it floats on top a bit)
-  drawStation();
+  // Decorative station — home room only (hidden on Solar System / room 1)
+  if (currentRoom === 0) drawStation();
 
   // pointer cursor over clickable planets (cheap: only touch DOM on change)
   if (hoveredIdx !== lastHoveredIndex) ui.style.cursor = hoveredIdx >= 0 ? "pointer" : "";
