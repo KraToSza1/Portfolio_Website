@@ -2395,76 +2395,249 @@ function drawTargetPlanet(x,y,t, hovered, now){
   uictx.drawImage(ls.canvas, px - ls.w / 2, py + r + 6, ls.w, ls.h);
 }
 
-// === Decorative Space Station (sprite + pseudo-3D) ==========================
+// === Decorative Space Station (procedural Star Wars / Trek vibe) ============
 const STATION_CFG = {
   label: SITE.station?.label || "Station",
-  sprite: SITE.station?.sprite || "",        // e.g. "assets/images/station.png"
-  px: (typeof SITE.station?.px === "number") ? SITE.station.px : 22,   // default moved LEFT
-  py: (typeof SITE.station?.py === "number") ? SITE.station.py : 18,
-  scale: SITE.station?.scale ?? 1
+  sprite: "", // procedural art — ignore flat PNG icon
+  px: (typeof SITE.station?.px === "number") ? SITE.station.px : 22,
+  py: (typeof SITE.station?.py === "number") ? SITE.station.py : 58,
+  scale: SITE.station?.scale ?? 1.35
 };
-let stationImg = null;
-if (STATION_CFG.sprite) {
-  const _img = new Image();
-  _img.onload = () => { stationImg = _img; };
-  try { _img.decoding = "async"; } catch {}
-  _img.src = STATION_CFG.sprite;
-}
-const STATION = { r: 18, rot: 0, rotSpeed: 0.0035, pulse: 0, ...STATION_CFG };
+const STATION = {
+  r: 28, rot: 0, rotSpeed: 0.0022, pulse: 0, ringRot: 0,
+  ...STATION_CFG
+};
 
 function drawStation(){
   const x = toPx(STATION.px, width);
   const y = toPx(STATION.py, height);
+  const R = STATION.r * (STATION.scale || 1);
+  const t = performance.now();
 
   STATION.rot += STATION.rotSpeed;
-  STATION.pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.002);
+  STATION.ringRot += STATION.rotSpeed * 0.55;
+  STATION.pulse = 0.5 + 0.5 * Math.sin(t * 0.0024);
 
   uictx.save();
   uictx.translate(x, y);
+
+  // ambient glow behind the station
+  const glow = uictx.createRadialGradient(0, 0, R * 0.2, 0, 0, R * 3.2);
+  glow.addColorStop(0, `rgba(120,180,255,${0.16 + STATION.pulse * 0.08})`);
+  glow.addColorStop(0.45, "rgba(80,130,220,0.06)");
+  glow.addColorStop(1, "rgba(0,0,0,0)");
+  uictx.fillStyle = glow;
+  uictx.beginPath(); uictx.arc(0, 0, R * 3.2, 0, Math.PI * 2); uictx.fill();
+
+  // outer habitat ring (DS9 / Golan vibe) — slow counter-rotate
+  uictx.save();
+  uictx.rotate(STATION.ringRot);
+  uictx.strokeStyle = "rgba(170,195,230,0.55)";
+  uictx.lineWidth = Math.max(2, R * 0.08);
+  uictx.beginPath(); uictx.arc(0, 0, R * 1.72, 0, Math.PI * 2); uictx.stroke();
+  uictx.strokeStyle = "rgba(90,120,170,0.85)";
+  uictx.lineWidth = Math.max(1, R * 0.035);
+  uictx.beginPath(); uictx.arc(0, 0, R * 1.58, 0, Math.PI * 2); uictx.stroke();
+  // ring modules / docking bays
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const mx = Math.cos(a) * R * 1.65;
+    const my = Math.sin(a) * R * 1.65;
+    uictx.save();
+    uictx.translate(mx, my);
+    uictx.rotate(a + Math.PI / 2);
+    uictx.fillStyle = i % 2 ? "#6a7f9e" : "#4e617c";
+    uictx.fillRect(-R * 0.14, -R * 0.08, R * 0.28, R * 0.16);
+    uictx.fillStyle = i % 3 === 0
+      ? `rgba(255,220,120,${0.45 + STATION.pulse * 0.4})`
+      : `rgba(120,210,255,${0.35 + STATION.pulse * 0.35})`;
+    uictx.fillRect(-R * 0.05, -R * 0.03, R * 0.1, R * 0.06);
+    uictx.restore();
+  }
+  // spokes to hub
+  uictx.strokeStyle = "rgba(140,165,200,0.45)";
+  uictx.lineWidth = Math.max(1, R * 0.03);
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 8;
+    uictx.beginPath();
+    uictx.moveTo(Math.cos(a) * R * 0.7, Math.sin(a) * R * 0.7);
+    uictx.lineTo(Math.cos(a) * R * 1.55, Math.sin(a) * R * 1.55);
+    uictx.stroke();
+  }
+  uictx.restore();
+
+  // tilted orbital ring (Death Star / ringworld silhouette)
+  uictx.save();
+  uictx.rotate(-0.42 + STATION.rot * 0.15);
+  uictx.strokeStyle = `rgba(190,215,255,${0.35 + STATION.pulse * 0.2})`;
+  uictx.lineWidth = Math.max(1.2, R * 0.045);
+  uictx.shadowColor = "rgba(120,180,255,0.55)";
+  uictx.shadowBlur = 10;
+  uictx.beginPath(); uictx.ellipse(0, 0, R * 2.15, R * 0.72, 0, 0, Math.PI * 2); uictx.stroke();
+  uictx.shadowBlur = 0;
+  // ring traffic lights
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + t * 0.0006;
+    const lx = Math.cos(a) * R * 2.15;
+    const ly = Math.sin(a) * R * 0.72;
+    uictx.fillStyle = i % 2
+      ? `rgba(255,230,140,${0.5 + STATION.pulse * 0.5})`
+      : `rgba(140,220,255,${0.45 + STATION.pulse * 0.4})`;
+    uictx.beginPath(); uictx.arc(lx, ly, Math.max(1.2, R * 0.045), 0, Math.PI * 2); uictx.fill();
+  }
+  uictx.restore();
+
+  // main body rotates slowly
+  uictx.save();
   uictx.rotate(STATION.rot);
 
-  // pseudo-3D ring (tilted ellipse + glow)
-  uictx.save();
-  uictx.rotate(-0.25);
-  uictx.globalAlpha = 0.30 + STATION.pulse * 0.25;
-  uictx.strokeStyle = "rgba(180,210,255,0.85)";
-  uictx.lineWidth = 1.2;
-  uictx.beginPath(); uictx.ellipse(0, 0, STATION.r*1.9, STATION.r*0.9, 0, 0, Math.PI*2); uictx.stroke();
-  uictx.restore();
-
-  // sprite (if provided), otherwise vector fallback
-  if (stationImg) {
-    const s = STATION.r * 2.2 * (STATION.scale || 1);
-    // soft drop shadow for depth
-    uictx.save();
-    uictx.globalAlpha = 0.85;
-    uictx.shadowColor = "rgba(100,140,255,0.55)";
-    uictx.shadowBlur = 16;
-    uictx.drawImage(stationImg, -s*0.5, -s*0.5, s, s);
-    uictx.restore();
-  } else {
-    // vector fallback
-    uictx.fillStyle = "#cfe1ff";
-    uictx.beginPath(); uictx.arc(0, 0, STATION.r*0.46, 0, Math.PI*2); uictx.fill();
-
-    uictx.strokeStyle = "#9fb6ff";
-    uictx.lineWidth = 2;
-    uictx.beginPath(); uictx.moveTo(-STATION.r*1.2, 0); uictx.lineTo(STATION.r*1.2, 0); uictx.stroke();
-    uictx.beginPath(); uictx.moveTo(0, -STATION.r*1.2); uictx.lineTo(0, STATION.r*1.2); uictx.stroke();
+  // solar / radiator wings
+  for (const side of [-1, 1]) {
+    uictx.fillStyle = "#2a3648";
+    uictx.fillRect(side * R * 0.55, -R * 0.95, side * R * 0.95, R * 0.28);
+    uictx.fillStyle = "#3d5168";
+    uictx.fillRect(side * R * 0.58, -R * 0.9, side * R * 0.88, R * 0.08);
+    uictx.fillRect(side * R * 0.58, -R * 0.78, side * R * 0.88, R * 0.08);
+    // panel grid
+    uictx.strokeStyle = "rgba(100,180,255,0.25)";
+    uictx.lineWidth = 0.8;
+    for (let g = 0; g < 5; g++) {
+      const gx = side * (R * 0.62 + g * R * 0.18);
+      uictx.beginPath();
+      uictx.moveTo(gx, -R * 0.95);
+      uictx.lineTo(gx, -R * 0.67);
+      uictx.stroke();
+    }
+    // blue energy shimmer on panels
+    uictx.fillStyle = `rgba(100,190,255,${0.08 + STATION.pulse * 0.1})`;
+    uictx.fillRect(side * R * 0.58, -R * 0.92, side * R * 0.88, R * 0.22);
   }
 
-  // tiny blink
-  uictx.fillStyle = "rgba(255,255,255,0.9)";
-  uictx.beginPath(); uictx.arc(STATION.r*0.75, 0, 1.6 + STATION.pulse*0.8, 0, Math.PI*2); uictx.fill();
+  // spherical hub (Death Star core)
+  const hub = uictx.createRadialGradient(-R * 0.25, -R * 0.3, R * 0.1, 0, 0, R * 0.95);
+  hub.addColorStop(0, "#d8e6ff");
+  hub.addColorStop(0.35, "#8aa0c0");
+  hub.addColorStop(0.7, "#4a5a72");
+  hub.addColorStop(1, "#1c2430");
+  uictx.fillStyle = hub;
+  uictx.beginPath(); uictx.arc(0, 0, R * 0.78, 0, Math.PI * 2); uictx.fill();
+
+  // equatorial trench
+  uictx.strokeStyle = "#0e141c";
+  uictx.lineWidth = Math.max(2, R * 0.1);
+  uictx.beginPath(); uictx.arc(0, 0, R * 0.78, -0.18, Math.PI + 0.18); uictx.stroke();
+  uictx.strokeStyle = "rgba(255,210,120,0.35)";
+  uictx.lineWidth = Math.max(1, R * 0.035);
+  uictx.beginPath(); uictx.arc(0, 0, R * 0.78, 0.15, Math.PI - 0.15); uictx.stroke();
+
+  // surface panel lines
+  uictx.strokeStyle = "rgba(20,28,40,0.55)";
+  uictx.lineWidth = 1;
+  for (let i = -2; i <= 2; i++) {
+    if (i === 0) continue;
+    uictx.beginPath();
+    uictx.ellipse(0, 0, R * 0.78, R * 0.78 * Math.abs(Math.cos(i * 0.35)), 0, 0, Math.PI * 2);
+    uictx.stroke();
+  }
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    uictx.beginPath();
+    uictx.moveTo(Math.cos(a) * R * 0.2, Math.sin(a) * R * 0.2);
+    uictx.lineTo(Math.cos(a) * R * 0.76, Math.sin(a) * R * 0.76);
+    uictx.stroke();
+  }
+
+  // superlaser / sensor dish (Death Star homage — small)
+  uictx.fillStyle = "#2a3548";
+  uictx.beginPath(); uictx.arc(-R * 0.28, -R * 0.28, R * 0.22, 0, Math.PI * 2); uictx.fill();
+  uictx.strokeStyle = "#6a7f9e";
+  uictx.lineWidth = 1.2;
+  uictx.stroke();
+  const dish = uictx.createRadialGradient(-R * 0.28, -R * 0.28, 0, -R * 0.28, -R * 0.28, R * 0.16);
+  dish.addColorStop(0, `rgba(180,230,255,${0.55 + STATION.pulse * 0.35})`);
+  dish.addColorStop(0.6, "rgba(60,120,180,0.35)");
+  dish.addColorStop(1, "rgba(20,40,60,0.1)");
+  uictx.fillStyle = dish;
+  uictx.beginPath(); uictx.arc(-R * 0.28, -R * 0.28, R * 0.16, 0, Math.PI * 2); uictx.fill();
+
+  // command tower / spire
+  uictx.fillStyle = "#5a6e88";
+  uictx.fillRect(-R * 0.08, -R * 1.15, R * 0.16, R * 0.4);
+  uictx.fillStyle = "#8aa0c0";
+  uictx.fillRect(-R * 0.12, -R * 1.2, R * 0.24, R * 0.1);
+  uictx.fillStyle = `rgba(255,220,120,${0.55 + STATION.pulse * 0.45})`;
+  uictx.beginPath(); uictx.arc(0, -R * 1.22, Math.max(1.5, R * 0.05), 0, Math.PI * 2); uictx.fill();
+
+  // docking arm
+  uictx.strokeStyle = "#7a90b0";
+  uictx.lineWidth = Math.max(1.5, R * 0.05);
+  uictx.beginPath();
+  uictx.moveTo(R * 0.55, R * 0.2);
+  uictx.lineTo(R * 1.15, R * 0.55);
+  uictx.stroke();
+  uictx.fillStyle = "#9bb0cc";
+  uictx.beginPath(); uictx.arc(R * 1.15, R * 0.55, R * 0.1, 0, Math.PI * 2); uictx.fill();
+  uictx.fillStyle = `rgba(120,220,255,${0.4 + STATION.pulse * 0.4})`;
+  uictx.beginPath(); uictx.arc(R * 1.15, R * 0.55, R * 0.045, 0, Math.PI * 2); uictx.fill();
+
+  // hull window lights
+  const windows = [
+    [0.35, 0.15], [0.45, -0.1], [0.2, 0.4], [-0.15, 0.35],
+    [0.55, 0.35], [-0.45, 0.15], [0.1, -0.5], [-0.5, -0.15]
+  ];
+  for (let i = 0; i < windows.length; i++) {
+    const [wx, wy] = windows[i];
+    const blink = 0.45 + 0.55 * Math.sin(t * 0.003 + i * 1.7);
+    uictx.fillStyle = i % 3 === 0
+      ? `rgba(255,220,120,${blink})`
+      : `rgba(160,220,255,${blink})`;
+    uictx.fillRect(wx * R, wy * R, Math.max(1.5, R * 0.06), Math.max(1.2, R * 0.045));
+  }
+
+  // engine glow at the "rear"
+  uictx.fillStyle = `rgba(100,190,255,${0.25 + STATION.pulse * 0.35})`;
+  uictx.beginPath(); uictx.ellipse(0, R * 0.72, R * 0.22, R * 0.1, 0, 0, Math.PI * 2); uictx.fill();
+  uictx.fillStyle = `rgba(220,245,255,${0.35 + STATION.pulse * 0.4})`;
+  uictx.beginPath(); uictx.ellipse(0, R * 0.72, R * 0.1, R * 0.045, 0, 0, Math.PI * 2); uictx.fill();
+
+  uictx.restore(); // end body rotate
+
+  // nav beacon (world-space, doesn't spin with hull)
+  uictx.fillStyle = `rgba(255,255,255,${0.7 + STATION.pulse * 0.3})`;
+  uictx.shadowColor = "rgba(180,220,255,0.9)";
+  uictx.shadowBlur = 8;
+  uictx.beginPath();
+  uictx.arc(R * 1.55, -R * 0.15, 1.8 + STATION.pulse * 1.2, 0, Math.PI * 2);
+  uictx.fill();
+  uictx.shadowBlur = 0;
 
   uictx.restore();
 
-  // label (uses SITE.station.label if provided) — width measured once
-  uictx.font = "600 13px 'Space Grotesk', 'Segoe UI', sans-serif";
+  // label plate
+  uictx.font = "700 12px 'Space Grotesk', 'Segoe UI', sans-serif";
   const label = STATION.label || "Station";
   if (STATION._lw == null) STATION._lw = uictx.measureText(label).width;
-  uictx.fillStyle = "#cfe1ff";
-  uictx.fillText(label, x - STATION._lw/2, y + STATION.r + 16);
+  const lw = STATION._lw;
+  const ly = y + R * 1.85;
+  const padX = 10, padY = 5;
+  const bx = x - lw / 2 - padX;
+  const by = ly - 11;
+  const bw = lw + padX * 2;
+  const bh = 18;
+  uictx.fillStyle = "rgba(8,14,26,0.6)";
+  uictx.beginPath();
+  uictx.moveTo(bx + 9, by);
+  uictx.arcTo(bx + bw, by, bx + bw, by + bh, 9);
+  uictx.arcTo(bx + bw, by + bh, bx, by + bh, 9);
+  uictx.arcTo(bx, by + bh, bx, by, 9);
+  uictx.arcTo(bx, by, bx + bw, by, 9);
+  uictx.closePath();
+  uictx.fill();
+  uictx.strokeStyle = "rgba(140,180,230,0.4)";
+  uictx.lineWidth = 1;
+  uictx.stroke();
+  uictx.fillStyle = "#d5e6ff";
+  uictx.fillText(label, x - lw / 2, ly);
 }
 
 function drawTargets(){
