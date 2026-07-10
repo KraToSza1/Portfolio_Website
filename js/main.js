@@ -10,21 +10,24 @@ const intro = document.getElementById("intro");
 const introScroll = document.getElementById("intro-scroll");
 const warpOverlay = document.getElementById("warp");
 const startBtn = document.getElementById("start-button");
-const skipIntroBtn = document.getElementById("skip-intro");
 const shootSfx = document.getElementById("sfx-shoot");
 const bgMusic = document.getElementById("bg-music");
 
-// Auto-pause the intro crawl when the user scrolls/touches to read.
+// Intro crawl: pause while the visitor reads (scroll/touch), then resume
+// automatically after ~3s of no interaction so the text keeps rising.
 (() => {
   if (!intro || !introScroll) return;
   const crawlEl = intro.querySelector(".crawl");
-  let crawlPaused = false;
+  let resumeTimer = null;
 
   const pauseCrawl = () => {
-    if (crawlPaused) return;
-    crawlPaused = true;
     intro.classList.add("is-reading");
     crawlEl?.classList.add("is-paused");
+    if (resumeTimer) clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(() => {
+      intro.classList.remove("is-reading");
+      crawlEl?.classList.remove("is-paused");
+    }, 3000);
   };
 
   ["touchstart", "wheel", "scroll"].forEach(evt => {
@@ -2896,7 +2899,6 @@ async function enterMission({ playSfx = true } = {}){
 }
 
 startBtn?.addEventListener("click", () => enterMission({ playSfx: true }));
-skipIntroBtn?.addEventListener("click", () => enterMission({ playSfx: false }));
 
 // Clear older auto-skip preference so revisit no longer jumps past the crawl
 try { localStorage.removeItem("rvdw-entered-mission"); } catch {}

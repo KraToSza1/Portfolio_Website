@@ -328,80 +328,190 @@
     return { light: light, dark: [null].concat(light.slice(1).map(darken)) };
   }
 
-  // demon frames: 0/1 walk, 2 attack, 3 pain, 4 dead — palette-driven
-  function buildDemon(pal) {
+  // demon frames: 0/1 walk, 2 attack, 3 pain, 4 dead — Doom-style pixel creatures
+  function buildDemon(pal, opts) {
+    opts = opts || {};
+    const horns = opts.horns !== false;
+    const spikes = !!opts.spikes;
+    const bulk = !!opts.bulk;
     function frame(pose) {
       return mkTex(TEX, function (g) {
+        const shade = function (c, a) {
+          g.fillStyle = c; g.globalAlpha = a == null ? 1 : a;
+        };
         if (pose === 4) {
-          g.fillStyle = "#3d1210"; g.beginPath(); g.ellipse(32, 56, 20, 6, 0, 0, 7); g.fill();
-          g.fillStyle = pal.body; g.beginPath(); g.ellipse(32, 53, 12, 5, 0, 0, 7); g.fill();
-          g.fillStyle = "#d8c9a8";
-          g.beginPath(); g.moveTo(22, 52); g.lineTo(18, 44); g.lineTo(25, 49); g.fill();
-          g.beginPath(); g.moveTo(42, 52); g.lineTo(46, 44); g.lineTo(39, 49); g.fill();
-          return;
+          // bloody puddle + crumpled corpse
+          shade("#2a0a08"); g.beginPath(); g.ellipse(32, 58, 22, 5, 0, 0, 7); g.fill();
+          shade("#5a1010", 0.7); g.beginPath(); g.ellipse(32, 57, 14, 3.5, 0, 0, 7); g.fill();
+          shade(pal.body); g.beginPath(); g.ellipse(30, 52, 14, 7, -0.2, 0, 7); g.fill();
+          shade(pal.skin); g.beginPath(); g.ellipse(38, 48, 7, 6, 0.4, 0, 7); g.fill();
+          shade("#d8c9a8");
+          g.beginPath(); g.moveTo(20, 50); g.lineTo(14, 40); g.lineTo(24, 47); g.fill();
+          g.beginPath(); g.moveTo(44, 50); g.lineTo(52, 42); g.lineTo(42, 48); g.fill();
+          shade("#8a1a12", 0.85); g.fillRect(26, 50, 3, 2); g.fillRect(34, 53, 4, 2);
+          g.globalAlpha = 1; return;
         }
         const bodyC = pose === 3 ? "#c98a7a" : pal.body;
         const skinC = pose === 3 ? "#e8b0a0" : pal.skin;
-        g.fillStyle = pose === 3 ? "#8a5a50" : "#571f12";
-        g.fillRect(24, 46, 7, 16); g.fillRect(33, 46, 7, 16);
-        g.fillStyle = bodyC;
-        g.beginPath(); g.ellipse(32, 36, 13, 15, 0, 0, 7); g.fill();
-        g.fillStyle = skinC;
-        if (pose === 2) {
-          g.fillRect(13, 18, 6, 16); g.fillRect(45, 18, 6, 16);
-          g.fillStyle = "#e8e0c8";
-          g.fillRect(12, 14, 8, 5); g.fillRect(44, 14, 8, 5);
-          g.fillStyle = skinC;
-        } else if (pose === 1) {
-          g.fillRect(15, 34, 6, 14); g.fillRect(43, 30, 6, 14);
-        } else {
-          g.fillRect(15, 30, 6, 14); g.fillRect(43, 34, 6, 14);
+        const dark = "#1a0806";
+        const mid = "#3a1410";
+
+        // shadow
+        shade("rgba(0,0,0,0.35)"); g.beginPath(); g.ellipse(32, 61, 12, 3, 0, 0, 7); g.fill();
+
+        // legs with muscle bands
+        const legY = pose === 1 ? [44, 48] : pose === 2 ? [46, 46] : [46, 48];
+        shade(mid); g.fillRect(23, legY[0], 8, 16); g.fillRect(33, legY[1], 8, 16);
+        shade(bodyC); g.fillRect(24, legY[0] + 1, 6, 14); g.fillRect(34, legY[1] + 1, 6, 14);
+        shade(dark); g.fillRect(24, legY[0] + 6, 6, 2); g.fillRect(34, legY[1] + 8, 6, 2);
+        // hooves / claws
+        shade("#0c0504"); g.fillRect(23, 58, 8, 3); g.fillRect(33, 58, 8, 3);
+        shade("#d8c9a8"); g.fillRect(22, 59, 2, 3); g.fillRect(30, 59, 2, 3); g.fillRect(32, 59, 2, 3); g.fillRect(40, 59, 2, 3);
+
+        // torso
+        const tw = bulk ? 16 : 13, th = bulk ? 17 : 15;
+        shade(dark); g.beginPath(); g.ellipse(32, 37, tw + 1, th + 1, 0, 0, 7); g.fill();
+        shade(bodyC); g.beginPath(); g.ellipse(32, 36, tw, th, 0, 0, 7); g.fill();
+        // belly highlight + rib shadows
+        shade(skinC, 0.35); g.beginPath(); g.ellipse(32, 38, tw * 0.55, th * 0.55, 0, 0, 7); g.fill();
+        shade(dark, 0.45);
+        g.fillRect(24, 30, tw * 1.2, 1.5); g.fillRect(25, 35, tw * 1.1, 1.2); g.fillRect(26, 40, tw, 1.2);
+        // chest scars / scales
+        shade("#0a0403", 0.5);
+        for (let i = 0; i < 5; i++) g.fillRect(27 + (i % 3) * 3, 28 + i * 3, 2, 2);
+        if (spikes) {
+          shade(mid);
+          g.beginPath(); g.moveTo(32, 20); g.lineTo(28, 28); g.lineTo(36, 28); g.fill();
+          g.beginPath(); g.moveTo(22, 26); g.lineTo(18, 34); g.lineTo(24, 32); g.fill();
+          g.beginPath(); g.moveTo(42, 26); g.lineTo(46, 34); g.lineTo(40, 32); g.fill();
         }
-        g.beginPath(); g.ellipse(32, 18, 10, 9, 0, 0, 7); g.fill();
-        g.fillStyle = "#d8c9a8";
-        g.beginPath(); g.moveTo(24, 14); g.lineTo(19, 4); g.lineTo(27, 10); g.fill();
-        g.beginPath(); g.moveTo(40, 14); g.lineTo(45, 4); g.lineTo(37, 10); g.fill();
-        g.fillStyle = pose === 3 ? "#fff" : pal.eye;
-        g.fillRect(27, 15, 4, 4); g.fillRect(34, 15, 4, 4);
-        g.fillStyle = "#e33"; g.fillRect(28, 16, 2, 2); g.fillRect(35, 16, 2, 2);
-        g.fillStyle = "#2a0a06"; g.fillRect(28, 23, 9, 3);
-        if (pose === 2) { g.fillStyle = "#fff"; g.fillRect(28, 23, 2, 3); g.fillRect(34, 23, 2, 3); }
+        g.globalAlpha = 1;
+
+        // arms
+        shade(skinC);
+        if (pose === 2) {
+          g.fillRect(10, 16, 7, 18); g.fillRect(47, 16, 7, 18);
+          shade(bodyC); g.fillRect(11, 22, 5, 4); g.fillRect(48, 22, 5, 4);
+          shade("#e8e0c8");
+          g.fillRect(8, 12, 10, 6); g.fillRect(46, 12, 10, 6);
+          // claws
+          shade("#d8c9a8");
+          for (let i = 0; i < 3; i++) {
+            g.fillRect(8 + i * 3, 10, 2, 4);
+            g.fillRect(48 + i * 3, 10, 2, 4);
+          }
+        } else if (pose === 1) {
+          g.fillRect(14, 32, 7, 16); g.fillRect(43, 28, 7, 16);
+          shade("#d8c9a8"); g.fillRect(13, 46, 3, 4); g.fillRect(49, 42, 3, 4);
+        } else {
+          g.fillRect(14, 28, 7, 16); g.fillRect(43, 32, 7, 16);
+          shade("#d8c9a8"); g.fillRect(13, 42, 3, 4); g.fillRect(49, 46, 3, 4);
+        }
+
+        // head
+        shade(dark); g.beginPath(); g.ellipse(32, 18, 11, 10, 0, 0, 7); g.fill();
+        shade(skinC); g.beginPath(); g.ellipse(32, 17, 10, 9, 0, 0, 7); g.fill();
+        // brow ridge
+        shade(bodyC); g.fillRect(23, 12, 18, 3);
+        // horns
+        if (horns) {
+          shade("#d8c9a8");
+          g.beginPath(); g.moveTo(22, 12); g.lineTo(14, 2); g.lineTo(26, 10); g.fill();
+          g.beginPath(); g.moveTo(42, 12); g.lineTo(50, 2); g.lineTo(38, 10); g.fill();
+          shade("#8a6b3a", 0.7);
+          g.beginPath(); g.moveTo(22, 12); g.lineTo(16, 5); g.lineTo(25, 10); g.fill();
+          g.beginPath(); g.moveTo(42, 12); g.lineTo(48, 5); g.lineTo(39, 10); g.fill();
+          g.globalAlpha = 1;
+        }
+        // eyes with glow
+        shade(pose === 3 ? "#fff" : pal.eye);
+        g.fillRect(26, 14, 5, 5); g.fillRect(34, 14, 5, 5);
+        shade("rgba(255,220,80,0.35)");
+        g.beginPath(); g.arc(28.5, 16.5, 5, 0, 7); g.fill();
+        g.beginPath(); g.arc(36.5, 16.5, 5, 0, 7); g.fill();
+        shade("#e33"); g.fillRect(27, 15, 2, 3); g.fillRect(35, 15, 2, 3);
+        // snarl
+        shade("#2a0a06"); g.fillRect(27, 22, 11, 4);
+        if (pose === 2) {
+          shade("#fff"); g.fillRect(28, 22, 2, 4); g.fillRect(34, 22, 2, 4);
+          shade("#c9333f"); g.fillRect(30, 24, 5, 2);
+        }
+        // cheek / jaw detail
+        shade(dark, 0.4); g.fillRect(23, 18, 3, 5); g.fillRect(39, 18, 3, 5);
+        g.globalAlpha = 1;
+        // blood / grime speckles
+        shade("#1a0806", 0.35);
+        g.fillRect(28, 32, 1, 1); g.fillRect(36, 28, 1, 1); g.fillRect(30, 42, 2, 1);
+        g.globalAlpha = 1;
       });
     }
     return [frame(0), frame(1), frame(2), frame(3), frame(4)];
   }
 
-  // WRAITH — a floating spectral skull-ghost (translucency applied at draw time)
+  // WRAITH — floating spectral skull-ghost
   function buildWraith(pal) {
     function frame(pose) {
       return mkTex(TEX, function (g) {
         if (pose === 4) {
-          g.fillStyle = pal.body; g.globalAlpha = 0.4;
-          g.beginPath(); g.ellipse(32, 40, 16, 6, 0, 0, 7); g.fill();
+          g.fillStyle = pal.body; g.globalAlpha = 0.35;
+          g.beginPath(); g.ellipse(32, 42, 18, 7, 0, 0, 7); g.fill();
+          g.fillStyle = "#d5f4ff"; g.globalAlpha = 0.25;
+          for (let i = 0; i < 8; i++) g.fillRect(18 + i * 4, 38 + (i % 3), 2, 2);
           g.globalAlpha = 1; return;
         }
-        // wispy trailing tail
-        g.fillStyle = pal.body;
+        // ambient glow
+        g.fillStyle = pal.eye; g.globalAlpha = 0.12;
+        g.beginPath(); g.arc(32, 30, 22, 0, 7); g.fill();
+        g.globalAlpha = 1;
+        // wispy trailing tail with layers
+        g.fillStyle = pal.body; g.globalAlpha = 0.55;
         g.beginPath();
-        g.moveTo(20, 30);
-        g.quadraticCurveTo(14, 52, 22 + (pose === 1 ? 4 : 0), 60);
-        g.quadraticCurveTo(32, 50, 42 - (pose === 1 ? 4 : 0), 60);
-        g.quadraticCurveTo(50, 52, 44, 30);
+        g.moveTo(18, 28);
+        g.quadraticCurveTo(10, 50, 20 + (pose === 1 ? 5 : 0), 62);
+        g.quadraticCurveTo(32, 48, 44 - (pose === 1 ? 5 : 0), 62);
+        g.quadraticCurveTo(54, 50, 46, 28);
         g.fill();
+        g.fillStyle = pal.skin; g.globalAlpha = 0.4;
+        g.beginPath();
+        g.moveTo(24, 32);
+        g.quadraticCurveTo(20, 52, 28, 58);
+        g.quadraticCurveTo(32, 50, 36, 58);
+        g.quadraticCurveTo(44, 52, 40, 32);
+        g.fill();
+        g.globalAlpha = 1;
         // hooded head
         g.fillStyle = pose === 3 ? "#c0d8e8" : pal.skin;
-        g.beginPath(); g.ellipse(32, 26, 15, 17, 0, 0, 7); g.fill();
-        g.fillStyle = "#0a1016";
-        g.beginPath(); g.ellipse(32, 30, 11, 13, 0, 0, 7); g.fill(); // hood shadow
+        g.beginPath(); g.ellipse(32, 24, 16, 18, 0, 0, 7); g.fill();
+        // hood rim
+        g.fillStyle = pal.body; g.globalAlpha = 0.7;
+        g.beginPath(); g.ellipse(32, 14, 15, 6, 0, 0, 7); g.fill();
+        g.globalAlpha = 1;
+        g.fillStyle = "#060a10";
+        g.beginPath(); g.ellipse(32, 28, 12, 14, 0, 0, 7); g.fill();
+        // skull face
+        g.fillStyle = "#c8d8e4"; g.globalAlpha = 0.55;
+        g.beginPath(); g.ellipse(32, 28, 8, 9, 0, 0, 7); g.fill();
+        g.globalAlpha = 1;
         // glowing eyes
         g.fillStyle = pose === 2 ? "#fff" : pal.eye;
-        g.fillRect(25, 26, 5, 6); g.fillRect(35, 26, 5, 6);
-        g.fillStyle = "#8ad8ff"; g.fillRect(26, 27, 2, 3); g.fillRect(36, 27, 2, 3);
-        // claws when attacking
+        g.fillRect(24, 24, 6, 7); g.fillRect(35, 24, 6, 7);
+        g.fillStyle = "#8ad8ff"; g.fillRect(25, 25, 3, 4); g.fillRect(36, 25, 3, 4);
+        g.fillStyle = "rgba(138,216,255,0.4)";
+        g.beginPath(); g.arc(27, 27, 6, 0, 7); g.fill();
+        g.beginPath(); g.arc(38, 27, 6, 0, 7); g.fill();
+        // jaw
+        g.fillStyle = "#0a1016"; g.fillRect(27, 36, 11, 3);
         if (pose === 2) {
           g.fillStyle = pal.skin;
-          g.fillRect(12, 34, 5, 12); g.fillRect(47, 34, 5, 12);
+          g.fillRect(10, 32, 6, 14); g.fillRect(48, 32, 6, 14);
+          g.fillStyle = "#d5f4ff";
+          g.fillRect(9, 30, 2, 5); g.fillRect(14, 30, 2, 5);
+          g.fillRect(49, 30, 2, 5); g.fillRect(54, 30, 2, 5);
         }
+        // sparkles
+        g.fillStyle = "#d5f4ff"; g.globalAlpha = 0.5;
+        g.fillRect(16, 20, 2, 2); g.fillRect(48, 18, 2, 2); g.fillRect(30, 8, 2, 2);
+        g.globalAlpha = 1;
       });
     }
     return [frame(0), frame(1), frame(2), frame(3), frame(4)];
@@ -412,27 +522,157 @@
     function frame(pose) {
       return mkTex(TEX, function (g) {
         if (pose === 4) {
-          g.fillStyle = "#2a2010"; g.beginPath(); g.ellipse(32, 56, 20, 6, 0, 0, 7); g.fill();
-          g.fillStyle = pal.body; g.beginPath(); g.ellipse(32, 53, 12, 5, 0, 0, 7); g.fill();
-          g.fillStyle = "#5a6b7a"; g.fillRect(40, 48, 16, 5); // dropped gun
+          g.fillStyle = "#1a1408"; g.beginPath(); g.ellipse(32, 58, 20, 5, 0, 0, 7); g.fill();
+          g.fillStyle = pal.body; g.beginPath(); g.ellipse(30, 52, 13, 6, -0.15, 0, 7); g.fill();
+          g.fillStyle = "#5a6b7a"; g.fillRect(38, 48, 18, 6);
+          g.fillStyle = "#2a3038"; g.fillRect(52, 49, 5, 4);
           return;
         }
+        // shadow
+        g.fillStyle = "rgba(0,0,0,0.35)"; g.beginPath(); g.ellipse(32, 61, 11, 3, 0, 0, 7); g.fill();
+        // boots
+        g.fillStyle = "#1a1408";
+        g.fillRect(23, 54, 8, 6); g.fillRect(33, 54, 8, 6);
         g.fillStyle = "#3a2e18";
-        g.fillRect(24, 46, 7, 16); g.fillRect(33, 46, 7, 16);
+        g.fillRect(24, 46, 7, 12); g.fillRect(33, 46, 7, 12);
+        g.fillStyle = "#5a4a28"; g.fillRect(24, 50, 7, 2); g.fillRect(33, 50, 7, 2);
         // armoured torso
         g.fillStyle = pose === 3 ? "#c0a070" : pal.body;
-        g.fillRect(20, 22, 24, 26);
-        g.fillStyle = "#5a6b7a"; g.fillRect(20, 22, 24, 5); // chest plate
-        g.fillStyle = "#8d99b8"; g.fillRect(22, 30, 20, 2); g.fillRect(22, 38, 20, 2);
-        // head
+        g.fillRect(19, 20, 26, 28);
+        // plating layers
+        g.fillStyle = "#5a6b7a"; g.fillRect(19, 20, 26, 6);
+        g.fillStyle = "#8d99b8"; g.fillRect(21, 22, 22, 2);
+        g.fillStyle = "#3a4554"; g.fillRect(21, 28, 22, 2); g.fillRect(21, 36, 22, 2);
+        g.fillStyle = "#ffd75e"; g.fillRect(30, 30, 4, 4); // rank badge
+        g.fillStyle = "#2a2010"; g.fillRect(22, 40, 20, 3); // belt
+        g.fillStyle = "#8a6b2a"; g.fillRect(28, 40, 8, 3);
+        // ammo pouches
+        g.fillStyle = "#4a3a20"; g.fillRect(20, 42, 5, 5); g.fillRect(39, 42, 5, 5);
+        // head + helmet
         g.fillStyle = pose === 3 ? "#d0b080" : pal.skin;
-        g.beginPath(); g.ellipse(30, 16, 8, 8, 0, 0, 7); g.fill();
+        g.beginPath(); g.ellipse(29, 14, 8, 8, 0, 0, 7); g.fill();
+        g.fillStyle = "#4a5464"; g.fillRect(21, 8, 16, 5); // helmet
+        g.fillStyle = "#2a3038"; g.fillRect(22, 10, 14, 2);
         g.fillStyle = pose === 2 ? "#fff" : pal.eye;
-        g.fillRect(26, 14, 3, 4); g.fillRect(32, 14, 3, 4);
-        // shoulder cannon (muzzle flashes on attack)
-        g.fillStyle = "#4a5464"; g.fillRect(40, 20, 16, 8);
-        g.fillStyle = "#2a3038"; g.fillRect(52, 21, 6, 6);
-        if (pose === 2) { g.fillStyle = "#ffd75e"; g.beginPath(); g.arc(58, 24, 5, 0, 7); g.fill(); }
+        g.fillRect(25, 13, 4, 4); g.fillRect(31, 13, 4, 4);
+        g.fillStyle = "#e33"; g.fillRect(26, 14, 2, 2); g.fillRect(32, 14, 2, 2);
+        // visor glint
+        g.fillStyle = "rgba(138,216,255,0.35)"; g.fillRect(24, 12, 12, 2);
+        // left arm
+        g.fillStyle = pal.skin; g.fillRect(14, 24, 6, 14);
+        g.fillStyle = "#5a6b7a"; g.fillRect(13, 22, 8, 5); // shoulder pad
+        // shoulder cannon
+        g.fillStyle = "#4a5464"; g.fillRect(40, 18, 18, 10);
+        g.fillStyle = "#2a3038"; g.fillRect(54, 19, 7, 8);
+        g.fillStyle = "#8d99b8"; g.fillRect(42, 20, 10, 2);
+        g.fillStyle = "#1a1e24"; g.fillRect(58, 21, 3, 4); // barrel hole
+        if (pose === 2) {
+          g.fillStyle = "#ffd75e"; g.beginPath(); g.arc(60, 23, 6, 0, 7); g.fill();
+          g.fillStyle = "#fff"; g.beginPath(); g.arc(60, 23, 3, 0, 7); g.fill();
+          g.fillStyle = "rgba(255,140,60,0.4)"; g.beginPath(); g.arc(60, 23, 9, 0, 7); g.fill();
+        }
+      });
+    }
+    return [frame(0), frame(1), frame(2), frame(3), frame(4)];
+  }
+
+  // BOSS — towering horned demon lord
+  function buildBoss(pal) {
+    function frame(pose) {
+      return mkTex(TEX, function (g) {
+        if (pose === 4) {
+          g.fillStyle = "#2a0505"; g.beginPath(); g.ellipse(32, 58, 26, 6, 0, 0, 7); g.fill();
+          g.fillStyle = "#8a1010"; g.globalAlpha = 0.6; g.beginPath(); g.ellipse(32, 56, 18, 4, 0, 0, 7); g.fill();
+          g.globalAlpha = 1;
+          g.fillStyle = pal.body; g.beginPath(); g.ellipse(28, 48, 18, 10, -0.25, 0, 7); g.fill();
+          g.fillStyle = pal.skin; g.beginPath(); g.ellipse(42, 40, 10, 9, 0.5, 0, 7); g.fill();
+          g.fillStyle = "#d8c9a8";
+          g.beginPath(); g.moveTo(16, 44); g.lineTo(6, 28); g.lineTo(20, 40); g.fill();
+          g.beginPath(); g.moveTo(48, 42); g.lineTo(60, 30); g.lineTo(46, 40); g.fill();
+          return;
+        }
+        const bodyC = pose === 3 ? "#c07060" : pal.body;
+        const skinC = pose === 3 ? "#e0a090" : pal.skin;
+        // shadow
+        g.fillStyle = "rgba(0,0,0,0.4)"; g.beginPath(); g.ellipse(32, 62, 16, 3, 0, 0, 7); g.fill();
+        // massive legs
+        g.fillStyle = "#2a0808";
+        g.fillRect(18, 42, 12, 18); g.fillRect(34, 42, 12, 18);
+        g.fillStyle = bodyC;
+        g.fillRect(19, 42, 10, 16); g.fillRect(35, 42, 10, 16);
+        g.fillStyle = "#1a0404"; g.fillRect(19, 48, 10, 2); g.fillRect(35, 50, 10, 2);
+        g.fillStyle = "#0a0202"; g.fillRect(17, 56, 14, 5); g.fillRect(33, 56, 14, 5);
+        g.fillStyle = "#d8c9a8";
+        g.fillRect(16, 58, 3, 4); g.fillRect(28, 58, 3, 4); g.fillRect(32, 58, 3, 4); g.fillRect(44, 58, 3, 4);
+        // huge torso
+        g.fillStyle = "#1a0404"; g.beginPath(); g.ellipse(32, 32, 18, 18, 0, 0, 7); g.fill();
+        g.fillStyle = bodyC; g.beginPath(); g.ellipse(32, 31, 16, 16, 0, 0, 7); g.fill();
+        g.fillStyle = skinC; g.globalAlpha = 0.3; g.beginPath(); g.ellipse(32, 34, 10, 10, 0, 0, 7); g.fill();
+        g.globalAlpha = 1;
+        // spine spikes
+        g.fillStyle = "#3a1010";
+        for (let i = 0; i < 4; i++) {
+          g.beginPath();
+          g.moveTo(32, 14 + i * 6);
+          g.lineTo(28, 20 + i * 6);
+          g.lineTo(36, 20 + i * 6);
+          g.fill();
+        }
+        // abs / scars
+        g.fillStyle = "rgba(10,2,2,0.5)";
+        g.fillRect(26, 28, 12, 1.5); g.fillRect(26, 33, 12, 1.5); g.fillRect(26, 38, 12, 1.5);
+        g.fillStyle = "#5a1010"; g.fillRect(24, 26, 2, 14); // scar
+        // arms
+        g.fillStyle = skinC;
+        if (pose === 2) {
+          g.fillRect(4, 12, 10, 22); g.fillRect(50, 12, 10, 22);
+          g.fillStyle = bodyC; g.fillRect(5, 18, 8, 5); g.fillRect(51, 18, 8, 5);
+          g.fillStyle = "#e8e0c8";
+          g.fillRect(2, 8, 12, 7); g.fillRect(50, 8, 12, 7);
+          g.fillStyle = "#d8c9a8";
+          for (let i = 0; i < 4; i++) {
+            g.fillRect(2 + i * 3, 5, 2, 5);
+            g.fillRect(50 + i * 3, 5, 2, 5);
+          }
+          // fire in hands
+          g.fillStyle = "#ffd75e"; g.globalAlpha = 0.7;
+          g.beginPath(); g.arc(8, 10, 6, 0, 7); g.fill();
+          g.beginPath(); g.arc(56, 10, 6, 0, 7); g.fill();
+          g.globalAlpha = 1;
+        } else {
+          g.fillRect(8, 26, 10, 18); g.fillRect(46, 26, 10, 18);
+          g.fillStyle = "#d8c9a8";
+          g.fillRect(7, 42, 3, 5); g.fillRect(14, 42, 3, 5);
+          g.fillRect(47, 42, 3, 5); g.fillRect(54, 42, 3, 5);
+        }
+        // head
+        g.fillStyle = "#1a0404"; g.beginPath(); g.ellipse(32, 14, 13, 12, 0, 0, 7); g.fill();
+        g.fillStyle = skinC; g.beginPath(); g.ellipse(32, 13, 11, 10, 0, 0, 7); g.fill();
+        g.fillStyle = bodyC; g.fillRect(22, 8, 20, 4); // brow
+        // massive horns
+        g.fillStyle = "#d8c9a8";
+        g.beginPath(); g.moveTo(20, 8); g.lineTo(6, -2); g.lineTo(24, 10); g.fill();
+        g.beginPath(); g.moveTo(44, 8); g.lineTo(58, -2); g.lineTo(40, 10); g.fill();
+        g.fillStyle = "#8a5a20"; g.globalAlpha = 0.6;
+        g.beginPath(); g.moveTo(20, 8); g.lineTo(10, 1); g.lineTo(23, 9); g.fill();
+        g.beginPath(); g.moveTo(44, 8); g.lineTo(54, 1); g.lineTo(41, 9); g.fill();
+        g.globalAlpha = 1;
+        // crown spikes
+        g.fillStyle = "#ffd75e";
+        g.fillRect(28, 2, 2, 5); g.fillRect(32, 0, 2, 6); g.fillRect(36, 2, 2, 5);
+        // eyes
+        g.fillStyle = pose === 3 ? "#fff" : pal.eye;
+        g.fillRect(24, 11, 6, 6); g.fillRect(35, 11, 6, 6);
+        g.fillStyle = "rgba(255,215,94,0.4)";
+        g.beginPath(); g.arc(27, 14, 6, 0, 7); g.fill();
+        g.beginPath(); g.arc(38, 14, 6, 0, 7); g.fill();
+        g.fillStyle = "#e33"; g.fillRect(25, 12, 3, 4); g.fillRect(36, 12, 3, 4);
+        // mouth
+        g.fillStyle = "#1a0404"; g.fillRect(26, 20, 13, 5);
+        if (pose === 2) {
+          g.fillStyle = "#fff"; g.fillRect(27, 20, 3, 5); g.fillRect(36, 20, 3, 5);
+          g.fillStyle = "#c9333f"; g.fillRect(30, 22, 5, 3);
+        }
       });
     }
     return [frame(0), frame(1), frame(2), frame(3), frame(4)];
@@ -601,10 +841,10 @@
     this.setResolution(pxw >= 900 ? 3 : 2);
     this.tex = buildTextures();
     this.sprites = {
-      imp: buildDemon(ETYPES.imp.pal),
-      caster: buildDemon(ETYPES.caster.pal),
-      brute: buildDemon(ETYPES.brute.pal),
-      boss: buildDemon(ETYPES.boss.pal),
+      imp: buildDemon(ETYPES.imp.pal, { horns: true }),
+      caster: buildDemon(ETYPES.caster.pal, { horns: true, spikes: true }),
+      brute: buildDemon(ETYPES.brute.pal, { horns: true, bulk: true, spikes: true }),
+      boss: buildBoss(ETYPES.boss.pal),
       wraith: buildWraith(ETYPES.wraith.pal),
       gunner: buildGunner(ETYPES.gunner.pal)
     };
@@ -672,8 +912,23 @@
     const self = this;
     const root = document.getElementById("arcade-touch");
     if (!root) return;
+
+    // Desktop / mouse: keep the overlay fully hidden and unbound
+    const isTouch = !!(window.matchMedia && (
+      matchMedia("(pointer: coarse)").matches ||
+      matchMedia("(hover: none) and (pointer: coarse)").matches
+    )) || (("ontouchstart" in window) && navigator.maxTouchPoints > 0 && !(matchMedia("(pointer: fine)").matches));
+
+    if (!isTouch) {
+      root.style.display = "none";
+      root.setAttribute("aria-hidden", "true");
+      return;
+    }
+
     this._touchRoot = root;
+    root.style.display = "";
     root.setAttribute("aria-hidden", "false");
+    document.documentElement.classList.add("arcade-touch-on");
 
     const setKey = (k, on) => {
       if (!k) return;
