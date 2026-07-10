@@ -1861,9 +1861,10 @@ function arcadeHTML(){
   return `
     <p>A complete retro FPS I built from scratch in a canvas — raycast walls, sliding
     doors, <strong>6 weapons</strong> (pistol, shotgun, plasma, BFG, chainsaw &amp; rockets), 19 enemy
-    types including minibosses and egg hatchers, toxic floor hazards, teleporters, breakable
-    walls, berserk power-ups, ambush triggers, kill streaks, letter grades, and five themed
-    levels. Three difficulty modes. No engine: every pixel drawn in code.</p>
+    types including minibosses and egg hatchers, colored keycards, crushers, lava &amp; toxic
+    hazards, teleporters, lifts, breakable walls, berserk &amp; weapon mods, sticky mines, a
+    co-op wraith ally, ghost-replay speedrunning, a daily challenge, a level editor, and five
+    themed levels with an ending cinematic. Three difficulty modes. No engine: every pixel drawn in code.</p>
     <div class="arcade">
       <div class="arcade__rotate">↻ Rotate your phone sideways for the best experience</div>
       <div class="arcade__stage" id="arcade-stage">
@@ -1891,7 +1892,9 @@ function arcadeHTML(){
         </div>
       </div>
       <div class="arcade__controls">
-        <span><strong>Desktop:</strong> WASD move · mouse aim · click/space fire · 1–6 weapons · [ ] difficulty · M map · P pause</span>
+        <span><strong>Desktop:</strong> WASD move · mouse aim · click/space fire · 1–6 weapons · F drop mine · M map · P pause · [ ] difficulty</span>
+        <span><strong>Keycards:</strong> red / blue / yellow open matching doors · <strong>Mods:</strong> rapid · spread · lifesteal</span>
+        <span><strong>Title screen:</strong> C daily challenge · E level editor · O toggle wraith ally · <strong>Intermission/win:</strong> S download score card</span>
         <span class="arcade__controls-mobile"><strong>Mobile:</strong> left stick move · right pad aim · Fire button · 1–6 weapons</span>
       </div>
     </div>`;

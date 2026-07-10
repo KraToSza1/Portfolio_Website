@@ -6,7 +6,7 @@
    - Clean versioned caches + opt-in skipWaiting via postMessage
 */
 
-const VERSION  = "2026-07-10-v17";
+const VERSION  = "2026-07-10-v18";
 const PRECACHE = `rvdw-precache-${VERSION}`;
 const RUNTIME  = `rvdw-runtime-${VERSION}`;
 const DEBUG    = false;

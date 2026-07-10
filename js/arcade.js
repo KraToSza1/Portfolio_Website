@@ -10,13 +10,19 @@
   "use strict";
 
   // ============================ LEVELS ============================
-  // walls: # brick · T tech · S slime · M metal · X exit(needs key)
-  //        D auto sliding door · G gold-locked door (needs keycard)
-  // floor: . or space
+  // walls: # brick · T tech · S slime · M metal · X exit(needs red key)
+  //        D auto sliding door · G red-locked door · = blue-locked door
+  //        + yellow-locked door
+  // floor: . or space · ~ hazard(theme: toxic/lava) · @ / $ teleporter pair
+  //        ! ambush trigger · ^ crusher · < / > lift pad pair
   // enemies: E imp · C caster · U brute · F wraith · R gunner · L lurker
   //          N nightmare · H hound · O ogre · J jelly · Z boss
-  // pickups: h health · v armor · a bullets · s shells · c cells · k keycard
-  //          W shotgun · Q plasma · Y BFG · B exploding barrel
+  //          A arachnid · I cultist · V vulture · K knight · g egg · 1/2/3 minibosses
+  // pickups: h health · v armor · a bullets · s shells · c cells · o rockets
+  //          k RED key · b BLUE key · y YELLOW key
+  //          W shotgun · Q plasma · Y BFG · n chainsaw · m rocket · e berserk
+  //          p rapid-fire mod · x spread mod · l lifesteal mod · z mine pack
+  //          B exploding barrel · props: t r i u f
   const LEVELS = [
     {
       "name": "E1: STEEL HANGAR",
@@ -33,7 +39,7 @@
         "#..W..D....#.......D.........#",
         "#..r..#....#.......#....E....#",
         "#.....#..B.#.......#....r....#",
-        "#.....#....#...h...#....B....#",
+        "#.....#....#...h...#...pB....#",
         "#######....#.......######....#",
         "#.....#....D.....E.....R...h.#",
         "#..E..#....#..B..........E...#",
@@ -60,8 +66,8 @@
         "#...t...#....B.t....#.....H....#",
         "#.......#....J......#.....v..k.#",
         "####D########....##########D####",
-        "#.....#....s.t......#....t.....#",
-        "#..s..D....#....F...D....a.....#",
+        "#.....#....s.t......#....t..b..#",
+        "#..s..=....#....F...D....a.....#",
         "#..J..#..t.#...A....#....E.....#",
         "#.t...#....#...SS...#....t.....#",
         "####D##....#.......######D######",
@@ -72,7 +78,7 @@
         "####D#######..F.t..#.........h.#",
         "#......E..#....#...D....H......#",
         "#..h......D....#...#....t......#",
-        "#....t.t..#....#...#...........#",
+        "#....t.t..#....#...#....x......#",
         "#...B..L..#....#...#..a........#",
         "###########G########.#######X###",
         "#....E.....C....1...J....A....##",
@@ -93,19 +99,19 @@
         "#..R..i..#...B.......B......#..O.#",
         "#........#......F...........#..k.#",
         "#####D########......#########D####",
-        "#.......#....s...a.....#.........#",
-        "#..s....D....#.........#.....a...#",
+        "#.......#....s...a.....#....y....#",
+        "#..s....+....#.........#.....a...#",
         "#..O..i.#....#...F.....#.....C...#",
         "#.......#....#...A.....#....i....#",
         "#####D#######.........###D########",
         "#.....#%....#...H...#...#...A....#",
-        "#..C..#.....#.......#...#.....R..#",
+        "#..C..#.<...#.......#...#.....R..#",
         "#.....D.....#..Q....#...D........#",
         "#..a..#.....#..v.c..#...#.....s..#",
         "#####D#######..F....#####D########",
         "#...m......#........#....E.....h.#",
-        "#..h..R....D...B....#....#.......#",
-        "#..........#........#....#...c...#",
+        "#..h..R....D...B....#....#..l....#",
+        "#..........#........#....#>..c...#",
         "#..B..E....#...F....#....#......X#",
         "############G########.######D#####",
         "#....E.....A....@..O.....F......##",
@@ -127,18 +133,18 @@
         "#..s.......#....#...c......v.....#",
         "#####D######....####.............#",
         "#..c.......#...........R......s..#",
-        "#..U.......D..C....U.............#",
+        "#..U.......=..C....U.............#",
         "#.....A....#.....H...............#",
         "############......h.......########",
-        "#....E...........f.....L......s..#",
+        "#....E...........f.....L....b.s..#",
         "#MM..~.f..............MM.....c...#",
-        "#..a.....A...........R...........#",
-        "#........B...F...F...B...........#",
+        "#..a.....A...........R......^....#",
+        "#........B...F...F...B......^....#",
         "##########...........#.........h.#",
         "#MM...........@..N...#.......c...#",
-        "#....H.....A.........%....F....s.#",
+        "#....H.....A...x.....%....F....s.#",
         "#####D######....######...........#",
-        "#....s..h.F....c..............a..#",
+        "#....s..h.F....c........z.....a..#",
         "#....N.......$.....L....R........#",
         "#....L..g......H....A...3....J...#",
         "#.............~.................X#",
@@ -163,29 +169,46 @@
         "#.....A....#.....H...............#",
         "############......h.......###D####",
         "#Y..c.#..........................#",
-        "#.....#MM......A........MM...c...#",
-        "#..a..D..........................#",
+        "#.....#MM......A.l......MM...c...#",
+        "#..a..=..........................#",
         "########...B...F.Z.F...B.........#",
-        "#.............#.....#..........h.#",
-        "#MM.....g.....#.....#........c...#",
-        "#.............#.....#..........s.#",
-        "#####D#####...#######............#",
-        "#....s..h.F....c...............a.#",
-        "#....N...!........L....R.........#",
+        "#......^......#.....#..........h.#",
+        "#MM.<...g.....#.....#........c...#",
+        "#.........^...#.....#.......b..s.#",
+        "#####+#####...#######............#",
+        "#....s..h.F....c..........y....a.#",
+        "#....N...!........L....R....>....#",
         "#......I.......N.......H....K....#",
-        "#....u.....E.....A........V...u..#",
+        "#....u.....E.....A..z.....V...u..#",
         "#....##*##.....R.....A...........#",
         "#....#vc.#.......................#",
         "##################################"
       ]
     }
   ];
-  const WALLS = { "#": 1, "T": 2, "S": 3, "M": 4, "X": 5, "D": 6, "G": 7, "*": 8, "%": 9 };
+  const WALLS = { "#": 1, "T": 2, "S": 3, "M": 4, "X": 5, "D": 6, "G": 7, "*": 8, "%": 9, "=": 10, "+": 11 };
   const DOOR_SPEED = 2.2;   // openness units per second
   const DOOR_HOLD = 4;      // seconds a door stays open
   let diff = 1; // 0 recruit / 1 normal / 2 nightmare
   const DIFF_NAMES = ["RECRUIT", "NORMAL", "NIGHTMARE"];
   const DIFF_MUL  = [0.75, 1.0, 1.35]; // hp/dmg scale
+
+  // ---- daily challenge / deterministic RNG ----
+  let dailyMode = false, dailySeed = 0;
+  function todaySeed() {
+    const d = new Date();
+    return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  }
+  // small deterministic PRNG (mulberry32) — used only for daily enemy jitter
+  function seededRng(seed) {
+    let s = (seed >>> 0) || 1;
+    return function () {
+      s |= 0; s = (s + 0x6D2B79F5) | 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
 
   // ============================ CONFIG ============================
   // Base ("chrome") space: HUD/menus are authored in 320x200 coordinates and
@@ -415,15 +438,15 @@
       g.beginPath(); g.moveTo(44, 34); g.lineTo(38, 30); g.lineTo(38, 38); g.fill();
       g.fillStyle = "#3a5568"; g.fillRect(3, 2, 58, 2); g.fillRect(3, 58, 58, 2);
     });
-    const gold = mkTex(TEX, function (g) {
-      g.fillStyle = "#3a2e10"; g.fillRect(0, 0, 64, 64);
-      g.fillStyle = "#5e4718"; g.fillRect(3, 2, 58, 60);
-      g.fillStyle = "#8a6b2a"; g.fillRect(6, 6, 52, 52);
-      g.fillStyle = "#2a2008"; g.fillRect(30, 2, 4, 60);      // seam
-      g.fillStyle = "#ffd75e"; g.fillRect(8, 8, 48, 4);
+    const gold = mkTex(TEX, function (g) { // RED-locked door (needs red keycard)
+      g.fillStyle = "#2a0e0c"; g.fillRect(0, 0, 64, 64);
+      g.fillStyle = "#5e1a16"; g.fillRect(3, 2, 58, 60);
+      g.fillStyle = "#8a2a22"; g.fillRect(6, 6, 52, 52);
+      g.fillStyle = "#1a0806"; g.fillRect(30, 2, 4, 60);      // seam
+      g.fillStyle = "#ff6a5e"; g.fillRect(8, 8, 48, 4);
       // big keyhole medallion
-      g.fillStyle = "#ffd75e"; g.beginPath(); g.arc(32, 32, 10, 0, 7); g.fill();
-      g.fillStyle = "#2a2008"; g.beginPath(); g.arc(32, 30, 3.5, 0, 7); g.fill();
+      g.fillStyle = "#ff6a5e"; g.beginPath(); g.arc(32, 32, 10, 0, 7); g.fill();
+      g.fillStyle = "#1a0806"; g.beginPath(); g.arc(32, 30, 3.5, 0, 7); g.fill();
       g.fillRect(30, 30, 4, 10);
     });
     const secret = mkTex(TEX, function (g) {
@@ -433,6 +456,21 @@
       g.fillStyle = "rgba(0,0,0,0.2)";
       g.fillRect(28, 20, 2, 24); g.fillRect(34, 20, 2, 24);
     });
+    // colored locked doors (blue / yellow) — same slab as gold but tinted
+    function lockedDoor(base, trim, gem, dark) {
+      return mkTex(TEX, function (g) {
+        g.fillStyle = dark; g.fillRect(0, 0, 64, 64);
+        g.fillStyle = base; g.fillRect(3, 2, 58, 60);
+        g.fillStyle = dark; g.fillRect(30, 2, 4, 60);          // seam
+        g.fillStyle = trim; g.fillRect(8, 8, 48, 4);
+        g.fillStyle = trim; g.beginPath(); g.arc(32, 32, 10, 0, 7); g.fill();
+        g.fillStyle = gem;  g.beginPath(); g.arc(32, 30, 4, 0, 7); g.fill();
+        g.fillStyle = dark; g.fillRect(30, 30, 4, 10);
+        g.fillStyle = trim; g.fillRect(3, 2, 58, 2); g.fillRect(3, 58, 58, 2);
+      });
+    }
+    const blueDoor   = lockedDoor("#1a2c48", "#5aa0e8", "#d5f0ff", "#0c1626");
+    const yellowDoor = lockedDoor("#4a4210", "#ffe14a", "#fff8c0", "#20200a");
     const crackedBrick = mkTex(TEX, function (g) {
       g.drawImage(brick, 0, 0);
       // cracks overlaid on brick
@@ -446,7 +484,7 @@
       g.fillStyle = "rgba(0,0,0,0.25)";
       g.fillRect(18, 20, 3, 12); g.fillRect(44, 18, 3, 10);
     });
-    const light = [null, brick, tech, slime, metal, exit, door, gold, secret, crackedBrick].map(function (t) { return t && polish(t); });
+    const light = [null, brick, tech, slime, metal, exit, door, gold, secret, crackedBrick, blueDoor, yellowDoor].map(function (t) { return t && polish(t); });
     return { light: light, dark: [null].concat(light.slice(1).map(darken)) };
   }
 
@@ -823,13 +861,40 @@
       g.fillStyle = "#8ad8ff"; g.fillRect(24, 38, 16, 6); g.fillRect(24, 48, 16, 4);
       g.fillStyle = "#d5f4ff"; g.fillRect(28, 39, 8, 4);
     });
-    out.k = mkTex(TEX, function (g) { // gold keycard
-      g.fillStyle = "#1a1520"; g.fillRect(14, 28, 36, 24);
-      g.fillStyle = "#ffd75e"; g.fillRect(16, 30, 32, 20);
-      g.fillStyle = "#8ad8ff"; g.fillRect(16, 30, 32, 5);           // blue stripe
-      g.fillStyle = "#c9333f"; g.fillRect(16, 35, 32, 3);           // red stripe
-      g.fillStyle = "#0c0d12"; g.fillRect(20, 42, 14, 4);           // chip
-      g.fillStyle = "#fff8d0"; g.fillRect(38, 42, 6, 6);            // hologram square
+    function keycard(face, edge) {
+      return mkTex(TEX, function (g) {
+        g.fillStyle = "#1a1520"; g.fillRect(14, 28, 36, 24);
+        g.fillStyle = face;      g.fillRect(16, 30, 32, 20);
+        g.fillStyle = edge;      g.fillRect(16, 30, 32, 5);
+        g.fillStyle = "#0c0d12"; g.fillRect(20, 42, 14, 4);         // chip
+        g.fillStyle = "#fff8d0"; g.fillRect(38, 42, 6, 6);          // hologram square
+      });
+    }
+    out.k = keycard("#c9333f", "#ff8a70"); // RED keycard
+    out.b = keycard("#3a6ad8", "#8ad8ff"); // BLUE keycard
+    out.y = keycard("#e0c020", "#fff08a"); // YELLOW keycard
+    out.p = mkTex(TEX, function (g) { // rapid-fire mod (yellow bolt)
+      g.fillStyle = "#1a1e28"; g.beginPath(); g.arc(32, 38, 15, 0, 7); g.fill();
+      g.fillStyle = "#ffd75e"; g.beginPath();
+      g.moveTo(34, 26); g.lineTo(26, 40); g.lineTo(32, 40); g.lineTo(30, 50); g.lineTo(40, 36); g.lineTo(34, 36); g.closePath(); g.fill();
+    });
+    out.x = mkTex(TEX, function (g) { // spread mod (fan of pellets)
+      g.fillStyle = "#281c1a"; g.beginPath(); g.arc(32, 38, 15, 0, 7); g.fill();
+      g.fillStyle = "#ff9a50";
+      for (let i = -2; i <= 2; i++) g.fillRect(32 + i * 4, 44 - Math.abs(i) * 3, 3, 6 + (2 - Math.abs(i)) * 4);
+    });
+    out.l = mkTex(TEX, function (g) { // lifesteal mod (green heart)
+      g.fillStyle = "#101f14"; g.beginPath(); g.arc(32, 38, 15, 0, 7); g.fill();
+      g.fillStyle = "#63d97a";
+      g.beginPath(); g.arc(28, 34, 5, 0, 7); g.arc(36, 34, 5, 0, 7);
+      g.moveTo(23, 36); g.lineTo(32, 48); g.lineTo(41, 36); g.closePath(); g.fill();
+    });
+    out.z = mkTex(TEX, function (g) { // mine pack
+      g.fillStyle = "#1a1a1e"; g.fillRect(20, 36, 24, 18);
+      g.fillStyle = "#3a3a44"; g.fillRect(22, 38, 20, 14);
+      g.fillStyle = "#c9333f"; g.beginPath(); g.arc(32, 34, 6, 0, 7); g.fill();
+      g.fillStyle = "#ffd75e"; g.fillRect(24, 44, 16, 3);
+      g.fillStyle = "#0c0d12"; g.fillRect(28, 48, 8, 3);
     });
     out.W = mkTex(TEX, function (g) {
       g.fillStyle = "#3a2a18"; g.fillRect(14, 44, 14, 8);
@@ -924,6 +989,13 @@
       g.fillStyle = "#ff7722"; g.beginPath(); g.moveTo(26, 20); g.lineTo(20, 30); g.lineTo(32, 30); g.fill();
       g.fillStyle = "#ffd75e"; g.fillRect(22, 48, 8, 4);
       for (let i = 0; i < 3; i++) g.fillRect(24 + i * 2, 54 + i, 2, 3);
+    });
+    out.mineFloor = mkTex(TEX, function (g) { // armed sticky mine on the floor
+      g.fillStyle = "#12141a"; g.beginPath(); g.arc(32, 44, 12, 0, 7); g.fill();
+      g.fillStyle = "#2a2c34"; g.beginPath(); g.arc(32, 42, 9, 0, 7); g.fill();
+      g.fillStyle = "#c9333f"; g.beginPath(); g.arc(32, 40, 3.5, 0, 7); g.fill();
+      g.fillStyle = "#1a1a1e";
+      for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28; g.fillRect(32 + Math.cos(a) * 12 - 1, 44 + Math.sin(a) * 12 - 3, 3, 5); }
     });
     out.e = mkTex(TEX, function (g) { // berserk sphere
       g.fillStyle = "rgba(200,30,30,0.9)";
@@ -1026,17 +1098,18 @@
   function parseLevel(idx) {
     const rows = LEVELS[idx].rows;
     const map = [], enemies = [], items = [], barrels = [], doors = {}, props = [];
-    const hazards = [], telepads = [], ambushes = [];
+    const hazards = [], telepads = [], ambushes = [], crushers = [], lifts = [];
     const breakables = {}; // y*1000+x → {x,y,hp}
-    let px = 1.5, py = 1.5;
-    const hpScale = DIFF_MUL[diff] || 1;
+    let px = 1.5, py = 1.5, totSecrets = 0;
+    const hpScale = (DIFF_MUL[diff] || 1) * (dailyMode ? 1.15 : 1);
+    const rng = dailyMode ? seededRng(dailySeed + idx * 7919) : Math.random;
     for (let y = 0; y < rows.length; y++) {
       const line = rows[y], row = [];
       for (let x = 0; x < line.length; x++) {
         const ch = line[x];
         const wv = WALLS[ch] || 0;
         // floor-marker chars: treat as open floor in the map array
-        if (ch === "~" || ch === "@" || ch === "$" || ch === "!") {
+        if (ch === "~" || ch === "@" || ch === "$" || ch === "!" || ch === "^" || ch === "<" || ch === ">") {
           row.push(0);
         } else {
           row.push(wv);
@@ -1044,20 +1117,25 @@
         if (wv === 9) {
           breakables[y * 1000 + x] = { x: x, y: y, hp: 3 };
         }
-        if (wv === 6 || wv === 7 || wv === 8) {
-          doors[y * 1000 + x] = { x: x, y: y, open: 0, target: 0, gold: wv === 7, secret: wv === 8, hold: 0 };
+        if (wv === 6 || wv === 7 || wv === 8 || wv === 10 || wv === 11) {
+          const lock = wv === 7 ? "red" : wv === 10 ? "blue" : wv === 11 ? "yellow" : null;
+          doors[y * 1000 + x] = { x: x, y: y, open: 0, target: 0, gold: wv === 7, lock: lock, secret: wv === 8, hold: 0 };
         }
+        if (wv === 8) totSecrets++;
         if (ch === "P") { px = x + 0.5; py = y + 0.5; }
         else if (ch === "~") { hazards.push({ x: x + 0.5, y: y + 0.5 }); }
+        else if (ch === "^") { crushers.push({ x: x + 0.5, y: y + 0.5, cx: x, cy: y, phase: (x + y) % 5 * 0.5, drop: 0 }); }
+        else if (ch === "<" || ch === ">") { lifts.push({ x: x + 0.5, y: y + 0.5, kind: ch, dest: null }); }
         else if (ch === "@" || ch === "$") { telepads.push({ x: x + 0.5, y: y + 0.5, kind: ch, dest: null }); }
         else if (ch === "!") { ambushes.push({ x: x + 0.5, y: y + 0.5, used: false }); }
         else if (ECHARS[ch]) {
           const cfg = ETYPES[ECHARS[ch]];
-          enemies.push({ type: ECHARS[ch], cfg: cfg, x: x + 0.5, y: y + 0.5, hp: Math.max(1, (cfg.hp * hpScale) | 0),
-                         state: "idle", animT: 0, atkT: 1 + Math.random(), painT: 0, roared: false,
+          const jitter = dailyMode ? (0.85 + rng() * 0.5) : 1; // daily: ±HP variance
+          enemies.push({ type: ECHARS[ch], cfg: cfg, x: x + 0.5, y: y + 0.5, hp: Math.max(1, (cfg.hp * hpScale * jitter) | 0),
+                         state: "idle", animT: 0, atkT: 1 + rng(), painT: 0, roared: false,
                          phase: 0, blink: 0, asleep: true, blinkT: 0, hatchT: -1, hatching: false });
         }
-        else if ("hasckWQYvnmoeg".indexOf(ch) >= 0) items.push({ x: x + 0.5, y: y + 0.5, kind: ch });
+        else if ("hasckbyWQYvnmoepxlzg".indexOf(ch) >= 0) items.push({ x: x + 0.5, y: y + 0.5, kind: ch });
         else if (ch === "B") barrels.push({ x: x + 0.5, y: y + 0.5, hp: 12, dead: false });
         else if ("trifu".indexOf(ch) >= 0) props.push({ x: x + 0.5, y: y + 0.5, kind: ch });
       }
@@ -1069,11 +1147,45 @@
     for (let i = 0; i < Math.min(ats.length, dls.length); i++) {
       ats[i].dest = dls[i]; dls[i].dest = ats[i];
     }
+    // link lift pads < ↔ > (paired in order)
+    const la = lifts.filter(function (t) { return t.kind === "<"; });
+    const lb = lifts.filter(function (t) { return t.kind === ">"; });
+    for (let i = 0; i < Math.min(la.length, lb.length); i++) {
+      la[i].dest = lb[i]; lb[i].dest = la[i];
+    }
     return { map: map, enemies: enemies, items: items, barrels: barrels, doors: doors, props: props,
-             hazards: hazards, telepads: telepads, ambushes: ambushes, breakables: breakables,
+             hazards: hazards, telepads: telepads, ambushes: ambushes, crushers: crushers, lifts: lifts,
+             breakables: breakables,
              px: px, py: py, w: rows[0].length, h: rows.length,
              name: LEVELS[idx].name, par: LEVELS[idx].par, theme: LEVELS[idx].theme || "hangar",
-             totKills: enemies.length, totItems: items.length };
+             totKills: enemies.length, totItems: items.length, totSecrets: totSecrets };
+  }
+
+  // ============================ PERSISTENCE ============================
+  // persistent unlocks: { shellsBonus, pistolSkin, bestGrade, runs }
+  function loadUnlocks() {
+    const def = { shellsBonus: 0, pistolSkin: false, bestGrade: "-", runs: 0 };
+    try {
+      const j = JSON.parse(localStorage.getItem("inferno-unlocks") || "{}");
+      return Object.assign(def, j || {});
+    } catch (e) { return def; }
+  }
+  function saveUnlocks(u) {
+    try { localStorage.setItem("inferno-unlocks", JSON.stringify(u)); } catch (e) {}
+  }
+  const GRADE_RANK = { "S": 5, "A": 4, "B": 3, "C": 2, "-": 0 };
+  // ghost replay storage — best (fastest) recorded path per level
+  function loadGhost(idx) {
+    try {
+      const j = JSON.parse(localStorage.getItem("inferno-ghost-" + idx) || "null");
+      return (j && j.pts && j.pts.length) ? j : null;
+    } catch (e) { return null; }
+  }
+  function saveGhost(idx, ghost) {
+    try {
+      const prev = loadGhost(idx);
+      if (!prev || ghost.time < prev.time) localStorage.setItem("inferno-ghost-" + idx, JSON.stringify(ghost));
+    } catch (e) {}
   }
 
   // ============================ GAME ============================
@@ -1119,15 +1231,28 @@
     this.bob = 0; this.shake = 0;
     this.berserkT = 0; this.hazardCd = 0; this.teleCd = 0;
     this.streakCount = 0; this.streakT = 0; this.rockets = 0;
+    this.mods = { rapid: 0, spread: 0, lifesteal: 0 };
+    this.mines = []; this.mineCount = 0; this.mineCd = 0;
+    this.crusherCd = 0;
+    this.keycards = { red: false, blue: false, yellow: false };
+    this.bigMsg = ""; this.bigT = 0; this.bigColor = "#ffd75e";
+    this.ghost = [];          // positions recorded this run (per level)
+    this.ghostBest = null;    // loaded best ghost for current level
+    this.ghostT = 0;
+    this.allyOn = false; this.ally = null;
+    this.combatIntensity = 0; this.music = null;
+    this.cineT = 0;
+    this.editor = null;
     this.running = true;
     this._last = performance.now();
     this.hi = 0;
     try { this.hi = parseInt(localStorage.getItem("rvdw-inferno-hi") || "0", 10) || 0; } catch (e) {}
+    this.unlocks = loadUnlocks();
 
     const self = this;
     this._down = function (e) {
       const k = e.key.toLowerCase();
-      if (["arrowup","arrowdown","arrowleft","arrowright"," ","w","a","s","d","r","m","p","1","2","3","4","5","6","[","]","-","="].indexOf(k) >= 0) e.preventDefault();
+      if (["arrowup","arrowdown","arrowleft","arrowright"," ","w","a","s","d","r","m","p","f","c","e","o","1","2","3","4","5","6","7","8","9","[","]","-","="].indexOf(k) >= 0) e.preventDefault();
       self.keys[k] = true;
       self.press(k);
     };
@@ -1390,17 +1515,29 @@
   };
 
   Game.prototype.press = function (k) {
-    if (k === "m") this.showMap = !this.showMap;
+    if (this.mode === "editor") { this.editorKey(k); return; }
+    if (this.mode === "cine") { if (k === "enter" || k === " ") this.endCinematic(); return; }
+    if (this.mode === "play") this.showMap = (k === "m") ? !this.showMap : this.showMap;
     if (this.mode === "title") {
-      if (k === " " || k === "enter") { this.startRun(); return; }
+      if (k === " " || k === "enter") { dailyMode = false; this.startRun(); return; }
+      if (k === "c") { dailyMode = true; dailySeed = todaySeed(); this.startRun(); return; }
+      if (k === "e") { this.startEditor(); return; }
+      if (k === "o") { this.allyOn = !this.allyOn; this.say(this.allyOn ? "WRAITH ALLY: ON" : "WRAITH ALLY: OFF", 1.2); return; }
       if (k === "[" || k === "-") { diff = Math.max(0, diff - 1); return; }
       if (k === "]" || k === "=") { diff = Math.min(2, diff + 1); return; }
     }
-    if (this.mode === "inter" && k === " ") { this.nextLevel(); return; }
+    if (this.mode === "inter") {
+      if (k === "s") { this.downloadScoreCard(); return; }
+      if (k === " ") { this.nextLevel(); return; }
+    }
     if (this.mode === "dead" && (k === "r" || k === " ")) { this.retryLevel(); return; }
-    if (this.mode === "win" && (k === "r" || k === " ")) { this.mode = "title"; return; }
+    if (this.mode === "win") {
+      if (k === "s") { this.downloadScoreCard(); return; }
+      if (k === "r" || k === " ") { this.mode = "title"; this.stopMusic(); return; }
+    }
     if (this.mode === "play") {
       if (k === " ") this.tryFire();
+      if (k === "f") { this.dropMine(); return; }
       if (k === "r") this.retryLevel();
       if (k === "p") { this.mode = "pause"; return; }
       if (k === "1" || k === "2" || k === "3" || k === "4" || k === "5" || k === "6") {
@@ -1417,6 +1554,13 @@
     this.bullets = 40; this.shells = 0; this.cells = 0; this.rockets = 0;
     this.owned = [true, false, false, false, false, false]; this.cur = 0;
     this.berserkT = 0; this.streakCount = 0; this.streakT = 0;
+    this.mods = { rapid: 0, spread: 0, lifesteal: 0 };
+    this.mineCount = 0;
+    this.unlocks = loadUnlocks();
+    // persistent unlock: bonus starting shells
+    if (this.unlocks.shellsBonus > 0) this.shells += this.unlocks.shellsBonus;
+    if (dailyMode) { diff = 2; this.startMusic(); this.announce("DAILY CHALLENGE  ·  SEED " + dailySeed, "#ff8a50"); }
+    else this.startMusic();
     this.loadLevel(0);
     this.mode = "play";
   };
@@ -1425,12 +1569,21 @@
     this.L = parseLevel(idx);
     this.px = this.L.px; this.py = this.L.py;
     this.dx = 1; this.dy = 0; this.plx = 0; this.ply = FOV_PLANE;
-    this.kills = 0; this.itemsGot = 0; this.time = 0;
-    this.hasKey = false;
-    this.hazardCd = 0; this.teleCd = 0;
+    this.kills = 0; this.itemsGot = 0; this.time = 0; this.secretsFound = 0;
+    this.keycards = { red: false, blue: false, yellow: false };
+    this.hazardCd = 0; this.teleCd = 0; this.crusherCd = 0;
+    this.mines = []; this.mineCd = 0;
     this.projs.length = 0; this.parts.length = 0; this.boomQueue.length = 0;
+    // ghost replay: reset recording, load best for this level
+    this.ghost = []; this.ghostT = 0; this.ghostBest = loadGhost(idx);
+    // co-op ghost ally spawns beside the player
+    this.ally = this.allyOn ? { x: this.px + 0.6, y: this.py, cd: 0, animT: 0 } : null;
     FLOOR_PIX = THEME_FLOOR[this.L.theme] || THEME_FLOOR.hangar;
     CEIL_PIX = THEME_CEIL[this.L.theme] || THEME_CEIL.hangar;
+    // theme-based hazard: swamp/dungeon = toxic (green, 8dmg), foundry/throne = lava (orange, 12dmg)
+    const lava = (this.L.theme === "foundry" || this.L.theme === "throne");
+    this.hazardDmg = lava ? 12 : 8;
+    this.hazardHot = lava;
     this.chaosT = 3.4;
     this.chaosSaid = false;
     for (let i = 0; i < this.L.enemies.length; i++) {
@@ -1459,6 +1612,55 @@
     }
   };
   Game.prototype.say = function (t, secs) { this.msg = t; this.msgT = secs; };
+  // big centered announcer text with fade — used for milestone events
+  Game.prototype.announce = function (t, color) {
+    this.bigMsg = t; this.bigT = 2.2; this.bigColor = color || "#ffd75e";
+  };
+
+  // ---- dynamic music layers (Web Audio) ----
+  // ambient drone always plays; combat adds a pulse bass + tension oscillator,
+  // crossfaded by combatIntensity (0-1). Respects the global mute + SFX system.
+  Game.prototype.startMusic = function () {
+    const a = audio(); if (!a) return;
+    if (this.music) return;
+    try {
+      const master = a.createGain(); master.gain.value = 0.5; master.connect(a.destination);
+      // ambient drone
+      const drone = a.createOscillator(); drone.type = "sine"; drone.frequency.value = 55;
+      const droneG = a.createGain(); droneG.gain.value = 0.05;
+      const drone2 = a.createOscillator(); drone2.type = "triangle"; drone2.frequency.value = 82.4;
+      const drone2G = a.createGain(); drone2G.gain.value = 0.02;
+      drone.connect(droneG); drone2.connect(drone2G); droneG.connect(master); drone2G.connect(master);
+      // combat pulse bass
+      const bass = a.createOscillator(); bass.type = "sawtooth"; bass.frequency.value = 55;
+      const bassG = a.createGain(); bassG.gain.value = 0.0001;
+      const bassLfo = a.createOscillator(); bassLfo.type = "square"; bassLfo.frequency.value = 4.2;
+      const bassLfoG = a.createGain(); bassLfoG.gain.value = 0.06;
+      bassLfo.connect(bassLfoG); bassLfoG.connect(bassG.gain);
+      bass.connect(bassG); bassG.connect(master);
+      // tension oscillator (higher)
+      const tension = a.createOscillator(); tension.type = "sawtooth"; tension.frequency.value = 220;
+      const tensionG = a.createGain(); tensionG.gain.value = 0.0001;
+      tension.connect(tensionG); tensionG.connect(master);
+      [drone, drone2, bass, bassLfo, tension].forEach(function (o) { try { o.start(); } catch (e) {} });
+      this.music = { master: master, bassG: bassG, tensionG: tensionG,
+                     nodes: [drone, drone2, bass, bassLfo, tension] };
+    } catch (e) { this.music = null; }
+  };
+  Game.prototype.updateMusic = function (dt) {
+    if (!this.music) return;
+    const a = actx; if (!a) return;
+    const ci = this.combatIntensity;
+    try {
+      this.music.bassG.gain.setTargetAtTime(0.0001 + ci * 0.05, a.currentTime, 0.4);
+      this.music.tensionG.gain.setTargetAtTime(0.0001 + ci * 0.03, a.currentTime, 0.6);
+    } catch (e) {}
+  };
+  Game.prototype.stopMusic = function () {
+    if (!this.music) return;
+    try { this.music.nodes.forEach(function (o) { try { o.stop(); } catch (e) {} }); } catch (e) {}
+    this.music = null;
+  };
 
   Game.prototype.rotate = function (a) {
     const c = Math.cos(a), s = Math.sin(a);
@@ -1476,7 +1678,7 @@
   Game.prototype.solidAt = function (x, y) {
     const v = this.wallAt(x, y);
     if (v === 0) return false;
-    if (v === 6 || v === 7 || v === 8) {
+    if (v === 6 || v === 7 || v === 8 || v === 10 || v === 11) {
       const d = this.doorAt(x | 0, y | 0);
       return !d || d.open < 0.85;
     }
@@ -1487,13 +1689,16 @@
     for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) {
       const d = this.doorAt((x | 0) + ox, (y | 0) + oy);
       if (!d) continue;
-      if (d.gold && !this.hasKey) {
-        if (byPlayer && this.msgT <= 0) { this.say("A GOLD DOOR — FIND THE KEYCARD", 1.4); SFX.nokey(); }
+      if (d.lock && !this.keycards[d.lock]) {
+        if (byPlayer && this.msgT <= 0) {
+          this.say(d.lock.toUpperCase() + " DOOR — FIND THE " + d.lock.toUpperCase() + " KEY", 1.4); SFX.nokey();
+        }
         continue;
       }
-      if (d.gold && byPlayer && d.open === 0 && d.target === 0) SFX.key();
+      if (d.lock && byPlayer && d.open === 0 && d.target === 0) SFX.key();
       if (d.secret && byPlayer && d.open === 0 && d.target === 0) {
-        this.say("A SECRET PASSAGE!", 1.6); SFX.key(); this.score += 50;
+        this.announce("SECRET FOUND!", "#ffd75e"); SFX.key(); this.score += 50;
+        this.secretsFound = (this.secretsFound || 0) + 1;
       }
       d.target = 1; d.hold = DOOR_HOLD;
     }
@@ -1558,6 +1763,10 @@
       if (dist > 1.5) dmg *= 0.35; // shield blocks frontal damage at range
     }
     e.hp -= dmg;
+    // lifesteal mod: heal a fraction of damage dealt by the player's weapons
+    if (this.mods && this.mods.lifesteal > 0 && !this._allyDmg && this.hp > 0 && this.hp < 100) {
+      this.hp = Math.min(100, this.hp + dmg * 0.15);
+    }
     const partN = Math.min(16, 5 + Math.floor(dmg / 15));
     this.spawnParts(e.x, e.y, partN, e.cfg.boss || e.cfg.miniboss ? "#ffb08a" : "#c9333f", 1.8 + dmg * 0.012);
     // nearby kill flash (red tint)
@@ -1569,18 +1778,29 @@
       this.kills++;
       this.score += e.cfg.score;
       SFX.edie();
+      // shotgun gore: extra chunks + blood on a shotgun kill
+      if (this.cur === 1) {
+        this.spawnParts(e.x, e.y, 5 + (Math.random() * 2 | 0), "#6a0e10", 2.6); // dark red chunks
+        this.spawnParts(e.x, e.y, 10, "#c9333f", 2.0);                          // blood spray
+      }
+      // multi-kill detection (kills bunched in a short window)
+      if ((this.multiT || 0) > 0) this.multiCount = (this.multiCount || 1) + 1;
+      else this.multiCount = 1;
+      this.multiT = 0.8;
+      if (this.multiCount === 3) this.announce("TRIPLE KILL!", "#ff8a50");
+      else if (this.multiCount >= 4) this.announce("MULTI KILL x" + this.multiCount, "#ff5d52");
       // kill streak
       this.streakT = 2.0;
       this.streakCount++;
-      if (this.streakCount >= 8)      this.say("UNSTOPPABLE!!", 1.6);
-      else if (this.streakCount >= 5) this.say("KILLING SPREE!", 1.4);
-      else if (this.streakCount >= 3) this.say("DOUBLE KILL!",  1.2);
-      // egg hatches into 2 arachnids
+      if (this.streakCount === 3)       this.announce("IMPRESSIVE!", "#ffd75e");
+      else if (this.streakCount === 5)  this.announce("KILLING SPREE!", "#ff8a50");
+      else if (this.streakCount === 8)  this.announce("UNSTOPPABLE!!", "#ff5d52");
+      // egg hatches into 3 arachnids
       if (e.type === "egg") {
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 3; i++) {
           const cfg = ETYPES.arachnid;
           this.L.enemies.push({ type: "arachnid", cfg: cfg,
-            x: e.x + (Math.random() - 0.5) * 0.8, y: e.y + (Math.random() - 0.5) * 0.8,
+            x: e.x + (Math.random() - 0.5) * 0.9, y: e.y + (Math.random() - 0.5) * 0.9,
             hp: cfg.hp, state: "chase", animT: 0, atkT: 0.4, painT: 0,
             roared: false, phase: 0, blink: 0, asleep: false, blinkT: 0, hatchT: -1, hatching: false });
           this.L.totKills++;
@@ -1598,8 +1818,9 @@
         this.spawnParts(e.x, e.y, 60, "#ff8a50", 3.2);
         this.spawnParts(e.x, e.y, 40, "#ffd75e", 2.4);
         this.shake = 0.8; SFX.boom();
+        this.announce("THE CINDER KING FALLS", "#ffd75e");
         const self = this;
-        setTimeout(function () { if (self.running && self.mode === "play") self.doWin(); }, 1400);
+        setTimeout(function () { if (self.running && self.mode === "play") self.startCinematic(); }, 1600);
       }
     } else {
       e.state = "pain"; e.painT = 0.26;
@@ -1658,7 +1879,7 @@
       }
       this[w.ammo] -= cost;
     }
-    this.fireCd = w.rate;
+    this.fireCd = w.rate * (this.mods.rapid > 0 ? 0.65 : 1);
     this.muzzle = w.bfg ? 0.18 : w.rocket ? 0.14 : 0.09;
     this.shake = Math.max(this.shake, w.kick * 0.016);
     if (w.bfg) { SFX.bfg(); this.shake = Math.max(this.shake, 0.45); }
@@ -1704,11 +1925,14 @@
       return;
     }
 
-    // HITSCAN pellets
+    // HITSCAN pellets — spread mod adds extra pellets and widens the cone
     const aim = Math.atan2(this.dy, this.dx);
     const targets = this.hitscanTargets();
-    for (let p = 0; p < w.pellets; p++) {
-      const off = (Math.random() * 2 - 1) * w.spread;
+    const spreadMod = this.mods.spread > 0;
+    const pellets = w.pellets + (spreadMod ? (w.pellets >= 4 ? 3 : 2) : 0);
+    const spreadAmt = w.spread * (spreadMod ? 1.7 : 1);
+    for (let p = 0; p < pellets; p++) {
+      const off = (Math.random() * 2 - 1) * spreadAmt;
       let best = null, bestD = 1e9;
       for (let i = 0; i < targets.length; i++) {
         const t = targets[i];
@@ -1806,6 +2030,7 @@
     this.muzzle = Math.max(0, this.muzzle - dt);
     this.dmgFlash = Math.max(0, this.dmgFlash - dt * 1.8);
     this.pickFlash = Math.max(0, this.pickFlash - dt * 2);
+    if (this.liftFlash > 0) this.liftFlash = Math.max(0, this.liftFlash - dt * 1.6);
     this.shake = Math.max(0, this.shake - dt * 1.6);
     if (this.msgT > 0) this.msgT -= dt;
 
@@ -1814,6 +2039,41 @@
 
     // kill streak decay
     if (this.streakT > 0) { this.streakT -= dt; if (this.streakT <= 0) this.streakCount = 0; }
+
+    // weapon-mod timers
+    if (this.bigT > 0) this.bigT -= dt;
+    if (this.multiT > 0) this.multiT -= dt;
+    if (this.mineCd > 0) this.mineCd -= dt;
+    for (const mk in this.mods) {
+      if (this.mods[mk] > 0) {
+        this.mods[mk] -= dt;
+        if (this.mods[mk] <= 0) { this.mods[mk] = 0; this.say(mk.toUpperCase() + " MOD FADED", 1.0); }
+      }
+    }
+
+    // ghost replay recording — sample the player position every 0.1s
+    this.ghostT += dt;
+    if (this.ghostT >= 0.1) {
+      this.ghostT -= 0.1;
+      if (this.ghost.length < 6000) this.ghost.push(this.px, this.py);
+    }
+
+    this.updateMines(dt);
+    this.updateAlly(dt);
+    this.updateCrushers(dt);
+    this.updateLifts(dt);
+
+    // combat intensity → drives dynamic music layers (0-1)
+    let awake = 0, close = 0;
+    for (let i = 0; i < this.L.enemies.length; i++) {
+      const e = this.L.enemies[i];
+      if (e.state === "dead" || e.asleep) continue;
+      awake++;
+      if (Math.hypot(e.x - this.px, e.y - this.py) < 8) close++;
+    }
+    const targetCI = this.chaosSaid || awake > 0 ? Math.min(1, 0.25 + close * 0.18) : 0;
+    this.combatIntensity += (targetCI - this.combatIntensity) * Math.min(1, dt * 2);
+    this.updateMusic(dt);
 
     // held-fire: mouse held always auto-fires; space auto-fires plasma/rocket; chainsaw auto-fires when held
     const cw = WEAPONS[this.cur];
@@ -1841,9 +2101,9 @@
         const hz = this.L.hazards[i];
         if (Math.abs(this.px - hz.x) < 0.6 && Math.abs(this.py - hz.y) < 0.6) {
           if (this.hazardCd <= 0) {
-            this.hurtPlayer((8 * DIFF_MUL[diff]) | 0);
+            this.hurtPlayer((this.hazardDmg * DIFF_MUL[diff]) | 0);
             this.hazardCd = 0.35;
-            if (Math.random() < 0.4) this.say("TOXIC GROUND!", 0.8);
+            if (Math.random() < 0.4) this.say(this.hazardHot ? "RISING LAVA!" : "TOXIC GROUND!", 0.8);
           }
           break;
         }
@@ -1893,24 +2153,29 @@
     for (let i = this.L.items.length - 1; i >= 0; i--) {
       const it = this.L.items[i];
       if (Math.hypot(it.x - this.px, it.y - this.py) < 0.55) {
-        let took = true;
+        let took = true, special = false;
         if (it.kind === "h") { if (this.hp >= 100) took = false; else { this.hp = Math.min(100, this.hp + 25); this.say("+25 HEALTH", 1); } }
         else if (it.kind === "v") { if (this.armor >= 100) took = false; else { this.armor = Math.min(100, this.armor + 25); this.say("+25 ARMOR", 1); } }
         else if (it.kind === "a") { this.bullets += 10; this.say("+10 BULLETS", 1); }
         else if (it.kind === "s") { this.shells += 4; this.say("+4 SHELLS", 1); }
         else if (it.kind === "c") { this.cells += 20; this.say("+20 CELLS", 1); }
         else if (it.kind === "o") { this.rockets += 5; this.say("+5 ROCKETS", 1); }
-        else if (it.kind === "k") { this.hasKey = true; this.say("GOLD KEYCARD ACQUIRED", 1.6); SFX.key(); }
-        else if (it.kind === "W") { this.owned[1] = true; this.cur = 1; this.shells += 8; this.say("SHOTGUN! (KEY 2)", 1.8); SFX.key(); }
-        else if (it.kind === "Q") { this.owned[2] = true; this.cur = 2; this.cells += 40; this.say("PLASMA RIFLE! (KEY 3)", 1.8); SFX.key(); }
-        else if (it.kind === "Y") { this.owned[3] = true; this.cur = 3; this.cells += 80; this.say("BFG-9000! (KEY 4)", 2.2); SFX.key(); this.shake = 0.35; }
-        else if (it.kind === "n") { this.owned[4] = true; this.cur = 4; this.say("CHAINSAW! (KEY 5)", 1.8); SFX.key(); }
-        else if (it.kind === "m") { this.owned[5] = true; this.cur = 5; this.rockets += 10; this.say("ROCKET LAUNCHER! (KEY 6)", 1.8); SFX.key(); this.shake = 0.25; }
-        else if (it.kind === "e") { this.berserkT = 8; this.say("BERSERK!!", 2.0); SFX.roar(); this.pickFlash = 0.8; this.shake = 0.3; }
+        else if (it.kind === "k") { this.keycards.red = true; this.announce("RED KEY", "#ff6a5e"); SFX.key(); special = true; }
+        else if (it.kind === "b") { this.keycards.blue = true; this.announce("BLUE KEY", "#5aa0e8"); SFX.key(); special = true; }
+        else if (it.kind === "y") { this.keycards.yellow = true; this.announce("YELLOW KEY", "#ffe14a"); SFX.key(); special = true; }
+        else if (it.kind === "W") { this.owned[1] = true; this.cur = 1; this.shells += 8; this.say("SHOTGUN! (KEY 2)", 1.8); SFX.key(); special = true; }
+        else if (it.kind === "Q") { this.owned[2] = true; this.cur = 2; this.cells += 40; this.say("PLASMA RIFLE! (KEY 3)", 1.8); SFX.key(); special = true; }
+        else if (it.kind === "Y") { this.owned[3] = true; this.cur = 3; this.cells += 80; this.say("BFG-9000! (KEY 4)", 2.2); SFX.key(); this.shake = 0.35; special = true; }
+        else if (it.kind === "n") { this.owned[4] = true; this.cur = 4; this.say("CHAINSAW! (KEY 5)", 1.8); SFX.key(); special = true; }
+        else if (it.kind === "m") { this.owned[5] = true; this.cur = 5; this.rockets += 10; this.say("ROCKET LAUNCHER! (KEY 6)", 1.8); SFX.key(); this.shake = 0.25; special = true; }
+        else if (it.kind === "e") { this.berserkT = 8; this.announce("BERSERK!!", "#ff5d52"); SFX.roar(); this.pickFlash = 0.8; this.shake = 0.3; special = true; }
+        else if (it.kind === "p") { this.mods.rapid = 20; this.announce("RAPID FIRE MOD", "#ffd75e"); SFX.key(); this.pickFlash = 0.6; special = true; }
+        else if (it.kind === "x") { this.mods.spread = 20; this.announce("SPREAD MOD", "#ff9a50"); SFX.key(); this.pickFlash = 0.6; special = true; }
+        else if (it.kind === "l") { this.mods.lifesteal = 15; this.announce("LIFESTEAL MOD", "#63d97a"); SFX.key(); this.pickFlash = 0.6; special = true; }
+        else if (it.kind === "z") { this.mineCount = Math.min(5, this.mineCount + 3); this.announce("MINE PACK  (+3)", "#c9333f"); SFX.key(); special = true; }
         if (took) {
-          if (it.kind !== "k" && it.kind !== "W" && it.kind !== "Q" && it.kind !== "Y" &&
-              it.kind !== "n" && it.kind !== "m" && it.kind !== "e") SFX.pickup();
-          this.pickFlash = 0.5; this.itemsGot++; this.score += 25;
+          if (!special) SFX.pickup();
+          this.pickFlash = Math.max(this.pickFlash, 0.5); this.itemsGot++; this.score += 25;
           this.L.items.splice(i, 1);
         }
       }
@@ -1927,7 +2192,7 @@
       this.chaosT -= dt;
       if (this.chaosT <= 0 && !this.chaosSaid) {
         this.chaosSaid = true;
-        this.say("THE HORDE STIRS — SURVIVE", 2.2);
+        this.announce("THE HORDE STIRS", "#ff8a50");
         SFX.roar(); this.shake = 0.35;
         for (let i = 0; i < this.L.enemies.length; i++) this.L.enemies[i].asleep = false;
       }
@@ -1960,8 +2225,8 @@
       if (e.state === "idle") {
         if (sees) {
           e.state = "chase";
-          if (e.cfg.boss && !e.roared) { e.roared = true; this.say("THE CINDER KING AWAKENS", 2.2); SFX.roar(); this.shake = 0.6; }
-          if (e.cfg.miniboss && !e.roared) { e.roared = true; this.say(e.cfg.title + " AWAKENS!", 2.0); SFX.roar(); this.shake = 0.45; }
+          if (e.cfg.boss && !e.roared) { e.roared = true; this.announce("THE CINDER KING AWAKENS", "#ff5d52"); SFX.roar(); this.shake = 0.6; }
+          if (e.cfg.miniboss && !e.roared) { e.roared = true; this.announce(e.cfg.title + " AWAKENS!", "#ff8a50"); SFX.roar(); this.shake = 0.45; }
         } else continue;
       }
       e.animT += dt * 5;
@@ -2043,7 +2308,7 @@
           if (Math.hypot(tg.x - p.x, tg.y - p.y) < hitR) {
             if (p.bfg)    this.bfgBlast(p.x, p.y, p.dmg, p.splash || 2.5);
             else if (p.rocket) this.rocketBlast(p.x, p.y, p.dmg, p.splash || 2.2);
-            else if (tg.e) this.damageEnemy(tg.e, p.dmg);
+            else if (tg.e) { this._allyDmg = !!p.ally; this.damageEnemy(tg.e, p.dmg); this._allyDmg = false; }
             else { tg.b.hp = 0; this.explodeBarrel(tg.b); }
             hit = true; break;
           }
@@ -2072,8 +2337,8 @@
     const near = [[1,0],[-1,0],[0,1],[0,-1]];
     for (let i = 0; i < 4; i++) {
       if (this.wallAt(tx + near[i][0], ty + near[i][1]) === 5) {
-        if (this.hasKey) { this.mode = "inter"; }
-        else if (this.msgT <= 0) { this.say("THE EXIT NEEDS THE GOLD KEYCARD", 1.6); SFX.nokey(); }
+        if (this.keycards.red) { this.finishLevel(); }
+        else if (this.msgT <= 0) { this.say("THE EXIT NEEDS THE RED KEYCARD", 1.6); SFX.nokey(); }
         break;
       }
     }
@@ -2088,10 +2353,155 @@
     if (!this.solidAt(e.x, ny + (ny > e.y ? R : -R))) e.y = ny;
   };
 
+  // ---- sticky mines ----
+  Game.prototype.dropMine = function () {
+    if (this.mineCount <= 0) { this.say("NO MINES — FIND A MINE PACK", 1.0); SFX.empty(); return; }
+    if (this.mines.length >= 5) { this.say("MINE LIMIT REACHED (5)", 1.0); return; }
+    this.mineCount--;
+    this.mines.push({ x: this.px, y: this.py, arm: 0.6, life: 8, blink: 0 });
+    SFX.switch(); this.say("MINE DEPLOYED", 0.8);
+    this.spawnParts(this.px, this.py, 4, "#c9333f", 0.8);
+  };
+  Game.prototype.explodeMine = function (m) {
+    const R = 2.0, dmg = 70;
+    this.spawnParts(m.x, m.y, 26, "#ff8a50", 3.2);
+    this.spawnParts(m.x, m.y, 14, "#ffd75e", 2.2);
+    this.shake = Math.max(this.shake, 0.4); SFX.boom();
+    for (let i = 0; i < this.L.enemies.length; i++) {
+      const e = this.L.enemies[i];
+      if (e.state === "dead") continue;
+      const d = Math.hypot(e.x - m.x, e.y - m.y);
+      if (d < R) this.damageEnemy(e, dmg * (1 - d / R));
+    }
+    const pd = Math.hypot(this.px - m.x, this.py - m.y);
+    if (pd < R * 0.7) this.hurtPlayer(((dmg * 0.35) * (1 - pd / (R * 0.7))) | 0);
+    for (let i = 0; i < this.L.barrels.length; i++) {
+      const b = this.L.barrels[i];
+      if (!b.dead && Math.hypot(b.x - m.x, b.y - m.y) < R) { b.hp = 0; this.explodeBarrel(b); }
+    }
+  };
+  Game.prototype.updateMines = function (dt) {
+    for (let i = this.mines.length - 1; i >= 0; i--) {
+      const m = this.mines[i];
+      m.blink += dt;
+      if (m.arm > 0) { m.arm -= dt; continue; }
+      m.life -= dt;
+      let boom = m.life <= 0;
+      if (!boom) {
+        for (let j = 0; j < this.L.enemies.length; j++) {
+          const e = this.L.enemies[j];
+          if (e.state !== "dead" && Math.hypot(e.x - m.x, e.y - m.y) < 1.2) { boom = true; break; }
+        }
+      }
+      if (boom) { this.explodeMine(m); this.mines.splice(i, 1); }
+    }
+  };
+
+  // ---- co-op ghost ally (wraith) ----
+  Game.prototype.updateAlly = function (dt) {
+    const al = this.ally; if (!al) return;
+    al.animT += dt * 3;
+    // follow the player, keeping a small standoff distance
+    const fx = this.px - al.x, fy = this.py - al.y, fd = Math.hypot(fx, fy) || 1;
+    if (fd > 1.4) { const s = 3.4 * dt; al.x += (fx / fd) * s; al.y += (fy / fd) * s; }
+    // auto-fire weak plasma at the nearest visible enemy every 1.2s
+    al.cd = Math.max(0, al.cd - dt);
+    if (al.cd <= 0) {
+      let best = null, bd = 9;
+      for (let i = 0; i < this.L.enemies.length; i++) {
+        const e = this.L.enemies[i];
+        if (e.state === "dead" || e.asleep) continue;
+        const d = Math.hypot(e.x - al.x, e.y - al.y);
+        if (d < bd && this.los(al.x, al.y, e.x, e.y)) { best = e; bd = d; }
+      }
+      if (best) {
+        al.cd = 1.2;
+        const a = Math.atan2(best.y - al.y, best.x - al.x);
+        this.projs.push({ x: al.x + Math.cos(a) * 0.4, y: al.y + Math.sin(a) * 0.4,
+                          vx: Math.cos(a) * 9, vy: Math.sin(a) * 9, player: true, ally: true, dmg: 12 });
+      }
+    }
+  };
+
+  // ---- crushers ----
+  Game.prototype.updateCrushers = function (dt) {
+    if (!this.L.crushers || !this.L.crushers.length) return;
+    for (let i = 0; i < this.L.crushers.length; i++) {
+      const c = this.L.crushers[i];
+      c.phase = (c.phase + dt) % 2.5;          // ~2.5s cycle
+      const slam = c.phase < 0.4;              // ~0.4s danger window
+      c.drop = slam ? (1 - c.phase / 0.4) : Math.max(0, c.drop - dt * 3);
+      if (slam && !c.hit && (this.px | 0) === c.cx && (this.py | 0) === c.cy) {
+        c.hit = true;
+        this.hurtPlayer((25 * DIFF_MUL[diff]) | 0);
+        this.shake = Math.max(this.shake, 0.5); SFX.boom();
+        this.spawnParts(c.x, c.y, 10, "#888", 2.0);
+      }
+      if (!slam) c.hit = false;
+      // warn when standing under a crusher that is about to slam
+      if (!slam && c.phase > 2.1 && (this.px | 0) === c.cx && (this.py | 0) === c.cy && this.msgT <= 0) {
+        this.say("CRUSHER — MOVE!", 0.6);
+      }
+    }
+  };
+
+  // ---- lifts (paired teleport pads with a black flash) ----
+  Game.prototype.updateLifts = function (dt) {
+    if (!this.L.lifts || !this.L.lifts.length || this.teleCd > 0) return;
+    for (let i = 0; i < this.L.lifts.length; i++) {
+      const lf = this.L.lifts[i];
+      if (!lf.dest) continue;
+      if (Math.abs(this.px - lf.x) < 0.5 && Math.abs(this.py - lf.y) < 0.5) {
+        this.px = lf.dest.x + 0.5; this.py = lf.dest.y + 0.5;
+        this.teleCd = 1.0; this.liftFlash = 0.45;
+        SFX.teleport(); this.announce("LIFT", "#8ad8ff");
+        break;
+      }
+    }
+  };
+
+  // ---- level completion / grade / unlocks ----
+  Game.prototype.finishLevel = function () {
+    this.mode = "inter";
+    // persist ghost replay if this run was faster
+    if (this.ghost.length > 2) saveGhost(this.levelIdx, { time: this.time, pts: this.ghost.slice() });
+    const grade = this.computeGrade();
+    // unlock: A/S beating a level grants bonus starting shells + best-grade record
+    const u = this.unlocks;
+    if (GRADE_RANK[grade] > GRADE_RANK[u.bestGrade]) u.bestGrade = grade;
+    if (grade === "A" || grade === "S") u.shellsBonus = Math.max(u.shellsBonus, 5);
+    u.runs = (u.runs || 0) + 1;
+    saveUnlocks(u);
+    this.announce("LEVEL CLEARED  ·  GRADE " + grade, grade === "S" ? "#ffd75e" : "#88ff88");
+  };
+  Game.prototype.computeGrade = function () {
+    const killPct = this.kills / Math.max(1, this.L.totKills);
+    const secPct = this.secretsFound / Math.max(1, this.L.totSecrets || 1);
+    const timePct = this.time / Math.max(1, this.L.par);
+    // blended score: kills 55%, secrets 20%, time 25%
+    const s = killPct * 0.55 + secPct * 0.20 + (timePct <= 1 ? 0.25 : Math.max(0, 0.25 - (timePct - 1) * 0.18));
+    if (s >= 0.92 && killPct >= 0.9 && timePct <= 1.15) return "S";
+    if (s >= 0.75) return "A";
+    if (s >= 0.55) return "B";
+    return "C";
+  };
+
+  // ---- ending cinematic ----
+  Game.prototype.startCinematic = function () {
+    this.mode = "cine"; this.cineT = 0; this.cineStart = performance.now();
+    if (this.score > this.hi) { this.hi = this.score; try { localStorage.setItem("rvdw-inferno-hi", String(this.hi)); } catch (e) {} }
+    // full campaign clear unlocks the gold pistol skin
+    const u = this.unlocks; u.pistolSkin = true; saveUnlocks(u);
+    SFX.roar();
+  };
+  Game.prototype.endCinematic = function () { this.doWin(); };
+
   // ============================ RENDER ============================
   Game.prototype.render = function () {
     const g = this.ctx;
     if (this.mode === "title") { this.renderTitle(g); return; }
+    if (this.mode === "editor") { this.renderEditor(g); return; }
+    if (this.mode === "cine") { this.renderCinematic(g); return; }
 
     const shakeX = this.shake > 0 ? (Math.random() - 0.5) * this.shake * 7 * SCALE : 0;
     const shakeY = this.shake > 0 ? (Math.random() - 0.5) * this.shake * 5 * SCALE : 0;
@@ -2119,7 +2529,7 @@
         if (mapY < 0 || mapY >= L.h || mapX < 0 || mapX >= L.w) { hit = 1; break; }
         const v = L.map[mapY][mapX];
         if (v > 0) {
-          if (v === 6 || v === 7 || v === 8) {
+          if (v === 6 || v === 7 || v === 8 || v === 10 || v === 11) {
             const dr = L.doors[mapY * 1000 + mapX];
             const o = dr ? dr.open : 0;
             const pd = side === 0 ? (mapX - this.px + (1 - stepX) / 2) / (rdx || 1e-9)
@@ -2169,6 +2579,25 @@
         g.globalAlpha = 1;
       }
     }
+    // lift-pad glow (green/cyan pads)
+    if (this.L.lifts && this.L.lifts.length > 0) {
+      const invD2 = 1 / (this.plx * this.dy - this.dx * this.ply);
+      for (let ti = 0; ti < this.L.lifts.length; ti++) {
+        const lf = this.L.lifts[ti];
+        const trx = lf.x - this.px, trry = lf.y - this.py;
+        const trX2 = invD2 * (this.dy * trx - this.dx * trry);
+        const trY2 = invD2 * (-this.ply * trx + this.plx * trry);
+        if (trY2 <= 0.1) continue;
+        const lsx = (W / 2) * (1 + trX2 / trY2);
+        if (lsx < 0 || lsx >= W) continue;
+        const lSize = Math.max(4, (VIEW_H * 0.18) / trY2);
+        const lPulse = 0.5 + 0.5 * Math.sin(this.time * 5 + ti);
+        g.globalAlpha = 0.28 + lPulse * 0.22;
+        g.fillStyle = lf.kind === "<" ? "#63d97a" : "#5aa0e8";
+        g.beginPath(); g.arc(lsx, VIEW_H - lSize * 0.3, lSize, 0, 7); g.fill();
+        g.globalAlpha = 1;
+      }
+    }
 
     // ---- billboards (enemies, barrels, items) far→near ----
     const spr = [];
@@ -2188,6 +2617,11 @@
       const it = L.items[i];
       spr.push({ x: it.x, y: it.y, kind: it.kind, d: dist2(it.x - this.px, it.y - this.py) });
     }
+    for (let i = 0; i < this.mines.length; i++) {
+      const m = this.mines[i];
+      spr.push({ x: m.x, y: m.y, mine: m, d: dist2(m.x - this.px, m.y - this.py) });
+    }
+    if (this.ally) spr.push({ x: this.ally.x, y: this.ally.y, ally: this.ally, d: dist2(this.ally.x - this.px, this.ally.y - this.py) });
     spr.sort(function (a, b) { return b.d - a.d; });
 
     const invDet = 1 / (this.plx * this.dy - this.dx * this.ply);
@@ -2213,6 +2647,18 @@
           alpha = 0.5 + 0.22 * Math.sin(e.blink * 6);       // spectral shimmer
           yOff -= size * (0.06 + 0.04 * Math.sin(e.blink * 3)); // float
         }
+      } else if (sp.ally) {
+        // co-op wraith ally: translucent cyan billboard
+        const fr = this.sprites.wraith;
+        img = fr[(sp.ally.animT | 0) % 2];
+        size = (size * 0.9) | 0;
+        alpha = 0.5 + 0.15 * Math.sin(sp.ally.animT * 2);
+        yOff = -size * 0.08;
+      } else if (sp.mine) {
+        img = this.items.mineFloor;
+        size = (size * 0.45) | 0;
+        yOff = size * 0.55;
+        if (sp.mine.arm <= 0 && Math.sin(sp.mine.blink * 10) > 0) alpha = 0.6; // armed blink
       } else if (sp.barrel) {
         img = this.items.B;
         size = (size * 0.8) | 0;
@@ -2283,6 +2729,43 @@
       g.globalAlpha = 1;
     }
 
+    // ---- ghost replay (translucent green marker retracing the best run) ----
+    if (this.ghostBest && this.ghostBest.pts) {
+      const pts = this.ghostBest.pts;
+      // index advances with the current run time so the ghost "races" you
+      const gi = (Math.min(this.time, this.ghostBest.time) / 0.1 | 0) * 2;
+      if (gi + 1 < pts.length) {
+        const gx0 = pts[gi], gy0 = pts[gi + 1];
+        const rx = gx0 - this.px, ry = gy0 - this.py;
+        const trX = invDet * (this.dy * rx - this.dx * ry);
+        const trY = invDet * (-this.ply * rx + this.plx * ry);
+        if (trY > 0.1) {
+          const sx = (W / 2) * (1 + trX / trY);
+          if (sx >= 0 && sx < W && this.zbuf[sx | 0] > trY) {
+            const gh = Math.abs((VIEW_H / trY) | 0) * 0.8;
+            g.globalAlpha = 0.35;
+            g.fillStyle = "#63d97a";
+            g.fillRect(sx - gh * 0.18, (VIEW_H - gh) / 2 + gh * 0.1, gh * 0.36, gh * 0.8);
+            g.beginPath(); g.arc(sx, (VIEW_H - gh) / 2 + gh * 0.05, gh * 0.16, 0, 7); g.fill();
+            g.globalAlpha = 1;
+          }
+        }
+      }
+    }
+
+    // ---- crusher slam overlay (dark ceiling bar drops when a near crusher fires)
+    if (this.L.crushers && this.L.crushers.length) {
+      let maxDrop = 0;
+      for (let i = 0; i < this.L.crushers.length; i++) {
+        const c = this.L.crushers[i];
+        if (c.drop > 0 && Math.hypot(c.x - this.px, c.y - this.py) < 3) maxDrop = Math.max(maxDrop, c.drop);
+      }
+      if (maxDrop > 0) {
+        g.fillStyle = "rgba(10,8,8," + (0.5 * maxDrop).toFixed(2) + ")";
+        g.fillRect(0, 0, W, (VIEW_H * 0.5 * maxDrop) | 0);
+      }
+    }
+
     // muzzle light — briefly warms the whole scene when firing
     if (this.muzzle > 0) {
       g.globalAlpha = Math.min(1, this.muzzle * 9);
@@ -2301,6 +2784,7 @@
     if (this.dmgFlash > 0) { g.fillStyle = "rgba(200,30,30," + (this.dmgFlash * 0.4).toFixed(2) + ")"; g.fillRect(0, 0, W, VIEW_H); }
     if (this.pickFlash > 0) { g.fillStyle = "rgba(255,240,180," + (this.pickFlash * 0.22).toFixed(2) + ")"; g.fillRect(0, 0, W, VIEW_H); }
     if (this.berserkT > 0) { g.fillStyle = "rgba(160,0,0," + Math.min(0.22, this.berserkT * 0.025).toFixed(3) + ")"; g.fillRect(0, 0, W, VIEW_H); }
+    if (this.liftFlash > 0) { g.fillStyle = "rgba(0,0,0," + Math.min(1, this.liftFlash * 2).toFixed(2) + ")"; g.fillRect(0, 0, W, VIEW_H); }
 
     // weather screen-space particles (theme-based)
     const theme = this.L && this.L.theme;
@@ -2325,6 +2809,7 @@
 
     if (this.showMap) this.renderMap(g);
     this.renderBossBar(g);
+    this.renderStatusStrip(g);
     this.renderHUD(g);
 
     // message
@@ -2333,6 +2818,20 @@
       g.font = "bold 10px monospace"; g.textAlign = "center"; g.textBaseline = "middle";
       g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, 12, BW, 16);
       g.fillStyle = "#ffd75e"; g.fillText(this.msg, BW / 2, 20);
+      g.restore();
+    }
+
+    // big centered announcer text (fades + pops)
+    if (this.bigT > 0 && this.bigMsg) {
+      g.save(); g.scale(SCALE, SCALE);
+      const a = Math.min(1, this.bigT / 0.6);
+      const pop = this.bigT > 1.9 ? (2.2 - this.bigT) / 0.3 : 1; // quick scale-in
+      g.globalAlpha = a;
+      g.textAlign = "center"; g.textBaseline = "middle";
+      g.font = "bold " + (14 + pop * 4).toFixed(0) + "px monospace";
+      g.fillStyle = "rgba(0,0,0,0.7)"; g.fillText(this.bigMsg, BW / 2 + 1, 56 + 1);
+      g.fillStyle = this.bigColor; g.fillText(this.bigMsg, BW / 2, 56);
+      g.globalAlpha = 1;
       g.restore();
     }
 
@@ -2376,14 +2875,15 @@
     g.fillRect(gx + 18, gy, 14, 2);
 
     if (this.cur === 0) {
-      // PISTOL
-      g.fillStyle = "#1a1e28"; g.fillRect(gx - 4, gy - 36, 10, 28);
-      g.fillStyle = "#3a4254"; g.fillRect(gx - 5, gy - 34, 12, 8);
-      g.fillStyle = "#12141c"; g.fillRect(gx - 2, gy - 36, 6, 5);
-      g.fillStyle = "#2a2f3d"; g.fillRect(gx - 6, gy - 12, 14, 16);
+      // PISTOL (gold skin when the campaign has been beaten)
+      const gold = this.unlocks && this.unlocks.pistolSkin;
+      g.fillStyle = gold ? "#8a6b2a" : "#1a1e28"; g.fillRect(gx - 4, gy - 36, 10, 28);
+      g.fillStyle = gold ? "#c9a24a" : "#3a4254"; g.fillRect(gx - 5, gy - 34, 12, 8);
+      g.fillStyle = gold ? "#5e4718" : "#12141c"; g.fillRect(gx - 2, gy - 36, 6, 5);
+      g.fillStyle = gold ? "#a8842e" : "#2a2f3d"; g.fillRect(gx - 6, gy - 12, 14, 16);
       g.fillStyle = "#5e3a1e"; g.fillRect(gx - 5, gy + 2, 10, 14);
       g.fillStyle = "#ffd75e"; g.fillRect(gx - 6, gy - 12, 14, 2);
-      g.fillStyle = "#8a9ab0"; g.fillRect(gx + 4, gy - 8, 3, 6);
+      g.fillStyle = gold ? "#ffe8a0" : "#8a9ab0"; g.fillRect(gx + 4, gy - 8, 3, 6);
     } else if (this.cur === 1) {
       // SHOTGUN — twin barrels + wood stock
       g.fillStyle = "#1a1c22"; g.fillRect(gx - 14, gy - 40, 10, 34);
@@ -2457,7 +2957,9 @@
       const v = L.map[y][x];
       if (!v) continue;
       g.fillStyle = v === 5 ? "#ffd75e"
-                  : v === 7 ? "#ffcf5e"                    // gold door
+                  : v === 7 ? "#ff6a5e"                    // red door
+                  : v === 10 ? "#5aa0e8"                   // blue door
+                  : v === 11 ? "#ffe14a"                   // yellow door
                   : v === 6 || v === 8 ? "rgba(138,216,255,0.7)"
                   : "rgba(150,175,230,0.5)";
       g.fillRect(ox + x * sc, oy + y * sc, sc, sc);
@@ -2571,6 +3073,29 @@
     }
   };
 
+  // small overlay strip above the HUD: active mod timers + daily/ghost badges
+  Game.prototype.renderStatusStrip = function (g) {
+    g.save(); g.scale(SCALE, SCALE);
+    g.font = "bold 7px monospace"; g.textBaseline = "middle"; g.textAlign = "left";
+    let x = 4;
+    const mods = [["RAPID", this.mods.rapid, 20, "#ffd75e"], ["SPREAD", this.mods.spread, 20, "#ff9a50"], ["LIFE", this.mods.lifesteal, 15, "#63d97a"]];
+    for (let i = 0; i < mods.length; i++) {
+      const m = mods[i]; if (m[1] <= 0) continue;
+      const w = 34;
+      g.fillStyle = "rgba(4,5,11,0.6)"; g.fillRect(x, 4, w, 9);
+      g.fillStyle = m[3]; g.fillRect(x, 12, (w * m[1] / m[2]) | 0, 1);
+      g.fillText(m[0] + " " + Math.ceil(m[1]) + "s", x + 2, 8);
+      x += w + 3;
+    }
+    // badges (top-right)
+    g.textAlign = "right";
+    let bx = BW - 4;
+    if (dailyMode) { g.fillStyle = "#ff8a50"; g.fillText("DAILY #" + dailySeed, bx, 8); bx -= 66; }
+    if (this.ghostBest) { g.fillStyle = "#63d97a"; g.fillText("GHOST", bx, 8); bx -= 34; }
+    if (this.allyOn) { g.fillStyle = "#8ad8ff"; g.fillText("ALLY", bx, 8); }
+    g.restore();
+  };
+
   Game.prototype.renderHUD = function (g) {
     g.save(); g.scale(SCALE, SCALE); // chrome space
     g.fillStyle = "#0b0f1a"; g.fillRect(0, VIEW_B, BW, BHUD);
@@ -2599,20 +3124,23 @@
       g.fillText(String(i + 1), 76 + i * 9, VIEW_B + 20);
     }
     g.fillStyle = "#8d99b8"; g.fillText(w.name, 132, VIEW_B + 20);
-    // keycard
-    if (this.hasKey) {
-      g.fillStyle = "#ffd75e"; g.fillRect(168, VIEW_B + 4, 7, 10);
-      g.fillStyle = "#0b0f1a"; g.fillRect(170, VIEW_B + 6, 3, 3);
-    } else {
-      g.fillStyle = "#2a3350"; g.fillRect(168, VIEW_B + 4, 7, 10);
+    // keycards (red / blue / yellow)
+    const kc = this.keycards, kcCol = ["#c9333f", "#3a6ad8", "#e0c020"], kcOwn = [kc.red, kc.blue, kc.yellow];
+    for (let ki = 0; ki < 3; ki++) {
+      const kx = 124 + ki * 7;
+      if (kcOwn[ki]) { g.fillStyle = kcCol[ki]; g.fillRect(kx, VIEW_B + 3, 6, 9); g.fillStyle = "#0b0f1a"; g.fillRect(kx + 1, VIEW_B + 5, 4, 2); }
+      else { g.fillStyle = "#2a3350"; g.fillRect(kx, VIEW_B + 3, 6, 9); }
     }
+    // mine count
+    if (this.mineCount > 0) { g.fillStyle = "#c9333f"; g.fillText("◆" + this.mineCount, 124, VIEW_B + 20); }
     // kills
-    g.fillStyle = "#8d99b8"; g.fillText("K", 180, VIEW_B + 8);
-    g.fillStyle = "#8ad8ff"; g.fillText(this.kills + "/" + this.L.totKills, 190, VIEW_B + 8);
-    // level + time
-    g.fillStyle = "#8d99b8"; g.fillText("L" + (this.levelIdx + 1), 180, VIEW_B + 20);
-    const tm = this.time | 0;
-    g.fillText(((tm / 60) | 0) + ":" + ("0" + tm % 60).slice(-2), 198, VIEW_B + 20);
+    g.fillStyle = "#8d99b8"; g.fillText("K", 148, VIEW_B + 8);
+    g.fillStyle = "#8ad8ff"; g.fillText(this.kills + "/" + this.L.totKills, 156, VIEW_B + 8);
+    // level + precise time
+    g.fillStyle = "#8d99b8"; g.fillText("L" + (this.levelIdx + 1), 148, VIEW_B + 8 + 12);
+    const tm = this.time;
+    const tms = ((tm / 60) | 0) + ":" + ("0" + ((tm | 0) % 60)).slice(-2) + "." + (((tm * 10) | 0) % 10);
+    g.fillStyle = "#8ad8ff"; g.fillText(tms, 162, VIEW_B + 20);
     // score
     g.textAlign = "right";
     g.fillStyle = "#ffd75e"; g.fillText("SCORE " + this.score, BW - 5, VIEW_B + 8);
@@ -2632,34 +3160,66 @@
   };
   Game.prototype.renderTally = function (g, title, sub) {
     g.save(); g.scale(SCALE, SCALE);
-    g.fillStyle = "rgba(4,5,11,0.78)"; g.fillRect(0, 0, BW, BH);
+    g.fillStyle = "rgba(4,5,11,0.82)"; g.fillRect(0, 0, BW, BH);
     g.textAlign = "center"; g.textBaseline = "middle";
-    g.font = "bold 18px monospace"; g.fillStyle = "#ffd75e";
-    g.fillText(title, BW / 2, 40);
-    // grade calculation
+    g.font = "bold 16px monospace"; g.fillStyle = "#ffd75e";
+    g.fillText(title, BW / 2, 22);
+    // grade (kills + secrets + time blend)
     const killPct = this.kills / Math.max(1, this.L.totKills);
-    const timePct = this.time / Math.max(1, this.L.par);
-    let grade, gradeColor;
-    if (killPct >= 0.95 && timePct <= 1.0) { grade = "S"; gradeColor = "#ffd75e"; }
-    else if (killPct >= 0.80 && timePct <= 1.5) { grade = "A"; gradeColor = "#88ff88"; }
-    else if (killPct >= 0.60 && timePct <= 2.5) { grade = "B"; gradeColor = "#8ad8ff"; }
-    else { grade = "C"; gradeColor = "#8d99b8"; }
-    g.font = "bold 28px monospace"; g.fillStyle = gradeColor;
-    g.fillText(grade, BW / 2, 62);
-    g.font = "bold 10px monospace";
+    const secPct = this.secretsFound / Math.max(1, this.L.totSecrets || 1);
+    const grade = this.computeGrade();
+    const gradeColor = grade === "S" ? "#ffd75e" : grade === "A" ? "#88ff88" : grade === "B" ? "#8ad8ff" : "#8d99b8";
+    g.font = "bold 26px monospace"; g.fillStyle = gradeColor;
+    g.fillText(grade, 44, 44);
+    g.font = "bold 8px monospace"; g.fillStyle = "#8d99b8"; g.fillText("GRADE", 44, 62);
+    // stat rows (right of the grade)
+    g.font = "bold 9px monospace";
     const rows = [
       ["KILLS",  this.kills + " / " + this.L.totKills + "  (" + ((100 * killPct) | 0) + "%)"],
+      ["SECRETS", this.secretsFound + " / " + (this.L.totSecrets || 0) + "  (" + ((100 * secPct) | 0) + "%)"],
       ["ITEMS",  this.itemsGot + " / " + this.L.totItems],
       ["TIME",   (((this.time | 0) / 60) | 0) + ":" + ("0" + (this.time | 0) % 60).slice(-2) + "  par " + ((this.L.par / 60) | 0) + ":" + ("0" + this.L.par % 60).slice(-2)],
       ["SCORE",  String(this.score)]
     ];
     for (let i = 0; i < rows.length; i++) {
-      g.fillStyle = "#8d99b8"; g.textAlign = "right"; g.fillText(rows[i][0], BW / 2 - 10, 82 + i * 16);
-      g.fillStyle = "#eef2ff"; g.textAlign = "left";  g.fillText(rows[i][1], BW / 2 + 10, 82 + i * 16);
+      g.fillStyle = "#8d99b8"; g.textAlign = "right"; g.fillText(rows[i][0], 150, 34 + i * 13);
+      g.fillStyle = "#eef2ff"; g.textAlign = "left";  g.fillText(rows[i][1], 158, 34 + i * 13);
     }
+    // intermission map art (mini top-down) on the right with path + kill dots
+    this.renderMiniMap(g, 168, 30, 140, 96);
     g.textAlign = "center"; g.fillStyle = "#8ad8ff";
-    g.fillText(sub, BW / 2, 160);
+    g.font = "bold 9px monospace";
+    g.fillText(sub, BW / 2, 176);
+    g.fillStyle = "#8d99b8"; g.font = "bold 7px monospace";
+    g.fillText("S = download score card", BW / 2, 190);
     g.restore();
+  };
+
+  // mini top-down level art used on the intermission screen (chrome-space)
+  Game.prototype.renderMiniMap = function (g, ox, oy, maxW, maxH) {
+    const L = this.L;
+    const sc = Math.max(1, Math.min(maxW / L.w, maxH / L.h));
+    const mw = L.w * sc, mh = L.h * sc;
+    g.fillStyle = "rgba(2,3,7,0.9)"; g.fillRect(ox - 2, oy - 2, mw + 4, mh + 4);
+    for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) {
+      const v = L.map[y][x]; if (!v) continue;
+      g.fillStyle = v === 5 ? "#ffd75e"
+                  : (v >= 6 && v <= 11) ? "#3a4c6e"
+                  : "#26314c";
+      g.fillRect(ox + x * sc, oy + y * sc, Math.ceil(sc), Math.ceil(sc));
+    }
+    // player path (recorded ghost of this run)
+    g.fillStyle = "rgba(99,217,122,0.7)";
+    for (let i = 0; i + 1 < this.ghost.length; i += 6) {
+      g.fillRect(ox + this.ghost[i] * sc - 0.5, oy + this.ghost[i + 1] * sc - 0.5, 1.5, 1.5);
+    }
+    // kill markers (dead enemies)
+    for (let i = 0; i < L.enemies.length; i++) {
+      const e = L.enemies[i]; if (e.state !== "dead") continue;
+      g.fillStyle = "#c9333f"; g.fillRect(ox + e.x * sc - 1, oy + e.y * sc - 1, 2, 2);
+    }
+    // final player position
+    g.fillStyle = "#fff"; g.fillRect(ox + this.px * sc - 1, oy + this.py * sc - 1, 2, 2);
   };
   Game.prototype.renderWin = function (g) {
     g.save(); g.scale(SCALE, SCALE);
@@ -2677,6 +3237,163 @@
     g.fillText("SPACE to return to title", BW / 2, 150);
     g.restore();
   };
+  // ---- ending cinematic ----
+  Game.prototype.renderCinematic = function (g) {
+    const t = (performance.now() - (this.cineStart || performance.now())) / 1000;
+    if (t > 11) { this.endCinematic(); return; }
+    g.save(); g.scale(SCALE, SCALE);
+    g.fillStyle = "#070406"; g.fillRect(0, 0, BW, BH);
+    // rising embers
+    for (let i = 0; i < 30; i++) {
+      const y = (BH - ((t * (12 + i % 9) + i * 41) % (BH + 40)));
+      g.fillStyle = i % 3 ? "rgba(255,110,60,0.5)" : "rgba(255,200,90,0.5)";
+      g.fillRect(((i * 61 + Math.sin(t + i) * 10) % BW + BW) % BW, y, 2, 3);
+    }
+    g.textAlign = "center"; g.textBaseline = "middle";
+    // staged text crawl
+    const lines = [
+      [0.3, "THE CINDER KING FALLS...", "#ffd75e", 16],
+      [3.0, "The gates of the inferno seal behind you.", "#eef2ff", 9],
+      [5.0, "FINAL SCORE  " + this.score, "#ff8a50", 12],
+      [7.0, "GRADE ON RECORD  " + this.unlocks.bestGrade, "#8ad8ff", 10],
+      [9.0, "THANKS FOR PLAYING", "#ffd75e", 14]
+    ];
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i]; if (t < l[0]) continue;
+      g.globalAlpha = Math.min(1, (t - l[0]) * 1.5);
+      g.font = "bold " + l[3] + "px monospace"; g.fillStyle = l[2];
+      g.fillText(l[1], BW / 2, 50 + i * 22);
+    }
+    g.globalAlpha = 1;
+    g.font = "bold 8px monospace"; g.fillStyle = "#8d99b8";
+    if (Math.sin(t * 4) > 0) g.fillText("ENTER / CLICK TO CONTINUE", BW / 2, BH - 12);
+    g.restore();
+  };
+
+  // ---- level editor (visitor try) ----
+  Game.prototype.startEditor = function () {
+    const W2 = 24, H2 = 16;
+    const grid = [];
+    for (let y = 0; y < H2; y++) {
+      let row = "";
+      for (let x = 0; x < W2; x++) row += (x === 0 || y === 0 || x === W2 - 1 || y === H2 - 1) ? "#" : ".";
+      grid.push(row.split(""));
+    }
+    grid[1][1] = "P";
+    this.editor = { w: W2, h: H2, grid: grid, cx: 2, cy: 2, tile: 0 };
+    this.mode = "editor";
+  };
+  // palette: index → char + label
+  Game.prototype.editorPalette = function () {
+    return [
+      { ch: "#", name: "WALL" }, { ch: ".", name: "FLOOR" }, { ch: "D", name: "DOOR" },
+      { ch: "X", name: "EXIT" }, { ch: "k", name: "RED KEY" }, { ch: "G", name: "RED DOOR" },
+      { ch: "E", name: "IMP" }, { ch: "B", name: "BARREL" }, { ch: "P", name: "PLAYER START" }
+    ];
+  };
+  Game.prototype.editorKey = function (k) {
+    const ed = this.editor; if (!ed) return;
+    if (k === "escape") { this.mode = "title"; this.editor = null; return; }
+    if (k === "w" || k === "arrowup") ed.cy = Math.max(0, ed.cy - 1);
+    else if (k === "s" || k === "arrowdown") ed.cy = Math.min(ed.h - 1, ed.cy + 1);
+    else if (k === "a" || k === "arrowleft") ed.cx = Math.max(0, ed.cx - 1);
+    else if (k === "d" || k === "arrowright") ed.cx = Math.min(ed.w - 1, ed.cx + 1);
+    else if (k >= "1" && k <= "9") {
+      const pal = this.editorPalette(); const idx = +k - 1;
+      if (idx < pal.length) {
+        const ch = pal[idx].ch;
+        // only one player start allowed
+        if (ch === "P") for (let y = 0; y < ed.h; y++) for (let x = 0; x < ed.w; x++) if (ed.grid[y][x] === "P") ed.grid[y][x] = ".";
+        ed.grid[ed.cy][ed.cx] = ch; ed.tile = idx;
+      }
+    } else if (k === " ") { this.playtestEditor(); }
+  };
+  Game.prototype.playtestEditor = function () {
+    const ed = this.editor; if (!ed) return;
+    // ensure a player start + an exit exist
+    let hasP = false;
+    for (let y = 0; y < ed.h; y++) for (let x = 0; x < ed.w; x++) if (ed.grid[y][x] === "P") hasP = true;
+    if (!hasP) ed.grid[1][1] = "P";
+    const rows = ed.grid.map(function (r) { return r.join(""); });
+    // stash a custom level in a reserved slot (reused across playtests)
+    if (this._customIdx == null) this._customIdx = LEVELS.length;
+    LEVELS[this._customIdx] = { name: "CUSTOM MAP", theme: "hangar", par: 120, rows: rows };
+    this.score = this.score || 0; this.hp = 100; this.armor = 0;
+    this.bullets = 60; this.shells = 8; this.cells = 40; this.rockets = 5;
+    this.owned = [true, true, true, false, false, false]; this.cur = 0;
+    this.keycards = { red: true, blue: true, yellow: true };
+    this.editor = null;
+    this.loadLevel(this._customIdx);
+    this.mode = "play";
+  };
+  Game.prototype.renderEditor = function (g) {
+    g.save(); g.scale(SCALE, SCALE);
+    g.fillStyle = "#0a0c14"; g.fillRect(0, 0, BW, BH);
+    const ed = this.editor;
+    g.textAlign = "center"; g.textBaseline = "middle"; g.font = "bold 11px monospace";
+    g.fillStyle = "#ffd75e"; g.fillText("LEVEL EDITOR", BW / 2, 10);
+    const sc = Math.min(7, ((BW - 20) / ed.w) | 0);
+    const ox = (BW - ed.w * sc) / 2, oy = 20;
+    const colors = { "#": "#26314c", ".": "#0e1220", "D": "#5aa0e8", "X": "#ffd75e", "k": "#c9333f", "G": "#ff6a5e", "E": "#8f3a24", "B": "#3a4254", "P": "#63d97a" };
+    for (let y = 0; y < ed.h; y++) for (let x = 0; x < ed.w; x++) {
+      const ch = ed.grid[y][x];
+      g.fillStyle = colors[ch] || "#0e1220";
+      g.fillRect(ox + x * sc, oy + y * sc, sc - 0.5, sc - 0.5);
+    }
+    // cursor
+    g.strokeStyle = "#fff"; g.lineWidth = 1;
+    g.strokeRect(ox + ed.cx * sc, oy + ed.cy * sc, sc, sc);
+    // palette
+    const pal = this.editorPalette();
+    g.textAlign = "left"; g.font = "bold 7px monospace";
+    let py = oy + ed.h * sc + 8;
+    for (let i = 0; i < pal.length; i++) {
+      g.fillStyle = i === ed.tile ? "#ffd75e" : "#8d99b8";
+      g.fillText((i + 1) + " " + pal[i].name, 8 + (i % 3) * 104, py + ((i / 3) | 0) * 9);
+    }
+    g.textAlign = "center"; g.fillStyle = "#8d99b8"; g.font = "bold 7px monospace";
+    g.fillText("WASD move cursor · 1-9 place tile · SPACE playtest · ESC back", BW / 2, BH - 8);
+    g.restore();
+  };
+
+  // ---- shareable score card (PNG download) ----
+  Game.prototype.downloadScoreCard = function () {
+    try {
+      const cw = 640, ch = 360;
+      const c = document.createElement("canvas"); c.width = cw; c.height = ch;
+      const x = c.getContext("2d");
+      const grd = x.createLinearGradient(0, 0, 0, ch);
+      grd.addColorStop(0, "#1a0806"); grd.addColorStop(1, "#070810");
+      x.fillStyle = grd; x.fillRect(0, 0, cw, ch);
+      x.strokeStyle = "#ff8a50"; x.lineWidth = 4; x.strokeRect(8, 8, cw - 16, ch - 16);
+      x.textAlign = "center"; x.textBaseline = "middle";
+      x.fillStyle = "#ffd75e"; x.font = "bold 44px monospace"; x.fillText("INFERNO", cw / 2, 54);
+      x.fillStyle = "#ff8a50"; x.font = "bold 16px monospace"; x.fillText("SCORE CARD", cw / 2, 84);
+      x.fillStyle = "#eef2ff"; x.font = "bold 20px monospace";
+      x.fillText(this.L.name, cw / 2, 128);
+      const grade = this.computeGrade();
+      x.font = "bold 90px monospace"; x.fillStyle = "#ffd75e"; x.fillText(grade, cw / 2, 200);
+      x.font = "bold 16px monospace"; x.fillStyle = "#8d99b8"; x.fillText("GRADE", cw / 2, 248);
+      x.font = "bold 15px monospace"; x.textAlign = "center";
+      const tm = this.time | 0;
+      const info = "KILLS " + this.kills + "/" + this.L.totKills +
+                   "    SECRETS " + this.secretsFound + "/" + (this.L.totSecrets || 0) +
+                   "    TIME " + ((tm / 60) | 0) + ":" + ("0" + tm % 60).slice(-2);
+      x.fillStyle = "#eef2ff"; x.fillText(info, cw / 2, 284);
+      x.fillStyle = "#ffd75e"; x.font = "bold 18px monospace"; x.fillText("SCORE  " + this.score, cw / 2, 312);
+      x.fillStyle = "#8d99b8"; x.font = "bold 12px monospace";
+      x.fillText((dailyMode ? "DAILY #" + dailySeed + "  ·  " : "") + new Date().toLocaleDateString(), cw / 2, 338);
+      const finish = function (url) {
+        const a = document.createElement("a");
+        a.href = url; a.download = "inferno-scorecard.png";
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      };
+      if (c.toBlob) c.toBlob(function (b) { const u = URL.createObjectURL(b); finish(u); setTimeout(function () { URL.revokeObjectURL(u); }, 4000); });
+      else finish(c.toDataURL("image/png"));
+      this.say("SCORE CARD DOWNLOADED", 1.4);
+    } catch (e) { this.say("SCORE CARD FAILED", 1.2); }
+  };
+
   Game.prototype.renderTitle = function (g) {
     g.save(); g.scale(SCALE, SCALE);
     g.fillStyle = "#070810"; g.fillRect(0, 0, BW, BH);
@@ -2704,10 +3421,20 @@
     g.fillStyle = dColors[diff]; g.font = "bold 11px monospace";
     g.fillText("▶ " + DIFF_NAMES[diff] + " ◀", BW / 2, 150);
     g.font = "bold 8px monospace"; g.fillStyle = "#8d99b8";
-    g.fillText("WASD MOVE · MOUSE/ARROWS AIM · HOLD CLICK/SPACE FIRE", BW / 2, 162);
-    g.fillText("1-6 WEAPONS · M MAP · P PAUSE · CHAINSAW · ROCKETS · BERSERK", BW / 2, 172);
-    g.fillText("6 WEAPONS · 19 ENEMY TYPES · HAZARDS · TELEPORTERS · MINIBOSSES", BW / 2, 182);
-    if (this.hi > 0) { g.fillStyle = "#ffd75e"; g.fillText("HI-SCORE " + this.hi, BW / 2, 194); }
+    g.fillText("WASD MOVE · MOUSE/ARROWS AIM · FIRE CLICK/SPACE · F MINE · 1-6 WEAPONS", BW / 2, 160);
+    g.fillStyle = "#ff8a50";
+    g.fillText("C DAILY CHALLENGE · E LEVEL EDITOR · O WRAITH ALLY" + (this.allyOn ? " [ON]" : ""), BW / 2, 170);
+    g.fillStyle = "#8d99b8";
+    g.fillText("KEYCARDS · CRUSHERS · LAVA · LIFTS · MODS · MINES · GHOST REPLAY", BW / 2, 180);
+    // hi-score + persistent unlocks
+    let uy = 190;
+    if (this.hi > 0) { g.fillStyle = "#ffd75e"; g.fillText("HI-SCORE " + this.hi, BW / 2, uy); uy += 0; }
+    const u = this.unlocks || {};
+    const unl = [];
+    if (u.bestGrade && u.bestGrade !== "-") unl.push("BEST " + u.bestGrade);
+    if (u.shellsBonus > 0) unl.push("+" + u.shellsBonus + " SHELLS");
+    if (u.pistolSkin) unl.push("GOLD PISTOL");
+    if (unl.length) { g.fillStyle = "#63d97a"; g.font = "bold 7px monospace"; g.fillText("UNLOCKED: " + unl.join(" · "), BW / 2, 197); }
     g.restore();
   };
 
@@ -2734,6 +3461,7 @@
 
   Game.prototype.destroy = function () {
     this.running = false;
+    this.stopMusic();
     if (this._raf) cancelAnimationFrame(this._raf);
     removeEventListener("keydown", this._down);
     removeEventListener("keyup", this._up);
