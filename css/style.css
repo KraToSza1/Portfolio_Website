@@ -639,7 +639,8 @@ a:focus-visible,
   font-size:.82rem;
   color:var(--ink-soft);
 }
-.contact-pill__icon{font-size:.85rem;opacity:.9}
+.contact-pill__icon{display:inline-flex;align-items:center;opacity:.9;color:var(--gold)}
+.contact-pill__icon svg{display:block}
 .contact-pill__link{color:var(--ink-soft)}
 .contact-pill__link:hover{color:var(--cyan)}
 
