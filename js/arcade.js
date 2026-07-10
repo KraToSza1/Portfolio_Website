@@ -1,10 +1,11 @@
 // js/arcade.js — "INFERNO" — a complete retro FPS built from scratch.
 // Raycast renderer (DDA, textured walls, sliding doors, sprite billboards,
 // per-column z-clipping) + full game: title screen, 4 weapons (incl. BFG),
-// 8 enemy types incl. a boss, armor, projectiles, exploding barrels, keycards,
-// auto + locked doors, pickups, particles, minimap, synthesized sound,
-// score/tally screens, persistent hi-score, 4 big levels.
-// No libraries, no image assets. API: window.initArcade(id) / window.destroyArcade().
+// 11 enemy types incl. a boss, armor, themed floors, projectiles, barrels,
+// keycards, auto + locked doors, pickups, particles, minimap, synth sound,
+// score/tally screens, persistent hi-score, 5 themed levels.
+// Gun viewmodels: Kiovenn LowRes FPS sprites (see assets/arcade/CREDITS.txt).
+// API: window.initArcade(id) / window.destroyArcade().
 (function () {
   "use strict";
 
@@ -12,102 +13,102 @@
   // walls: # brick · T tech · S slime · M metal · X exit(needs key)
   //        D auto sliding door · G gold-locked door (needs keycard)
   // floor: . or space
-  // enemies: E imp · C caster · U brute · F wraith · R gunner · L lurker · N nightmare · Z boss
+  // enemies: E imp · C caster · U brute · F wraith · R gunner · L lurker
+  //          N nightmare · H hound · O ogre · J jelly · Z boss
   // pickups: h health · v armor · a bullets · s shells · c cells · k keycard
   //          W shotgun · Q plasma · Y BFG · B exploding barrel
   const LEVELS = [
     {
-      // Teach: move → door → shotgun → mid fight → key loop → exit. Soft curve.
-      name: "E1: HANGAR OF REGRET", par: 100,
+      name: "E1: STEEL HANGAR", theme: "hangar", par: 90,
+      // Teach: move, doors, shotgun, key → exit
+      rows: [
+        "##########################",
+        "#P.....#........#.......h#",
+        "#......D........D...E....#",
+        "#..E...#...B....#........#",
+        "#......#........#..h.v...#",
+        "###D####........####.....#",
+        "#.....#....#....#...a....#",
+        "#..W..#....D....D........#",
+        "#..E..#....#....#...E....#",
+        "#.....#..B.#....#........#",
+        "#.....#....#.h..#...B....#",
+        "####.#####D######..###D###",
+        "#......#...........E...h.#",
+        "#..h...#..B............E.#",
+        "#..E...D..............a..#",
+        "#......#....s...........X#",
+        "#..a.B.#....#...........##",
+        "#......#....#..k....##...#",
+        "####D###....######..D....#",
+        "#....E..............E....#",
+        "#...................F....#",
+        "##########################"
+      ]
+    },
+    {
+      name: "E2: THE BLACK MIRE", theme: "swamp", par: 130,
+      // Swamp: slime walls, jellies + hounds, key on right, gold door to exit
       rows: [
         "##############################",
-        "#P........#........#.........#",
-        "#.........D........D....E....#",
-        "#....E....#...B....#.........#",
-        "#.........#...E....#...h.v...#",
-        "####D######........#####.....#",
-        "#.....#....#.......#....a....#",
-        "#..W..#....D.......D.........#",
-        "#..E..#....#.......#....E....#",
-        "#.....#..B.#.......#.........#",
-        "#.....#....#..h....#....B....#",
-        "#####.#####D########...###D###",
-        "#.......#.............E....h.#",
-        "#..h....#..B...............E.#",
-        "#..E....D................a...#",
-        "#.......#....s..............X#",
-        "#..a.B..#....#..............##",
-        "#.......#....#..k.......##...#",
-        "#####D###....#######....D....#",
-        "#.....E.................E....#",
-        "#.......................F....#",
-        "#..........L.................#",
+        "#P.....#..........#.........h#",
+        "#......D..........D..........#",
+        "#..E...#....B.....#.....H....#",
+        "#......#....J.....#.....v..k.#",
+        "###D#######....########D######",
+        "#.....#....s........#........#",
+        "#..s..#....D....F...#....a...#",
+        "#..J..#....#........D....E...#",
+        "#.....#....#...SS...#........#",
+        "###D###....#.......#....###D##",
+        "#...S#....G........#......C..#",
+        "#..C.#....#....B...#.........#",
+        "#....#....#........#....s....#",
+        "#..a.#....#........###D#######",
+        "###D########..F.............h#",
+        "#......E..#....#.....H.......#",
+        "#..h......D....#.....D.......#",
+        "#.........#....#.............#",
+        "#...B..L..#.B..#..a.......G..#",
+        "####.#####.####.#####.###.X.##",
+        "#...................J.......##",
+        "#.........H.....L...........##",
         "##############################"
       ]
     },
     {
-      // Branch: left combat / right key loot, reconverge at gold door → exit push.
-      name: "E2: THE GOLD FOUNDRY", par: 140,
+      name: "E3: BONE CATACOMBS", theme: "dungeon", par: 160,
+      // Dungeon: ogres, plasma vault behind gold door
       rows: [
         "################################",
-        "#P......#...........#.........h#",
-        "#.......D...........D..........#",
-        "#..E....#....B......#.....R....#",
-        "#.......#....E......#.....v..k.#",
-        "####D########....#########D#####",
-        "#......#....s.........#........#",
-        "#..s...#....D....F....#....a...#",
-        "#..E...#....#.........#....E...#",
-        "#......#....######S####........#",
-        "####.D##....#........#....###D##",
-        "#....##....G.........#......C..#",
-        "#..C.#.....#....B....#.........#",
-        "#....#.....#.........#....s....#",
-        "#..a.#.....#.........###D#######",
-        "####D#########..F.............h#",
-        "#.......E..#.....#.....E.......#",
-        "#..h.......D.....#.....D.......#",
-        "#..........#.....#............G#",
-        "#...B..R...#.B...#..a.........X#",
-        "#####.######.####.######.###...#",
-        "#.....................E.......##",
-        "#.........L.....C.....L.......##",
+        "#P......#.........h........#...#",
+        "#.......D..................D...#",
+        "#..R....#...B.......B......#..O#",
+        "#.......#......F...........#..k#",
+        "####D#########......########D###",
+        "#......#....s...a.....#........#",
+        "#..s...#....D.........#.....a..#",
+        "#..O...#....#...F.....#.....C..#",
+        "#......#....#.........#........#",
+        "####D########..........D.......#",
+        "#....##....#.......#....#......#",
+        "#..C.#....G........#....D....R.#",
+        "#....#....#..Q.....#.....#.....#",
+        "#..a.#....#..v.c...#.....#...s.#",
+        "####D########..F....######D#####",
+        "#.........#.........#....E....h#",
+        "#..h..R...D...B.....#....#.....#",
+        "#.........#.........#....#...c.#",
+        "#..B..E...#...F.....#....#....X#",
+        "#####.######.#######.#####D##..#",
+        "#..................O..........##",
+        "#.....L....N....H....O....L...##",
         "################################"
       ]
     },
     {
-      // Pressure: key hunt → plasma vault → nightmare gauntlet → exit.
-      name: "E3: THE MAW", par: 180,
-      rows: [
-        "##################################",
-        "#P......#.........h........#.....#",
-        "#.......D..................D.....#",
-        "#..R....#...B.......B......#..U..#",
-        "#.......#......F...........#...k.#",
-        "####D#########......########D#####",
-        "#......#....s...c.....#..........#",
-        "#..s...#....D.........#.....a....#",
-        "#..U...#....#...F.....#.....C....#",
-        "#......#....#.........#..........#",
-        "####.D#######S##S######..D########",
-        "#....##....#.......#.....#.......#",
-        "#..C.#....G........#.....D...R...#",
-        "#....#....#..Q.....#.....#.......#",
-        "#..a.#....#..v.c...#.....#...s...#",
-        "####D########..F....######D#######",
-        "#.........#.........#....E.....h.#",
-        "#..h..R...D...B.....#....#.......#",
-        "#.........#.........#....#...c...#",
-        "#..B..E...#...F.....#....#......X#",
-        "#####.######.#######.#####D##....#",
-        "#..................E............##",
-        "#.....L....N....L....N....L.....##",
-        "##################################"
-      ]
-    },
-    {
-      // Finale: armored approach → BFG stash → throne arena → Cinder King.
-      name: "E4: THRONE OF CINDER", par: 240,
+      name: "E4: SLAG FOUNDRY", theme: "foundry", par: 190,
+      // Foundry: metal halls, nightmares, key near exit
       rows: [
         "################################",
         "#P........#.......C..........h.#",
@@ -117,6 +118,36 @@
         "####D####...####...............#",
         "#..c....#.............R.....s..#",
         "#..U....D..C....U..............#",
+        "#.......#......................#",
+        "#####.###R.....h......###D######",
+        "#.....#......................s.#",
+        "#..M..#..M...........M.....c...#",
+        "#..a..D........................#",
+        "#.....#....B...F...F...B.......#",
+        "#######.............#........h.#",
+        "#..M..........N.....#......c...#",
+        "#.............#.....#........s.#",
+        "####D#####....#######..........#",
+        "#....s..h.F....c.............a.#",
+        "#....N............L....R.......#",
+        "#..............H...............#",
+        "#.............................X#",
+        "#...........................k.##",
+        "################################"
+      ]
+    },
+    {
+      name: "E5: THRONE OF CINDER", theme: "throne", par: 240,
+      // Finale: BFG stash → Cinder King (boss kill wins)
+      rows: [
+        "################################",
+        "#P........#.......C..........h.#",
+        "#...U.....D....................#",
+        "#.......#.#....#####...........#",
+        "#..s....#......#...c.....v.....#",
+        "####D####...####...............#",
+        "#..c....#.............R.....s..#",
+        "#..U....D..C....O..............#",
         "#.......#......................#",
         "#####.###R.....h......###D######",
         "#Y..c.#......................s.#",
@@ -129,7 +160,7 @@
         "####D#####....#######..........#",
         "#....s..h.F....c.............a.#",
         "#....N............L....R.......#",
-        "#..............N...............#",
+        "#..............N.......H.......#",
         "################################"
       ]
     }
@@ -173,11 +204,21 @@
     nightmare: { hp: 110, sp: 1.15, scale: 1.35, mdmg: [16, 24], mrange: 1.2, score: 320,
               ranged: { cd: 2.1, speed: 3.6, dmg: [12, 18], hold: 5.0 },
               pal: { body: "#2a1038", skin: "#5a2080", eye: "#ff66cc" } },
+    hound:  { hp: 18,  sp: 3.6,  scale: 0.78, mdmg: [8, 14],  mrange: 0.95, score: 140,
+              pal: { body: "#4a2010", skin: "#7a3a18", eye: "#ff9040" } },
+    ogre:   { hp: 140, sp: 0.9,  scale: 1.45, mdmg: [20, 28], mrange: 1.25, score: 350,
+              pal: { body: "#3a3020", skin: "#6a5840", eye: "#ffe08a" } },
+    jelly:  { hp: 36,  sp: 1.1,  scale: 0.92, mdmg: [6, 10],  mrange: 0.85, score: 180,
+              ranged: { cd: 1.4, speed: 3.2, dmg: [8, 14], hold: 4.0 },
+              pal: { body: "#1a4030", skin: "#3a9060", eye: "#b0ff80" } },
     boss:   { hp: 420, sp: 0.95, scale: 2.15, mdmg: [22, 30], mrange: 1.4,  score: 1000, boss: true,
-              ranged: { cd: 1.5, speed: 4.6, dmg: [12, 18], hold: 7, spread: 3 },
+              ranged: { cd: 1.5, speed: 4.6, dmg: [12, 18], hold: 7, burst: 3 },
               pal: { body: "#5a1010", skin: "#8a1f14", eye: "#ffd75e" } }
   };
-  const ECHARS = { E: "imp", C: "caster", U: "brute", Z: "boss", F: "wraith", R: "gunner", L: "lurker", N: "nightmare" };
+  const ECHARS = {
+    E: "imp", C: "caster", U: "brute", Z: "boss", F: "wraith", R: "gunner",
+    L: "lurker", N: "nightmare", H: "hound", O: "ogre", J: "jelly"
+  };
 
   // ============================ AUDIO (synth) ============================
   let actx = null;
@@ -771,49 +812,66 @@
     g.globalAlpha = 1;
   }
 
-  // ---- floor & ceiling textures (64px raw — sampled per-pixel by the caster) ----
-  function buildFloorTex() {
+  // ---- floor & ceiling textures (themed per level) ----
+  function buildFloorTex(theme) {
+    const pals = {
+      hangar:  { base: "#2a3038", tints: ["#323840", "#2e343c", "#383e48", "#262c34"], grout: "#1a1e24", speck: ["#1a1e24", "#3a4250", "#12161c"] },
+      swamp:   { base: "#1a2818", tints: ["#243820", "#1e301c", "#2a4024", "#162416"], grout: "#0e160c", speck: ["#0e160c", "#3a6040", "#102010"] },
+      dungeon: { base: "#2a2420", tints: ["#3a3228", "#322a22", "#403830", "#2a221c"], grout: "#1a1612", speck: ["#1a1612", "#4a4034", "#12100c"] },
+      foundry: { base: "#2a1a14", tints: ["#3a2218", "#301c14", "#422820", "#241410"], grout: "#140c08", speck: ["#140c08", "#5a3020", "#1a100c"] },
+      throne:  { base: "#1a1010", tints: ["#2a1818", "#221414", "#321c1c", "#180c0c"], grout: "#0c0808", speck: ["#0c0808", "#4a2020", "#100808"] }
+    };
+    const p = pals[theme] || pals.hangar;
     return mkTex(64, function (g) {
-      g.fillStyle = "#332b24"; g.fillRect(0, 0, 64, 64);
-      // big stone slabs with varied tints
-      const tints = ["#3b332a", "#372f27", "#40372c", "#352d25"];
+      g.fillStyle = p.base; g.fillRect(0, 0, 64, 64);
       for (let sy = 0; sy < 2; sy++) for (let sx = 0; sx < 2; sx++) {
-        g.fillStyle = tints[(sx + sy * 2 + ((sx ^ sy) & 1)) % 4];
+        g.fillStyle = p.tints[(sx + sy * 2 + ((sx ^ sy) & 1)) % 4];
         g.fillRect(sx * 32 + 1, sy * 32 + 1, 30, 30);
       }
-      g.fillStyle = "#1c1712"; // grout
+      g.fillStyle = p.grout;
       g.fillRect(0, 0, 64, 1); g.fillRect(0, 32, 64, 2); g.fillRect(0, 63, 64, 1);
       g.fillRect(0, 0, 1, 64); g.fillRect(32, 0, 2, 64); g.fillRect(63, 0, 1, 64);
-      speckle(g, 1234, 90, ["#241d17", "#4a4034", "#2e261e", "#171310"], 1, 3);
-      // a couple of cracks
-      g.strokeStyle = "rgba(20,15,10,0.6)"; g.lineWidth = 1;
+      speckle(g, 1234 + (theme || "").length * 17, 90, p.speck, 1, 3);
+      g.strokeStyle = "rgba(0,0,0,0.45)"; g.lineWidth = 1;
       g.beginPath(); g.moveTo(8, 6); g.lineTo(16, 14); g.lineTo(13, 24); g.stroke();
       g.beginPath(); g.moveTo(46, 40); g.lineTo(52, 50); g.lineTo(60, 54); g.stroke();
     });
   }
-  function buildCeilTex() {
+  function buildCeilTex(theme) {
+    const pals = {
+      hangar:  { a: "#151823", b: "#181c29", c: "#131622", rivet: "#2c3448", strip: "#3a4f6e" },
+      swamp:   { a: "#101810", b: "#142014", c: "#0c140c", rivet: "#2a4030", strip: "#3a7050" },
+      dungeon: { a: "#141210", b: "#1c1814", c: "#100e0c", rivet: "#3a3228", strip: "#5a4a38" },
+      foundry: { a: "#1a1010", b: "#241414", c: "#140c0c", rivet: "#4a2820", strip: "#8a4030" },
+      throne:  { a: "#120808", b: "#1a0c0c", c: "#0c0606", rivet: "#4a1818", strip: "#8a3030" }
+    };
+    const p = pals[theme] || pals.hangar;
     return mkTex(64, function (g) {
-      g.fillStyle = "#151823"; g.fillRect(0, 0, 64, 64);
-      // tech panels
+      g.fillStyle = p.a; g.fillRect(0, 0, 64, 64);
       for (let sy = 0; sy < 2; sy++) for (let sx = 0; sx < 2; sx++) {
-        g.fillStyle = (sx + sy) % 2 ? "#181c29" : "#131622";
+        g.fillStyle = (sx + sy) % 2 ? p.b : p.c;
         g.fillRect(sx * 32 + 1, sy * 32 + 1, 30, 30);
       }
       g.fillStyle = "#0a0c14";
       g.fillRect(0, 31, 64, 2); g.fillRect(31, 0, 2, 64);
-      // rivets + a dim light strip
-      g.fillStyle = "#2c3448";
-      for (const p of [[5,5],[27,5],[37,5],[59,5],[5,27],[59,27],[5,37],[59,37],[5,59],[27,59],[37,59],[59,59]])
-        g.fillRect(p[0], p[1], 2, 2);
-      g.fillStyle = "#3a4f6e"; g.fillRect(12, 14, 8, 2); g.fillRect(44, 46, 8, 2);
-      speckle(g, 777, 60, ["#0c0e16", "#1e2434", "#10131e"], 1, 3);
+      g.fillStyle = p.rivet;
+      for (const pt of [[5,5],[27,5],[37,5],[59,5],[5,27],[59,27],[5,37],[59,37],[5,59],[27,59],[37,59],[59,59]])
+        g.fillRect(pt[0], pt[1], 2, 2);
+      g.fillStyle = p.strip; g.fillRect(12, 14, 8, 2); g.fillRect(44, 46, 8, 2);
+      speckle(g, 777, 60, [p.a, p.b, p.c], 1, 3);
     });
   }
   function texPixels(c) {
     return new Uint32Array(c.getContext("2d").getImageData(0, 0, c.width, c.height).data.buffer.slice(0));
   }
-  const FLOOR_PIX = texPixels(buildFloorTex());
-  const CEIL_PIX = texPixels(buildCeilTex());
+  const THEME_FLOOR = {};
+  const THEME_CEIL = {};
+  ["hangar", "swamp", "dungeon", "foundry", "throne"].forEach(function (t) {
+    THEME_FLOOR[t] = texPixels(buildFloorTex(t));
+    THEME_CEIL[t] = texPixels(buildCeilTex(t));
+  });
+  let FLOOR_PIX = THEME_FLOOR.hangar;
+  let CEIL_PIX = THEME_CEIL.hangar;
 
   // warm muzzle-light glow (cached radial sprite, composited when firing)
   const MUZZ_GLOW = (function () {
@@ -856,7 +914,7 @@
     }
     return { map: map, enemies: enemies, items: items, barrels: barrels, doors: doors,
              px: px, py: py, w: rows[0].length, h: rows.length,
-             name: LEVELS[idx].name, par: LEVELS[idx].par,
+             name: LEVELS[idx].name, par: LEVELS[idx].par, theme: LEVELS[idx].theme || "hangar",
              totKills: enemies.length, totItems: items.length };
   }
 
@@ -878,9 +936,42 @@
       wraith: buildWraith(ETYPES.wraith.pal),
       gunner: buildGunner(ETYPES.gunner.pal),
       lurker: buildDemon(ETYPES.lurker.pal, { horns: false, spikes: true }),
-      nightmare: buildDemon(ETYPES.nightmare.pal, { horns: true, bulk: true, spikes: true })
+      nightmare: buildDemon(ETYPES.nightmare.pal, { horns: true, bulk: true, spikes: true }),
+      hound: buildDemon(ETYPES.hound.pal, { horns: false, spikes: true }),
+      ogre: buildDemon(ETYPES.ogre.pal, { horns: true, bulk: true, spikes: true }),
+      jelly: buildDemon(ETYPES.jelly.pal, { horns: false, spikes: false })
     };
     this.items = buildItems();
+    this.gunSheets = [null, null, null, null];
+    this.gunReady = false;
+    (function loadGuns(self) {
+      const names = ["pistol", "shotgun", "plasmagun", "railgun"];
+      let left = names.length;
+      names.forEach(function (name, i) {
+        const img = new Image();
+        img.onload = function () {
+          // 4x2 grid of 16x32 frames — idle = 0, fire = 1
+          const mk = function (frame) {
+            const c = document.createElement("canvas");
+            c.width = 16; c.height = 32;
+            const g = c.getContext("2d");
+            const col = frame % 4, row = (frame / 4) | 0;
+            g.drawImage(img, col * 16, row * 32, 16, 32, 0, 0, 16, 32);
+            const id = g.getImageData(0, 0, 16, 32);
+            for (let p = 0; p < id.data.length; p += 4) {
+              if (id.data[p] < 10 && id.data[p + 1] < 10 && id.data[p + 2] < 10) id.data[p + 3] = 0;
+            }
+            g.putImageData(id, 0, 0);
+            return c;
+          };
+          self.gunSheets[i] = { idle: mk(0), fire: mk(1) };
+          left--;
+          if (left <= 0) self.gunReady = true;
+        };
+        img.onerror = function () { left--; };
+        img.src = "assets/arcade/guns/" + name + ".png";
+      });
+    })(this);
     this.keys = {};
     this.mode = "title";     // title | play | pause | inter | dead | win
     this.projs = [];
@@ -1194,6 +1285,8 @@
     this.kills = 0; this.itemsGot = 0; this.time = 0;
     this.hasKey = false;
     this.projs.length = 0; this.parts.length = 0; this.boomQueue.length = 0;
+    FLOOR_PIX = THEME_FLOOR[this.L.theme] || THEME_FLOOR.hangar;
+    CEIL_PIX = THEME_CEIL[this.L.theme] || THEME_CEIL.hangar;
     this.say(this.L.name, 2.6);
   };
   Game.prototype.retryLevel = function () {
@@ -1821,34 +1914,61 @@
     const bobX = Math.sin(this.bob) * 5, bobY = Math.abs(Math.cos(this.bob)) * 4;
     const kick = this.fireCd > w.rate - 0.1 ? w.kick : 0;
     const gx = BW / 2 + bobX, gy = VIEW_B - 34 + bobY + kick;
-    if (this.muzzle > 0) {
-      g.fillStyle = w.proj ? "rgba(150,230,255,0.9)" : "rgba(255,230,140,0.9)";
-      g.beginPath(); g.arc(gx, gy - 12, 9 + Math.random() * 6, 0, 7); g.fill();
-      g.fillStyle = "rgba(255,255,255,0.95)";
-      g.beginPath(); g.arc(gx, gy - 12, 4, 0, 7); g.fill();
+    const sheet = this.gunSheets && this.gunSheets[this.cur];
+    if (sheet) {
+      const spr = (this.muzzle > 0.04 && sheet.fire) ? sheet.fire : sheet.idle;
+      const dw = 92, dh = 184;
+      g.imageSmoothingEnabled = false;
+      g.drawImage(spr, gx - dw / 2, gy - dh + 48, dw, dh);
+      if (this.muzzle > 0) {
+        g.fillStyle = w.bfg ? "rgba(125,255,154,0.95)" : w.proj ? "rgba(150,230,255,0.9)" : "rgba(255,230,140,0.9)";
+        g.beginPath(); g.arc(gx - 6, gy - 18, 10 + Math.random() * 7, 0, 7); g.fill();
+        g.fillStyle = "rgba(255,255,255,0.95)";
+        g.beginPath(); g.arc(gx - 6, gy - 18, 4, 0, 7); g.fill();
+      }
+      g.restore();
+      return;
     }
-    if (this.cur === 0) { // pistol
-      g.fillStyle = "#2a2f3d"; g.fillRect(gx - 7, gy - 10, 14, 44);
-      g.fillStyle = "#3a4254"; g.fillRect(gx - 10, gy + 6, 20, 30);
-      g.fillStyle = "#ffd75e"; g.fillRect(gx - 10, gy + 6, 20, 3);
-      g.fillStyle = "#12141c"; g.fillRect(gx - 4, gy - 8, 8, 6);
-    } else if (this.cur === 1) { // shotgun
-      g.fillStyle = "#23272f"; g.fillRect(gx - 14, gy - 8, 12, 42);
-      g.fillStyle = "#2c313c"; g.fillRect(gx + 2, gy - 8, 12, 42);
-      g.fillStyle = "#12141c"; g.fillRect(gx - 12, gy - 8, 8, 5); g.fillRect(gx + 4, gy - 8, 8, 5);
-      g.fillStyle = "#5e3a1e"; g.fillRect(gx - 16, gy + 22, 32, 16);
-      g.fillStyle = "#ffd75e"; g.fillRect(gx - 16, gy + 22, 32, 3);
-    } else if (this.cur === 2) { // plasma
-      g.fillStyle = "#1c2f42"; g.fillRect(gx - 12, gy - 6, 24, 40);
-      g.fillStyle = "#8ad8ff"; g.fillRect(gx - 8, gy - 2, 6, 26); g.fillRect(gx + 2, gy - 2, 6, 26);
-      g.fillStyle = "#d5f4ff"; g.fillRect(gx - 4, gy - 8, 8, 5);
-      g.fillStyle = "#ffd75e"; g.fillRect(gx - 12, gy + 30, 24, 3);
-    } else { // BFG
-      g.fillStyle = "#14301c"; g.fillRect(gx - 18, gy - 4, 36, 42);
-      g.fillStyle = "#2a6040"; g.fillRect(gx - 14, gy, 28, 30);
-      g.fillStyle = "#7dff9a"; g.fillRect(gx - 10, gy + 4, 8, 20); g.fillRect(gx + 2, gy + 4, 8, 20);
-      g.fillStyle = "#d5ffe0"; g.beginPath(); g.arc(gx, gy - 6, 8, 0, 7); g.fill();
-      g.fillStyle = "#ffd75e"; g.fillRect(gx - 18, gy + 32, 36, 4);
+    // procedural fallback (hands + detailed weapons)
+    if (this.muzzle > 0) {
+      g.fillStyle = w.bfg ? "rgba(125,255,154,0.9)" : w.proj ? "rgba(150,230,255,0.9)" : "rgba(255,230,140,0.9)";
+      g.beginPath(); g.arc(gx, gy - 14, 10 + Math.random() * 6, 0, 7); g.fill();
+      g.fillStyle = "rgba(255,255,255,0.95)";
+      g.beginPath(); g.arc(gx, gy - 14, 4, 0, 7); g.fill();
+    }
+    // hands
+    g.fillStyle = "#c4a882";
+    g.fillRect(gx - 28, gy + 18, 14, 18);
+    g.fillRect(gx + 14, gy + 20, 14, 16);
+    g.fillStyle = "#a88860";
+    g.fillRect(gx - 28, gy + 18, 14, 3);
+    g.fillRect(gx + 14, gy + 20, 14, 3);
+    if (this.cur === 0) {
+      g.fillStyle = "#2a2f3d"; g.fillRect(gx - 6, gy - 16, 12, 40);
+      g.fillStyle = "#3a4254"; g.fillRect(gx - 10, gy + 8, 20, 26);
+      g.fillStyle = "#ffd75e"; g.fillRect(gx - 10, gy + 8, 20, 3);
+      g.fillStyle = "#12141c"; g.fillRect(gx - 3, gy - 14, 6, 8);
+      g.fillStyle = "#8a9ab0"; g.fillRect(gx - 4, gy - 4, 8, 10);
+    } else if (this.cur === 1) {
+      g.fillStyle = "#23272f"; g.fillRect(gx - 16, gy - 12, 12, 44);
+      g.fillStyle = "#2c313c"; g.fillRect(gx + 2, gy - 12, 12, 44);
+      g.fillStyle = "#12141c"; g.fillRect(gx - 14, gy - 12, 8, 6); g.fillRect(gx + 4, gy - 12, 8, 6);
+      g.fillStyle = "#5e3a1e"; g.fillRect(gx - 18, gy + 20, 36, 18);
+      g.fillStyle = "#ffd75e"; g.fillRect(gx - 18, gy + 20, 36, 3);
+      g.fillStyle = "#8a6b3a"; g.fillRect(gx - 8, gy + 28, 16, 8);
+    } else if (this.cur === 2) {
+      g.fillStyle = "#1c2f42"; g.fillRect(gx - 14, gy - 8, 28, 42);
+      g.fillStyle = "#8ad8ff"; g.fillRect(gx - 10, gy - 4, 8, 28); g.fillRect(gx + 2, gy - 4, 8, 28);
+      g.fillStyle = "#d5f4ff"; g.fillRect(gx - 5, gy - 12, 10, 6);
+      g.fillStyle = "#ffd75e"; g.fillRect(gx - 14, gy + 28, 28, 3);
+      g.fillStyle = "#4a90b8"; g.fillRect(gx - 8, gy + 10, 16, 10);
+    } else {
+      g.fillStyle = "#14301c"; g.fillRect(gx - 20, gy - 6, 40, 44);
+      g.fillStyle = "#2a6040"; g.fillRect(gx - 16, gy - 2, 32, 32);
+      g.fillStyle = "#7dff9a"; g.fillRect(gx - 12, gy + 4, 10, 22); g.fillRect(gx + 2, gy + 4, 10, 22);
+      g.fillStyle = "#d5ffe0"; g.beginPath(); g.arc(gx, gy - 8, 10, 0, 7); g.fill();
+      g.fillStyle = "#ffd75e"; g.fillRect(gx - 20, gy + 30, 40, 4);
+      g.fillStyle = "#4a8060"; g.fillRect(gx - 10, gy + 12, 20, 12);
     }
     g.restore();
   };
@@ -2085,7 +2205,7 @@
     g.font = "bold 8px monospace"; g.fillStyle = "#8d99b8";
     g.fillText("WASD MOVE · MOVE MOUSE OR ARROWS TO AIM", BW / 2, 148);
     g.fillText("HOLD CLICK / SPACE = FIRE · 1-4 WEAPONS · M MAP · P PAUSE", BW / 2, 160);
-    g.fillText("4 LEVELS · 8 DEMON BREEDS · ARMOR · BFG · SLAY THE CINDER KING", BW / 2, 172);
+    g.fillText("5 THEMED LEVELS · 11 DEMON BREEDS · ARMOR · BFG · SLAY THE KING", BW / 2, 172);
     if (this.hi > 0) { g.fillStyle = "#ffd75e"; g.fillText("HI-SCORE " + this.hi, BW / 2, 188); }
     g.restore();
   };

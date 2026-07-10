@@ -1,0 +1,10 @@
+Inferno arcade assets
+=====================
+
+Gun sprites (assets/arcade/guns/*.png)
+  Source: "LowRes FPS Gun Sprites" by Kiovenn
+  https://opengameart.org/content/lowres-fps-gun-sprites
+  Used under the license stated on OpenGameArt for that pack.
+  Frames cropped for first-person viewmodels (pistol, shotgun, plasmagun, railgun→BFG).
+
+All other Inferno art (walls, demons, HUD, particles) is original procedural code.
