@@ -87,10 +87,13 @@ a:focus-visible,
   border-radius:10px;
 }
 
-/* ---- Star Jedi display font (title only) ---- */
+/* ---- Star Jedi display font (title only) ----
+   Prefer Starjout.ttf — Firefox rejects the broken starboba outline file. */
 @font-face{
   font-family:"StarJediOutline";
-  src:url("../assets/fonts/starboba/starjedioutline.ttf") format("truetype");
+  src:
+    url("../assets/fonts/starjout/Starjout.ttf") format("truetype"),
+    url("../assets/fonts/starjedi/Starjedi.ttf") format("truetype");
   font-display:swap;
   font-weight:normal;
   font-style:normal;

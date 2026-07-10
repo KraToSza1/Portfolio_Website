@@ -470,12 +470,12 @@
       showCrosshair: false,
       angleOffsetDeg: 0,
       disable2DShip: true,
-      autoStartIntroMs: 28000
+      autoStartIntroMs: 0
     };
   </script>
 
   <!-- Browser compatibility layer -->
-  <script src="js/browser-compat.js"></script>
+  <script src="js/browser-compat.js" defer></script>
 
   <!-- Three.js (UMD build from CDN, with fallback CDN) -->
   <script>
@@ -489,8 +489,9 @@
         if (onFail) s.onerror = onFail;
         document.head.appendChild(s);
       }
-      load('https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js', function () {
-        load('https://unpkg.com/three@0.158.0/build/three.min.js', function () {
+      // Keep UMD for ship3d.js compatibility; newer build reduces WebGL1 spam.
+      load('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js', function () {
+        load('https://unpkg.com/three@0.160.0/build/three.min.js', function () {
           console.warn('[Three.js] Could not load from any CDN — the 3D ship will not render, the rest of the site still works.');
         });
       });
@@ -511,11 +512,11 @@
     }
   </script>
 
-  <!-- Analytics -->
+  <!-- Analytics (CDN — more reliable on static/custom-domain setups) -->
   <script>
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
   </script>
-  <script defer src="/_vercel/insights/script.js"></script>
+  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 
   <!-- Main logic -->
   <script src="js/main.js" defer></script>

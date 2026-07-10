@@ -2882,7 +2882,6 @@ window.__portfolioState = () => ({
 
 async function enterMission({ playSfx = true } = {}){
   if (missionStarted) return;
-  try { localStorage.setItem("rvdw-entered-mission", "1"); } catch {}
   if (playSfx && shootSfx) {
     try {
       await shootSfx.play();
@@ -2897,23 +2896,8 @@ async function enterMission({ playSfx = true } = {}){
 startBtn?.addEventListener("click", () => enterMission({ playSfx: true }));
 skipIntroBtn?.addEventListener("click", () => enterMission({ playSfx: false }));
 
-// Return visitors skip the crawl automatically
-try {
-  if (localStorage.getItem("rvdw-entered-mission") === "1") {
-    enterMission({ playSfx: false });
-  }
-} catch {}
-
-// Auto-start intro (if enabled) with cool theme
-if (APP_OPTS.autoStartIntroMs) {
-  setTimeout(() => {
-    const introVisible = getComputedStyle(intro).display !== "none";
-    const stageHidden = stage.hasAttribute("hidden");
-    if (introVisible && stageHidden && !missionStarted) {
-      enterMission({ playSfx: false });
-    }
-  }, APP_OPTS.autoStartIntroMs);
-}
+// Clear older auto-skip preference so revisit no longer jumps past the crawl
+try { localStorage.removeItem("rvdw-entered-mission"); } catch {}
 
 // ADD: pause heavy work when tab hidden (lower warp target & star density)
 document.addEventListener("visibilitychange", () => {

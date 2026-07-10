@@ -6,7 +6,7 @@
    - Clean versioned caches + opt-in skipWaiting via postMessage
 */
 
-const VERSION  = "2026-07-10-v7";
+const VERSION  = "2026-07-10-v8";
 const PRECACHE = `rvdw-precache-${VERSION}`;
 const RUNTIME  = `rvdw-runtime-${VERSION}`;
 const DEBUG    = false;
@@ -135,6 +135,11 @@ self.addEventListener("fetch", (event) => {
   // Skip caching streamed media & byte-range requests
   if (req.headers.has("range")) return;
   if (req.destination === "audio" || req.destination === "video") return;
+
+  // Never intercept Vercel platform / analytics endpoints
+  if (url.pathname.startsWith("/_vercel/") || url.pathname.startsWith("/api/")) {
+    return;
+  }
 
   // 2) Same-origin strategies
   if (url.origin === location.origin) {

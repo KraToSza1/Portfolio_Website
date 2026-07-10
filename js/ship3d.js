@@ -99,32 +99,31 @@
       
       // ---- renderer (robust if canvas already has a 2D ctx) -----------------
       const makeRendererOn = (canvas) => {
-        // Prefer explicit WebGL1 context (WebGL2 will still work if present)
-        // Enhanced browser compatibility for Firefox, Edge, Opera
-        const webglOptions = {
-          alpha: true, 
-          antialias: true, 
+        // Prefer WebGL2; fall back to WebGL1 for older devices.
+        const opts = {
+          alpha: true,
+          antialias: true,
           premultipliedAlpha: false,
-          preserveDrawingBuffer: false, 
+          preserveDrawingBuffer: false,
           powerPreference: "high-performance",
-          failIfMajorPerformanceCaveat: false // Allow fallback for older devices
+          failIfMajorPerformanceCaveat: false
         };
-        
-        const ctx = canvas.getContext("webgl", webglOptions) 
-                 || canvas.getContext("webgl", webglOptions) // Retry
-                 || canvas.getContext("experimental-webgl", webglOptions);
-        
-        if (!ctx) {
-          // Try without strict options for older browsers
-          const ctx2 = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-          if (!ctx2) throw new Error("Ship3D: WebGL not available");
+
+        const ctx2 = canvas.getContext("webgl2", opts);
+        if (ctx2) {
           return new THREE.WebGLRenderer({
-            canvas, context: ctx2, antialias: false, alpha: true, premultipliedAlpha: false
+            canvas, context: ctx2, antialias: true, alpha: true, premultipliedAlpha: false
           });
         }
-        
+
+        const ctx1 = canvas.getContext("webgl", opts)
+          || canvas.getContext("experimental-webgl", opts)
+          || canvas.getContext("webgl")
+          || canvas.getContext("experimental-webgl");
+
+        if (!ctx1) throw new Error("Ship3D: WebGL not available");
         return new THREE.WebGLRenderer({
-          canvas, context: ctx, antialias: true, alpha: true, premultipliedAlpha: false
+          canvas, context: ctx1, antialias: true, alpha: true, premultipliedAlpha: false
         });
       };
 
