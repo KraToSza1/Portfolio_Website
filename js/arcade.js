@@ -63,27 +63,27 @@
         "################################",
         "#P......#...........#.........h#",
         "#.......D...........D.....A....#",
-        "#...t...#....B.t....#.....H....#",
-        "#.......#....J......#.....v..k.#",
+        "#...t...#....B.t....#.....v..k.#",
+        "#.......#....E......#.....H....#",
         "####D########....##########D####",
         "#.....#....s.t......#....t..b..#",
         "#..s..=....#....F...D....a.....#",
-        "#..J..#..t.#...A....#....E.....#",
+        "#..E..#..t.#...A....#....E.....#",
         "#.t...#....#...SS...#....t.....#",
         "####D##....#.......######D######",
         "#....#..e..#....B..#......C....#",
         "#..C.D...t.#.......#....t......#",
-        "#....#..H..#...L...#....s......#",
-        "#..a.#.....#~......####D########",
+        "#....#..h..#...E...#....s......#",
+        "#..a.#..h..#..~.~..####D########",
         "####D#######..F.t..#.........h.#",
         "#......E..#....#...D....H......#",
         "#..h......D....#...#....t......#",
         "#....t.t..#....#...#....x......#",
-        "#...B..L..#....#...#..a........#",
+        "#...B..E..#....#...#..a........#",
         "###########G########.#######X###",
-        "#....E.....C....1...J....A....##",
-        "#....R....H..t..L.....F.......##",
-        "#....##*##...~..A.....L........#",
+        "#....E.....C....1...E....A....##",
+        "#....R....H..t..E.....F.......##",
+        "#....##*##..h~..A..........v...#",
         "#....#cv.#.....................#",
         "################################"
       ]
@@ -268,7 +268,7 @@
               pal: { body: "#5a1010", skin: "#8a1f14", eye: "#ffd75e" } },
     egg:       { hp: 12,  sp: 0,    scale: 0.6,  mdmg: [0, 0],   mrange: 0,    score: 50,
               pal: { body: "#c8b898", skin: "#e0d0a8", eye: "#88aa44" } },
-    swampLord: { hp: 200, sp: 0.9,  scale: 1.45, mdmg: [20, 28], mrange: 1.25, score: 500, miniboss: true, title: "SWAMP LORD",
+    swampLord: { hp: 160, sp: 0.85,  scale: 1.4, mdmg: [16, 24], mrange: 1.2, score: 500, miniboss: true, title: "SWAMP LORD",
               ranged: { cd: 1.8, speed: 3.5, dmg: [14, 20], hold: 4.5 },
               pal: { body: "#1a4020", skin: "#3a6840", eye: "#88ff66" } },
     boneWarden:{ hp: 200, sp: 0.85, scale: 1.4,  mdmg: [18, 26], mrange: 1.2,  score: 500, miniboss: true, title: "BONE WARDEN", shield: true,
@@ -1580,9 +1580,10 @@
     this.ally = this.allyOn ? { x: this.px + 0.6, y: this.py, cd: 0, animT: 0 } : null;
     FLOOR_PIX = THEME_FLOOR[this.L.theme] || THEME_FLOOR.hangar;
     CEIL_PIX = THEME_CEIL[this.L.theme] || THEME_CEIL.hangar;
-    // theme-based hazard: swamp/dungeon = toxic (green, 8dmg), foundry/throne = lava (orange, 12dmg)
+    // theme-based hazard: swamp/dungeon = mild toxic; foundry/throne = hotter lava
     const lava = (this.L.theme === "foundry" || this.L.theme === "throne");
-    this.hazardDmg = lava ? 12 : 8;
+    this.hazardDmg = lava ? 10 : 4;
+    this.hazardTick = lava ? 0.4 : 0.55;
     this.hazardHot = lava;
     this.chaosT = 3.4;
     this.chaosSaid = false;
@@ -2102,8 +2103,8 @@
         if (Math.abs(this.px - hz.x) < 0.6 && Math.abs(this.py - hz.y) < 0.6) {
           if (this.hazardCd <= 0) {
             this.hurtPlayer((this.hazardDmg * DIFF_MUL[diff]) | 0);
-            this.hazardCd = 0.35;
-            if (Math.random() < 0.4) this.say(this.hazardHot ? "RISING LAVA!" : "TOXIC GROUND!", 0.8);
+            this.hazardCd = this.hazardTick || 0.5;
+            if (Math.random() < 0.35) this.say(this.hazardHot ? "RISING LAVA!" : "TOXIC GROUND!", 0.8);
           }
           break;
         }
