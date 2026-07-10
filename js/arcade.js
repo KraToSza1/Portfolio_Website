@@ -1174,18 +1174,11 @@
     try { localStorage.setItem("inferno-unlocks", JSON.stringify(u)); } catch (e) {}
   }
   const GRADE_RANK = { "S": 5, "A": 4, "B": 3, "C": 2, "-": 0 };
-  // ghost replay storage — best (fastest) recorded path per level
-  function loadGhost(idx) {
-    try {
-      const j = JSON.parse(localStorage.getItem("inferno-ghost-" + idx) || "null");
-      return (j && j.pts && j.pts.length) ? j : null;
-    } catch (e) { return null; }
-  }
-  function saveGhost(idx, ghost) {
-    try {
-      const prev = loadGhost(idx);
-      if (!prev || ghost.time < prev.time) localStorage.setItem("inferno-ghost-" + idx, JSON.stringify(ghost));
-    } catch (e) {}
+  let musicMuted = false;
+  try { musicMuted = localStorage.getItem("inferno-music-muted") === "1"; } catch (e) {}
+  function setMusicMuted(on) {
+    musicMuted = !!on;
+    try { localStorage.setItem("inferno-music-muted", musicMuted ? "1" : "0"); } catch (e) {}
   }
 
   // ============================ GAME ============================
@@ -1236,9 +1229,7 @@
     this.crusherCd = 0;
     this.keycards = { red: false, blue: false, yellow: false };
     this.bigMsg = ""; this.bigT = 0; this.bigColor = "#ffd75e";
-    this.ghost = [];          // positions recorded this run (per level)
-    this.ghostBest = null;    // loaded best ghost for current level
-    this.ghostT = 0;
+    this.pathTrail = []; this.pathT = 0; // for intermission mini-map only
     this.allyOn = false; this.ally = null;
     this.combatIntensity = 0; this.music = null;
     this.cineT = 0;
@@ -1252,7 +1243,7 @@
     const self = this;
     this._down = function (e) {
       const k = e.key.toLowerCase();
-      if (["arrowup","arrowdown","arrowleft","arrowright"," ","w","a","s","d","r","m","p","f","c","e","o","1","2","3","4","5","6","7","8","9","[","]","-","="].indexOf(k) >= 0) e.preventDefault();
+      if (["arrowup","arrowdown","arrowleft","arrowright"," ","w","a","s","d","r","m","p","f","c","e","o","n","1","2","3","4","5","6","7","8","9","[","]","-","="].indexOf(k) >= 0) e.preventDefault();
       self.keys[k] = true;
       self.press(k);
     };
@@ -1424,6 +1415,21 @@
       self.toggleFullscreen();
     }, { passive: false });
 
+    // In-game music mute (separate from site-wide mute)
+    const musicBtn = root.querySelector("[data-touch-music]");
+    const syncMusicBtn = () => {
+      if (!musicBtn) return;
+      musicBtn.textContent = musicMuted ? "♪̸" : "♪";
+      musicBtn.setAttribute("aria-label", musicMuted ? "Unmute music" : "Mute music");
+      musicBtn.classList.toggle("is-muted", musicMuted);
+    };
+    syncMusicBtn();
+    musicBtn?.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      self.toggleMusicMute();
+      syncMusicBtn();
+    }, { passive: false });
+
     this._resetTouch = resetStick;
   };
 
@@ -1517,6 +1523,7 @@
   Game.prototype.press = function (k) {
     if (this.mode === "editor") { this.editorKey(k); return; }
     if (this.mode === "cine") { if (k === "enter" || k === " ") this.endCinematic(); return; }
+    if (k === "n") { this.toggleMusicMute(); return; }
     if (this.mode === "play") this.showMap = (k === "m") ? !this.showMap : this.showMap;
     if (this.mode === "title") {
       if (k === " " || k === "enter") { dailyMode = false; this.startRun(); return; }
@@ -1574,9 +1581,9 @@
     this.hazardCd = 0; this.teleCd = 0; this.crusherCd = 0;
     this.mines = []; this.mineCd = 0;
     this.projs.length = 0; this.parts.length = 0; this.boomQueue.length = 0;
-    // ghost replay: reset recording, load best for this level
-    this.ghost = []; this.ghostT = 0; this.ghostBest = loadGhost(idx);
-    // co-op ghost ally spawns beside the player
+    // path trail for intermission mini-map only
+    this.pathTrail = []; this.pathT = 0;
+    // co-op wraith ally spawns beside the player
     this.ally = this.allyOn ? { x: this.px + 0.6, y: this.py, cd: 0, animT: 0 } : null;
     FLOOR_PIX = THEME_FLOOR[this.L.theme] || THEME_FLOOR.hangar;
     CEIL_PIX = THEME_CEIL[this.L.theme] || THEME_CEIL.hangar;
@@ -1618,10 +1625,24 @@
     this.bigMsg = t; this.bigT = 2.2; this.bigColor = color || "#ffd75e";
   };
 
+  Game.prototype.toggleMusicMute = function () {
+    setMusicMuted(!musicMuted);
+    if (musicMuted) {
+      this.stopMusic();
+      this.say("MUSIC OFF", 1.0);
+      this.announce("MUSIC MUTED", "#8d99b8");
+    } else {
+      if (this.mode === "play" || this.mode === "pause" || this.mode === "inter") this.startMusic();
+      this.say("MUSIC ON", 1.0);
+      this.announce("MUSIC ON", "#88ff88");
+    }
+  };
+
   // ---- dynamic music layers (Web Audio) ----
   // ambient drone always plays; combat adds a pulse bass + tension oscillator,
-  // crossfaded by combatIntensity (0-1). Respects the global mute + SFX system.
+  // crossfaded by combatIntensity (0-1). Respects global mute + in-game music mute.
   Game.prototype.startMusic = function () {
+    if (musicMuted || window.__RVDW_MUTED) return;
     const a = audio(); if (!a) return;
     if (this.music) return;
     try {
@@ -2052,11 +2073,11 @@
       }
     }
 
-    // ghost replay recording — sample the player position every 0.1s
-    this.ghostT += dt;
-    if (this.ghostT >= 0.1) {
-      this.ghostT -= 0.1;
-      if (this.ghost.length < 6000) this.ghost.push(this.px, this.py);
+    // path trail for intermission mini-map
+    this.pathT += dt;
+    if (this.pathT >= 0.15) {
+      this.pathT -= 0.15;
+      if (this.pathTrail.length < 4000) this.pathTrail.push(this.px, this.py);
     }
 
     this.updateMines(dt);
@@ -2464,8 +2485,6 @@
   // ---- level completion / grade / unlocks ----
   Game.prototype.finishLevel = function () {
     this.mode = "inter";
-    // persist ghost replay if this run was faster
-    if (this.ghost.length > 2) saveGhost(this.levelIdx, { time: this.time, pts: this.ghost.slice() });
     const grade = this.computeGrade();
     // unlock: A/S beating a level grants bonus starting shells + best-grade record
     const u = this.unlocks;
@@ -2730,29 +2749,7 @@
       g.globalAlpha = 1;
     }
 
-    // ---- ghost replay (translucent green marker retracing the best run) ----
-    if (this.ghostBest && this.ghostBest.pts) {
-      const pts = this.ghostBest.pts;
-      // index advances with the current run time so the ghost "races" you
-      const gi = (Math.min(this.time, this.ghostBest.time) / 0.1 | 0) * 2;
-      if (gi + 1 < pts.length) {
-        const gx0 = pts[gi], gy0 = pts[gi + 1];
-        const rx = gx0 - this.px, ry = gy0 - this.py;
-        const trX = invDet * (this.dy * rx - this.dx * ry);
-        const trY = invDet * (-this.ply * rx + this.plx * ry);
-        if (trY > 0.1) {
-          const sx = (W / 2) * (1 + trX / trY);
-          if (sx >= 0 && sx < W && this.zbuf[sx | 0] > trY) {
-            const gh = Math.abs((VIEW_H / trY) | 0) * 0.8;
-            g.globalAlpha = 0.35;
-            g.fillStyle = "#63d97a";
-            g.fillRect(sx - gh * 0.18, (VIEW_H - gh) / 2 + gh * 0.1, gh * 0.36, gh * 0.8);
-            g.beginPath(); g.arc(sx, (VIEW_H - gh) / 2 + gh * 0.05, gh * 0.16, 0, 7); g.fill();
-            g.globalAlpha = 1;
-          }
-        }
-      }
-    }
+    // (ghost replay removed)
 
     // ---- crusher slam overlay (dark ceiling bar drops when a near crusher fires)
     if (this.L.crushers && this.L.crushers.length) {
@@ -3105,7 +3102,7 @@
     g.textAlign = "right";
     let bx = BW - 4;
     if (dailyMode) { g.fillStyle = "#ff8a50"; g.fillText("DAILY #" + dailySeed, bx, 9); bx -= 70; }
-    if (this.ghostBest) { g.fillStyle = "#63d97a"; g.fillText("GHOST", bx, 9); bx -= 36; }
+    if (musicMuted) { g.fillStyle = "#8d99b8"; g.fillText("MUSIC OFF", bx, 9); bx -= 52; }
     if (this.allyOn) { g.fillStyle = "#8ad8ff"; g.fillText("ALLY", bx, 9); }
     g.restore();
   };
@@ -3250,10 +3247,11 @@
                   : "#26314c";
       g.fillRect(ox + x * sc, oy + y * sc, Math.ceil(sc), Math.ceil(sc));
     }
-    // player path (recorded ghost of this run)
-    g.fillStyle = "rgba(99,217,122,0.7)";
-    for (let i = 0; i + 1 < this.ghost.length; i += 6) {
-      g.fillRect(ox + this.ghost[i] * sc - 0.5, oy + this.ghost[i + 1] * sc - 0.5, 1.5, 1.5);
+    // player path this run
+    g.fillStyle = "rgba(138,216,255,0.65)";
+    const trail = this.pathTrail || [];
+    for (let i = 0; i + 1 < trail.length; i += 6) {
+      g.fillRect(ox + trail[i] * sc - 0.5, oy + trail[i + 1] * sc - 0.5, 1.5, 1.5);
     }
     // kill markers (dead enemies)
     for (let i = 0; i < L.enemies.length; i++) {
@@ -3465,9 +3463,9 @@
     g.font = "bold 8px monospace"; g.fillStyle = "#8d99b8";
     g.fillText("WASD MOVE · MOUSE/ARROWS AIM · FIRE CLICK/SPACE · F MINE · 1-6 WEAPONS", BW / 2, 160);
     g.fillStyle = "#ff8a50";
-    g.fillText("C DAILY CHALLENGE · E LEVEL EDITOR · O WRAITH ALLY" + (this.allyOn ? " [ON]" : ""), BW / 2, 170);
+    g.fillText("C DAILY · E EDITOR · O ALLY" + (this.allyOn ? " [ON]" : "") + " · N MUSIC " + (musicMuted ? "OFF" : "ON"), BW / 2, 170);
     g.fillStyle = "#8d99b8";
-    g.fillText("KEYCARDS · CRUSHERS · LAVA · LIFTS · MODS · MINES · GHOST REPLAY", BW / 2, 180);
+    g.fillText("KEYCARDS · CRUSHERS · LAVA · LIFTS · MODS · MINES", BW / 2, 180);
     // hi-score + persistent unlocks
     let uy = 190;
     if (this.hi > 0) { g.fillStyle = "#ffd75e"; g.fillText("HI-SCORE " + this.hi, BW / 2, uy); uy += 0; }

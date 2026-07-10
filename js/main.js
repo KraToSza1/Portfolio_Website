@@ -1863,7 +1863,7 @@ function arcadeHTML(){
     doors, <strong>6 weapons</strong> (pistol, shotgun, plasma, BFG, chainsaw &amp; rockets), 19 enemy
     types including minibosses and egg hatchers, colored keycards, crushers, lava &amp; toxic
     hazards, teleporters, lifts, breakable walls, berserk &amp; weapon mods, sticky mines, a
-    co-op wraith ally, ghost-replay speedrunning, a daily challenge, a level editor, and five
+    co-op wraith ally, a daily challenge, a level editor, and five
     themed levels with an ending cinematic. Three difficulty modes. No engine: every pixel drawn in code.</p>
     <div class="arcade">
       <div class="arcade__rotate">↻ Rotate your phone sideways for the best experience</div>
@@ -1871,6 +1871,7 @@ function arcadeHTML(){
         <canvas id="arcade-canvas" width="320" height="200" tabindex="0" aria-label="Retro FPS game"></canvas>
         <div class="arcade__touch" id="arcade-touch" aria-hidden="true">
           <button type="button" class="arcade__btn arcade__btn--map" data-touch-key="m" aria-label="Map">Map</button>
+          <button type="button" class="arcade__btn arcade__btn--music" data-touch-music aria-label="Toggle music">♪</button>
           <div class="arcade__weapons" role="group" aria-label="Weapons">
             <button type="button" class="arcade__btn" data-touch-key="1" aria-label="Pistol">1</button>
             <button type="button" class="arcade__btn" data-touch-key="2" aria-label="Shotgun">2</button>
@@ -1896,7 +1897,7 @@ function arcadeHTML(){
       <div class="arcade__controls">
         <span><strong>Desktop:</strong> WASD move · mouse aim · click/space fire · 1–6 weapons · F drop mine · M map · P pause · [ ] difficulty</span>
         <span><strong>Keycards:</strong> red / blue / yellow open matching doors · <strong>Mods:</strong> rapid · spread · lifesteal</span>
-        <span><strong>Title screen:</strong> C daily challenge · E level editor · O toggle wraith ally · <strong>Intermission/win:</strong> S download score card</span>
+        <span><strong>Title screen:</strong> C daily · E editor · O ally · N mute music · <strong>In-game:</strong> N mute music · <strong>Intermission/win:</strong> S score card</span>
         <span class="arcade__controls-mobile"><strong>Mobile:</strong> left stick move · right pad aim · Fire button · 1–6 weapons</span>
       </div>
     </div>`;
