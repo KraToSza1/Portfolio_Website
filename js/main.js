@@ -1861,7 +1861,8 @@ function arcadeHTML(){
     fight across four levels. No engine, no libraries, no image files: everything is
     code, the same rendering tech behind the 1993 classics.</p>
     <div class="arcade">
-      <div class="arcade__stage">
+      <div class="arcade__rotate">↻ Rotate your phone sideways for the best experience</div>
+      <div class="arcade__stage" id="arcade-stage">
         <canvas id="arcade-canvas" width="320" height="200" tabindex="0" aria-label="Retro FPS game"></canvas>
         <div class="arcade__touch" id="arcade-touch" aria-hidden="true">
           <div class="arcade__stick" id="arcade-stick" data-stick>
@@ -1873,6 +1874,7 @@ function arcadeHTML(){
             <button type="button" class="arcade__btn" data-touch-key="1" aria-label="Pistol">1</button>
             <button type="button" class="arcade__btn" data-touch-key="2" aria-label="Shotgun">2</button>
             <button type="button" class="arcade__btn" data-touch-key="3" aria-label="Plasma">3</button>
+            <button type="button" class="arcade__btn" data-touch-fs aria-label="Fullscreen">⛶</button>
             <button type="button" class="arcade__btn arcade__btn--map" data-touch-key="m" aria-label="Map">Map</button>
             <button type="button" class="arcade__btn arcade__btn--fire" data-touch-fire aria-label="Fire">Fire</button>
           </div>

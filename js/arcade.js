@@ -259,7 +259,8 @@
         g.fillRect(x * 16 + off - 8, y * 16, 15, 15);
       }
       g.fillStyle = "rgba(0,0,0,.35)";
-      for (let y = 0; y < 4; y++) g.fillRect(0, y * 16 + 15, TEX, 1);
+      for (let y = 0; y < 4; y++) g.fillRect(0, y * 16 + 15, 64, 1);
+      speckle(g, 42, 80, ["#3a150e", "#8a4530", "#2a0f0a", "#93503a"], 1, 2.5);
     });
     const tech = mkTex(TEX, function (g) {
       g.fillStyle = "#1a2236"; g.fillRect(0, 0, TEX, TEX);
@@ -267,6 +268,7 @@
       g.fillStyle = "#2c3a5e"; g.fillRect(8, 8, 48, 20);
       g.fillStyle = "#ffd75e"; g.fillRect(8, 32, 48, 3);
       g.fillStyle = "#8ad8ff"; g.fillRect(12, 42, 8, 8); g.fillRect(28, 42, 8, 8); g.fillRect(44, 42, 8, 8);
+      speckle(g, 91, 36, ["#101624", "#324260", "#0c1020"], 1, 2);
     });
     const slime = mkTex(TEX, function (g) {
       g.fillStyle = "#242e24"; g.fillRect(0, 0, TEX, TEX);
@@ -276,7 +278,8 @@
         g.fillRect((i * 23) % TEX, (i * 41) % TEX, s, s);
       }
       g.fillStyle = "rgba(90,200,120,.25)";
-      for (let i = 0; i < 6; i++) g.fillRect((i * 31) % TEX, (i * 17) % TEX, 3, 10 + (i * 5) % 12);
+      for (let i = 0; i < 6; i++) g.fillRect((i * 31) % 64, (i * 17) % 64, 3, 10 + (i * 5) % 12);
+      speckle(g, 7, 70, ["#557a50", "#1a231a", "#6a9660", "#131a13"], 1, 2.2);
     });
     const metal = mkTex(TEX, function (g) {
       g.fillStyle = "#20242e"; g.fillRect(0, 0, TEX, TEX);
@@ -287,6 +290,7 @@
       }
       g.fillStyle = "#4a5468";
       for (let i = 0; i < 8; i++) g.fillRect(6 + (i % 4) * 16, 8 + ((i / 4) | 0) * 44, 3, 3);
+      speckle(g, 133, 55, ["#12151d", "#556077", "#0e1118"], 1, 2);
     });
     const exit = mkTex(TEX, function (g) {
       g.fillStyle = "#0c0d12"; g.fillRect(0, 0, TEX, TEX);
@@ -484,6 +488,75 @@
     return out;
   }
 
+  // deterministic speckle/grime — cheap way to add a lot of texture detail
+  function speckle(g, seed, n, colors, sMin, sMax) {
+    let s = seed | 0 || 7;
+    const rnd = function () { s = (s * 16807) % 2147483647; return s / 2147483647; };
+    for (let i = 0; i < n; i++) {
+      g.fillStyle = colors[(rnd() * colors.length) | 0];
+      g.globalAlpha = 0.18 + rnd() * 0.3;
+      const sz = sMin + rnd() * (sMax - sMin);
+      g.fillRect(rnd() * 64, rnd() * 64, sz, sz);
+    }
+    g.globalAlpha = 1;
+  }
+
+  // ---- floor & ceiling textures (64px raw — sampled per-pixel by the caster) ----
+  function buildFloorTex() {
+    return mkTex(64, function (g) {
+      g.fillStyle = "#332b24"; g.fillRect(0, 0, 64, 64);
+      // big stone slabs with varied tints
+      const tints = ["#3b332a", "#372f27", "#40372c", "#352d25"];
+      for (let sy = 0; sy < 2; sy++) for (let sx = 0; sx < 2; sx++) {
+        g.fillStyle = tints[(sx + sy * 2 + ((sx ^ sy) & 1)) % 4];
+        g.fillRect(sx * 32 + 1, sy * 32 + 1, 30, 30);
+      }
+      g.fillStyle = "#1c1712"; // grout
+      g.fillRect(0, 0, 64, 1); g.fillRect(0, 32, 64, 2); g.fillRect(0, 63, 64, 1);
+      g.fillRect(0, 0, 1, 64); g.fillRect(32, 0, 2, 64); g.fillRect(63, 0, 1, 64);
+      speckle(g, 1234, 90, ["#241d17", "#4a4034", "#2e261e", "#171310"], 1, 3);
+      // a couple of cracks
+      g.strokeStyle = "rgba(20,15,10,0.6)"; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(8, 6); g.lineTo(16, 14); g.lineTo(13, 24); g.stroke();
+      g.beginPath(); g.moveTo(46, 40); g.lineTo(52, 50); g.lineTo(60, 54); g.stroke();
+    });
+  }
+  function buildCeilTex() {
+    return mkTex(64, function (g) {
+      g.fillStyle = "#151823"; g.fillRect(0, 0, 64, 64);
+      // tech panels
+      for (let sy = 0; sy < 2; sy++) for (let sx = 0; sx < 2; sx++) {
+        g.fillStyle = (sx + sy) % 2 ? "#181c29" : "#131622";
+        g.fillRect(sx * 32 + 1, sy * 32 + 1, 30, 30);
+      }
+      g.fillStyle = "#0a0c14";
+      g.fillRect(0, 31, 64, 2); g.fillRect(31, 0, 2, 64);
+      // rivets + a dim light strip
+      g.fillStyle = "#2c3448";
+      for (const p of [[5,5],[27,5],[37,5],[59,5],[5,27],[59,27],[5,37],[59,37],[5,59],[27,59],[37,59],[59,59]])
+        g.fillRect(p[0], p[1], 2, 2);
+      g.fillStyle = "#3a4f6e"; g.fillRect(12, 14, 8, 2); g.fillRect(44, 46, 8, 2);
+      speckle(g, 777, 60, ["#0c0e16", "#1e2434", "#10131e"], 1, 3);
+    });
+  }
+  function texPixels(c) {
+    return new Uint32Array(c.getContext("2d").getImageData(0, 0, c.width, c.height).data.buffer.slice(0));
+  }
+  const FLOOR_PIX = texPixels(buildFloorTex());
+  const CEIL_PIX = texPixels(buildCeilTex());
+
+  // warm muzzle-light glow (cached radial sprite, composited when firing)
+  const MUZZ_GLOW = (function () {
+    const c = document.createElement("canvas"); c.width = c.height = 256;
+    const g = c.getContext("2d");
+    const grd = g.createRadialGradient(128, 128, 8, 128, 128, 128);
+    grd.addColorStop(0, "rgba(255,220,150,0.55)");
+    grd.addColorStop(0.4, "rgba(255,170,80,0.22)");
+    grd.addColorStop(1, "rgba(255,140,60,0)");
+    g.fillStyle = grd; g.fillRect(0, 0, 256, 256);
+    return c;
+  })();
+
   // ============================ PARSE ============================
   function parseLevel(idx) {
     const rows = LEVELS[idx].rows;
@@ -581,6 +654,14 @@
     addEventListener("mouseup", this._mu);
     addEventListener("mousemove", this._mm);
     this.bindTouchControls();
+
+    // entering/leaving fullscreen changes the canvas size — re-pick resolution
+    this._fsc = function () {
+      const pxw = (canvas.clientWidth || 640) * Math.min(2, window.devicePixelRatio || 1);
+      self.setResolution(pxw >= 900 ? 3 : 2);
+    };
+    document.addEventListener("fullscreenchange", this._fsc);
+
     canvas.focus();
 
     this.loop = this.loop.bind(this);
@@ -654,7 +735,7 @@
       look.setPointerCapture?.(e.pointerId);
       lookId = e.pointerId;
       lookX = e.clientX;
-      if (self.mode !== "play") self.press(" ");
+      if (self.mode !== "play") { self.press(" "); self.enterFullscreen(); }
     }, { passive: false });
     look?.addEventListener("pointermove", (e) => {
       if (lookId !== e.pointerId || self.mode !== "play") return;
@@ -675,7 +756,7 @@
     const fireDown = (e) => {
       e.preventDefault();
       audio();
-      if (self.mode !== "play") { self.press(" "); return; }
+      if (self.mode !== "play") { self.press(" "); self.enterFullscreen(); return; }
       self.mdown = true;
       self.tryFire();
     };
@@ -696,7 +777,46 @@
       btn.addEventListener("pointercancel", () => setKey(key, false));
     });
 
+    // Fullscreen + landscape lock ("flip the phone" support)
+    root.querySelector("[data-touch-fs]")?.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      self.toggleFullscreen();
+    }, { passive: false });
+
     this._resetTouch = resetStick;
+  };
+
+  // Fullscreen the whole stage wrapper (canvas + touch controls stay visible)
+  // and ask the OS to rotate into landscape where the API allows it.
+  Game.prototype.fsTarget = function () {
+    return (this.canvas.closest && this.canvas.closest(".arcade__stage")) || this.canvas;
+  };
+  Game.prototype.enterFullscreen = function () {
+    // only auto-trigger for coarse (touch) pointers — desktop stays inline
+    if (!(window.matchMedia && matchMedia("(pointer: coarse)").matches)) return;
+    if (document.fullscreenElement) return;
+    this.toggleFullscreen();
+  };
+  Game.prototype.toggleFullscreen = function () {
+    const doc = document;
+    if (doc.fullscreenElement || doc.webkitFullscreenElement) {
+      try { (doc.exitFullscreen || doc.webkitExitFullscreen).call(doc); } catch (e) {}
+      return;
+    }
+    const el = this.fsTarget();
+    const rq = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!rq) return;
+    try {
+      const p = rq.call(el);
+      const lock = function () {
+        try {
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock("landscape").catch(function () {});
+          }
+        } catch (e) {}
+      };
+      if (p && p.then) p.then(lock).catch(function () {}); else lock();
+    } catch (e) {}
   };
 
   Game.prototype.setResolution = function (s) {
@@ -706,17 +826,51 @@
     this.zbuf = new Float64Array(W);
     const g = this.ctx;
     g.imageSmoothingEnabled = true; // smooth scaling — no chunky pixels
-    // lighting gradients + vignette, cached per resolution
-    this.ceilG = g.createLinearGradient(0, 0, 0, VIEW_H / 2);
-    this.ceilG.addColorStop(0, "#1c2134");
-    this.ceilG.addColorStop(1, "#0a0c14");
-    this.floorG = g.createLinearGradient(0, VIEW_H / 2, 0, VIEW_H);
-    this.floorG.addColorStop(0, "#16110e");
-    this.floorG.addColorStop(1, "#332a22");
     this.vig = g.createRadialGradient(W / 2, VIEW_H / 2, VIEW_H * 0.45, W / 2, VIEW_H / 2, VIEW_H * 0.95);
     this.vig.addColorStop(0, "rgba(0,0,0,0)");
     this.vig.addColorStop(1, "rgba(0,0,0,0.42)");
+    // floor/ceiling caster buffer — half resolution, smoothed up (fast + soft)
+    this.fbw = Math.max(2, W >> 1);
+    this.fbh = Math.max(2, (VIEW_H >> 1) & ~1); // even, split at the horizon
+    this.fcv = document.createElement("canvas");
+    this.fcv.width = this.fbw; this.fcv.height = this.fbh;
+    this.fctx = this.fcv.getContext("2d");
+    this.fimg = this.fctx.createImageData(this.fbw, this.fbh);
+    this.fbuf = new Uint32Array(this.fimg.data.buffer);
     this._fr = 0; this._jank = 0;
+  };
+
+  // True perspective floor & ceiling casting (the classic Doom-look upgrade):
+  // for every buffer row we walk a world-space line and sample the stone /
+  // tech-panel textures per pixel, with distance fog baked into the shade.
+  Game.prototype.renderFloorCast = function (g) {
+    const fw = this.fbw, fh = this.fbh, half = fh >> 1;
+    const buf = this.fbuf;
+    const rdx0 = this.dx - this.plx, rdy0 = this.dy - this.ply;
+    const rdx1 = this.dx + this.plx, rdy1 = this.dy + this.ply;
+    const px = this.px, py = this.py;
+    for (let y = 0; y < half; y++) {
+      const rowDist = half / (y + 0.5);
+      const stepX = rowDist * (rdx1 - rdx0) / fw;
+      const stepY = rowDist * (rdy1 - rdy0) / fw;
+      let fx = px + rowDist * rdx0;
+      let fy = py + rowDist * rdy0;
+      const lit = Math.max(0.14, 1 - rowDist * 0.11);        // distance fog
+      const litC = lit * 0.92;                                // ceiling a touch darker
+      const rowF = (half + y) * fw, rowC = (half - 1 - y) * fw;
+      for (let x = 0; x < fw; x++) {
+        const ti = ((((fy * 64) | 0) & 63) << 6) | (((fx * 64) | 0) & 63);
+        let p = FLOOR_PIX[ti];
+        buf[rowF + x] = 0xff000000 |
+          ((((p >> 16 & 255) * lit) & 255) << 16) | ((((p >> 8 & 255) * lit) & 255) << 8) | (((p & 255) * lit) & 255);
+        p = CEIL_PIX[ti];
+        buf[rowC + x] = 0xff000000 |
+          ((((p >> 16 & 255) * litC) & 255) << 16) | ((((p >> 8 & 255) * litC) & 255) << 8) | (((p & 255) * litC) & 255);
+        fx += stepX; fy += stepY;
+      }
+    }
+    this.fctx.putImageData(this.fimg, 0, 0);
+    g.drawImage(this.fcv, 0, 0, fw, fh, 0, 0, W, VIEW_H);
   };
 
   Game.prototype.press = function (k) {
@@ -1134,11 +1288,8 @@
     g.save();
     g.translate(shakeX | 0, shakeY | 0);
 
-    // ceiling & floor — gradient lighting instead of flat fills
-    g.fillStyle = this.ceilG;  g.fillRect(-pad, -pad, W + pad * 2, VIEW_H / 2 + pad);
-    g.fillStyle = this.floorG; g.fillRect(-pad, VIEW_H / 2, W + pad * 2, VIEW_H / 2 + pad);
-    g.fillStyle = "rgba(0,0,0,0.35)";
-    g.fillRect(-pad, VIEW_H * 0.42, W + pad * 2, VIEW_H * 0.16);
+    // perspective-textured floor & ceiling (true Doom-style floor casting)
+    this.renderFloorCast(g);
 
     // walls
     const L = this.L;
@@ -1278,6 +1429,14 @@
       g.globalAlpha = 1 - p.life / p.max;
       g.fillStyle = p.color;
       g.fillRect(sx - r / 2, VIEW_H / 2 - r / 2 + (p.life / p.max) * (VIEW_H * 0.08) / trY, r, r);
+      g.globalAlpha = 1;
+    }
+
+    // muzzle light — briefly warms the whole scene when firing
+    if (this.muzzle > 0) {
+      g.globalAlpha = Math.min(1, this.muzzle * 9);
+      const mr = VIEW_H * 0.9;
+      g.drawImage(MUZZ_GLOW, W / 2 - mr, VIEW_H * 0.75 - mr, mr * 2, mr * 2);
       g.globalAlpha = 1;
     }
 
@@ -1613,6 +1772,12 @@
     removeEventListener("mousemove", this._mm);
     removeEventListener("mouseup", this._mu);
     this.canvas.removeEventListener("mousedown", this._md);
+    document.removeEventListener("fullscreenchange", this._fsc);
+    if (this._resetTouch) this._resetTouch();
+    this.mdown = false;
+    if (document.fullscreenElement && document.exitFullscreen) {
+      try { document.exitFullscreen(); } catch (e) {}
+    }
     if (this._resetTouch) try { this._resetTouch(); } catch (e) {}
     if (document.pointerLockElement === this.canvas && document.exitPointerLock) {
       try { document.exitPointerLock(); } catch (e) {}

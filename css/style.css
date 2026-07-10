@@ -1514,6 +1514,41 @@ button.link-btn{
 .arcade__controls strong{color:var(--gold);font-weight:600}
 .arcade__controls-mobile{display:none}
 .arcade__stage{position:relative}
+
+/* "flip the phone" hint — only on touch devices held in portrait */
+.arcade__rotate{
+  display:none;
+  align-items:center;justify-content:center;gap:8px;
+  padding:9px 14px;
+  margin-bottom:10px;
+  border-radius:12px;
+  background:rgba(255,215,94,.1);
+  border:1px solid rgba(255,215,94,.35);
+  color:var(--gold);
+  font-family:var(--font-display);
+  font-size:.8rem;font-weight:600;
+  letter-spacing:.06em;
+}
+@media (pointer:coarse) and (orientation:portrait){
+  .arcade__rotate{display:flex}
+}
+
+/* fullscreen mode: black letterbox, game centered, touch controls overlay stays */
+.arcade__stage:fullscreen{
+  width:100vw;height:100vh;
+  background:#000;
+  display:flex;align-items:center;justify-content:center;
+}
+.arcade__stage:fullscreen canvas{
+  width:auto;height:100%;
+  max-width:100vw;max-height:100vh;
+  aspect-ratio:16/10;
+  border:0;border-radius:0;box-shadow:none;
+}
+.arcade__stage:-webkit-full-screen{
+  width:100vw;height:100vh;background:#000;
+  display:flex;align-items:center;justify-content:center;
+}
 .arcade__touch{
   display:none;
   position:absolute;inset:0;
