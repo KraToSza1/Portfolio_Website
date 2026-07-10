@@ -1,9 +1,9 @@
 // js/arcade.js — "INFERNO" — a complete retro FPS built from scratch.
 // Raycast renderer (DDA, textured walls, sliding doors, sprite billboards,
-// per-column z-clipping) + full game: title screen, 3 weapons, 6 enemy types
-// incl. a boss, projectiles, exploding barrels, keycards, auto + locked doors,
-// pickups, particles, minimap, synthesized sound, score/tally screens,
-// persistent hi-score, 4 big levels.
+// per-column z-clipping) + full game: title screen, 4 weapons (incl. BFG),
+// 8 enemy types incl. a boss, armor, projectiles, exploding barrels, keycards,
+// auto + locked doors, pickups, particles, minimap, synthesized sound,
+// score/tally screens, persistent hi-score, 4 big levels.
 // No libraries, no image assets. API: window.initArcade(id) / window.destroyArcade().
 (function () {
   "use strict";
@@ -12,116 +12,125 @@
   // walls: # brick · T tech · S slime · M metal · X exit(needs key)
   //        D auto sliding door · G gold-locked door (needs keycard)
   // floor: . or space
-  // enemies: E imp · C caster · U brute · F wraith · R gunner · Z boss
-  // pickups: h health · a bullets · s shells · c cells · k keycard
-  //          W shotgun · Q plasma · B exploding barrel
+  // enemies: E imp · C caster · U brute · F wraith · R gunner · L lurker · N nightmare · Z boss
+  // pickups: h health · v armor · a bullets · s shells · c cells · k keycard
+  //          W shotgun · Q plasma · Y BFG · B exploding barrel
   const LEVELS = [
     {
-      name: "E1: HANGAR OF REGRET", par: 110,
+      // Teach: move → door → shotgun → mid fight → key loop → exit. Soft curve.
+      name: "E1: HANGAR OF REGRET", par: 100,
       rows: [
-        "########################",
-        "#P.....#......#....h...#",
-        "#......D......D....E...#",
-        "#..E...#..B...#........#",
-        "#......#..E...#...s....#",
-        "###D########......####D#",
-        "#....#....F...#...a...k#",
-        "#..W.#....#...D........#",
-        "#..E.D....#...#...E....#",
-        "#....#..B.#...#........#",
-        "#....#....#.h.#...B....#",
-        "####.#####D###....###D##",
-        "#......#.......E......h#",
-        "#..h...#..B.......E....#",
-        "#..E...D...........a...#",
-        "#......#....s.........X#",
-        "#..a.B.#....#.........##",
-        "#......#....#..k...##..#",
-        "####D###....#####..D...#",
-        "#....E.............E...#",
-        "########################"
+        "##############################",
+        "#P........#........#.........#",
+        "#.........D........D....E....#",
+        "#....E....#...B....#.........#",
+        "#.........#...E....#...h.v...#",
+        "####D######........#####.....#",
+        "#.....#....#.......#....a....#",
+        "#..W..#....D.......D.........#",
+        "#..E..#....#.......#....E....#",
+        "#.....#..B.#.......#.........#",
+        "#.....#....#..h....#....B....#",
+        "#####.#####D########...###D###",
+        "#.......#.............E....h.#",
+        "#..h....#..B...............E.#",
+        "#..E....D................a...#",
+        "#.......#....s..............X#",
+        "#..a.B..#....#..............##",
+        "#.......#....#..k.......##...#",
+        "#####D###....#######....D....#",
+        "#.....E.................E....#",
+        "#.......................F....#",
+        "#..........L.................#",
+        "##############################"
       ]
     },
     {
-      name: "E2: THE GOLD FOUNDRY", par: 150,
+      // Branch: left combat / right key loot, reconverge at gold door → exit push.
+      name: "E2: THE GOLD FOUNDRY", par: 140,
       rows: [
-        "##########################",
-        "#P.....#.....C....#.....h#",
-        "#......D..........D......#",
-        "#..E...#....B.....#...R..#",
-        "#......#....E.....#.....k#",
-        "###D#######....######D####",
-        "#....#....s........#.....#",
-        "#..s.#....D....F...#..a..#",
-        "#..E.#....#........D..E..#",
-        "#....#....#####S####.....#",
-        "###.D#....#.......#..###D#",
-        "#...##....G.......#....C.#",
-        "#..C.#....#....B..#......#",
-        "#....#....#.......#..s...#",
-        "#..a.#....#.......###D####",
-        "###D########..F.........h#",
-        "#......E..#....#....E....#",
-        "#..h......D....#....D....#",
-        "#.........#....#........G#",
-        "#...B..R..#.B..#..a.....X#",
-        "####.#####.####.####.###.#",
-        "#..................E....##",
-        "##########################"
+        "################################",
+        "#P......#...........#.........h#",
+        "#.......D...........D..........#",
+        "#..E....#....B......#.....R....#",
+        "#.......#....E......#.....v..k.#",
+        "####D########....#########D#####",
+        "#......#....s.........#........#",
+        "#..s...#....D....F....#....a...#",
+        "#..E...#....#.........#....E...#",
+        "#......#....######S####........#",
+        "####.D##....#........#....###D##",
+        "#....##....G.........#......C..#",
+        "#..C.#.....#....B....#.........#",
+        "#....#.....#.........#....s....#",
+        "#..a.#.....#.........###D#######",
+        "####D#########..F.............h#",
+        "#.......E..#.....#.....E.......#",
+        "#..h.......D.....#.....D.......#",
+        "#..........#.....#............G#",
+        "#...B..R...#.B...#..a.........X#",
+        "#####.######.####.######.###...#",
+        "#.....................E.......##",
+        "#.........L.....C.....L.......##",
+        "################################"
       ]
     },
     {
-      name: "E4: THE MAW", par: 200,
+      // Pressure: key hunt → plasma vault → nightmare gauntlet → exit.
+      name: "E3: THE MAW", par: 180,
       rows: [
-        "############################",
-        "#P.....#......h......#.....#",
-        "#......D.............D.....#",
-        "#..R...#...B....B....#..U..#",
-        "#......#.....F.......#....k#",
-        "###D########....######D#####",
-        "#.....#....s...c...#.......#",
-        "#..s..#....D.......#....a..#",
-        "#..U..#....#...F...D....C..#",
-        "#.....#....#.......#.......#",
-        "###.D######S##S#####..D#####",
-        "#...##....#......#....#....#",
-        "#..C.#....G......#....D..R.#",
-        "#....#....#..Q...#....#....#",
-        "#..a.#....#......#....#..s.#",
-        "###D########..F...####D#####",
-        "#........#........#...E...h#",
-        "#..h..R..D...B....#...#....#",
-        "#........#........#...#..c.#",
-        "#..B..E..#...F....#...#...X#",
-        "####.#####.######.####D##.##",
-        "#.................E.......##",
-        "############################"
+        "##################################",
+        "#P......#.........h........#.....#",
+        "#.......D..................D.....#",
+        "#..R....#...B.......B......#..U..#",
+        "#.......#......F...........#...k.#",
+        "####D#########......########D#####",
+        "#......#....s...c.....#..........#",
+        "#..s...#....D.........#.....a....#",
+        "#..U...#....#...F.....#.....C....#",
+        "#......#....#.........#..........#",
+        "####.D#######S##S######..D########",
+        "#....##....#.......#.....#.......#",
+        "#..C.#....G........#.....D...R...#",
+        "#....#....#..Q.....#.....#.......#",
+        "#..a.#....#..v.c...#.....#...s...#",
+        "####D########..F....######D#######",
+        "#.........#.........#....E.....h.#",
+        "#..h..R...D...B.....#....#.......#",
+        "#.........#.........#....#...c...#",
+        "#..B..E...#...F.....#....#......X#",
+        "#####.######.#######.#####D##....#",
+        "#..................E............##",
+        "#.....L....N....L....N....L.....##",
+        "##################################"
       ]
     },
     {
-      name: "E3: THRONE OF CINDER", par: 220,
+      // Finale: armored approach → BFG stash → throne arena → Cinder King.
+      name: "E4: THRONE OF CINDER", par: 240,
       rows: [
-        "######################",
-        "#P.......#.....C....h#",
-        "#...U....D...........#",
-        "#......#.#...####....#",
-        "#..s...#.....#..c....#",
-        "###D###...####...#####",
-        "#..c...#.........R..s#",
-        "#..U...D..C....U.....#",
-        "#......#.............#",
-        "####.###R....h...##D##",
-        "#........B..........s#",
-        "#..M...........M....c#",
-        "#...................a#",
-        "#...B...F.Z.F....B...#",
-        "#...................h#",
-        "#..M...........M....c#",
-        "#........B..........s#",
-        "####D####....#####..##",
-        "#....s..h.F....c....a#",
-        "#...................R#",
-        "######################"
+        "################################",
+        "#P........#.......C..........h.#",
+        "#...U.....D....................#",
+        "#.......#.#....#####...........#",
+        "#..s....#......#...c.....v.....#",
+        "####D####...####...............#",
+        "#..c....#.............R.....s..#",
+        "#..U....D..C....U..............#",
+        "#.......#......................#",
+        "#####.###R.....h......###D######",
+        "#Y..c.#......................s.#",
+        "#.....#..M...........M.....c...#",
+        "#..a..D........................#",
+        "#######....B...F.Z.F...B.......#",
+        "#.............#.....#........h.#",
+        "#..M..........#.....#......c...#",
+        "#.............#.....#........s.#",
+        "####D#####....#######..........#",
+        "#....s..h.F....c.............a.#",
+        "#....N............L....R.......#",
+        "#..............N...............#",
+        "################################"
       ]
     }
   ];
@@ -142,7 +151,8 @@
   const WEAPONS = [
     { name: "PISTOL",  ammo: "bullets", rate: 0.32, pellets: 1, spread: 0.012, dmg: [12, 18], kick: 4,  color: "#ffe6a0" },
     { name: "SHOTGUN", ammo: "shells",  rate: 0.95, pellets: 6, spread: 0.085, dmg: [8, 13],  kick: 9,  color: "#ffd07a" },
-    { name: "PLASMA",  ammo: "cells",   rate: 0.15, proj: true, dmg: [18, 26], kick: 2,  color: "#9fe8ff" }
+    { name: "PLASMA",  ammo: "cells",   rate: 0.15, proj: true, cost: 1,  dmg: [18, 26], kick: 2,  color: "#9fe8ff" },
+    { name: "BFG",     ammo: "cells",   rate: 1.35, proj: true, cost: 40, bfg: true, dmg: [90, 130], splash: 2.8, kick: 16, color: "#7dff9a" }
   ];
 
   const ETYPES = {
@@ -158,11 +168,16 @@
     gunner: { hp: 40,  sp: 1.4,  scale: 1.05, mdmg: [6, 10],  mrange: 0.9,  score: 200,
               ranged: { cd: 1.15, speed: 7, dmg: [6, 10], hold: 5.5 },
               pal: { body: "#4a3a20", skin: "#8a6b3a", eye: "#ffb04a" } },
+    lurker: { hp: 22,  sp: 3.1,  scale: 0.85, mdmg: [10, 16], mrange: 0.85, score: 175,
+              pal: { body: "#1a2a18", skin: "#3a5a32", eye: "#9dff7a" } },
+    nightmare: { hp: 110, sp: 1.15, scale: 1.35, mdmg: [16, 24], mrange: 1.2, score: 320,
+              ranged: { cd: 2.1, speed: 3.6, dmg: [12, 18], hold: 5.0 },
+              pal: { body: "#2a1038", skin: "#5a2080", eye: "#ff66cc" } },
     boss:   { hp: 420, sp: 0.95, scale: 2.15, mdmg: [22, 30], mrange: 1.4,  score: 1000, boss: true,
               ranged: { cd: 1.5, speed: 4.6, dmg: [12, 18], hold: 7, spread: 3 },
               pal: { body: "#5a1010", skin: "#8a1f14", eye: "#ffd75e" } }
   };
-  const ECHARS = { E: "imp", C: "caster", U: "brute", Z: "boss", F: "wraith", R: "gunner" };
+  const ECHARS = { E: "imp", C: "caster", U: "brute", Z: "boss", F: "wraith", R: "gunner", L: "lurker", N: "nightmare" };
 
   // ============================ AUDIO (synth) ============================
   let actx = null;
@@ -204,6 +219,7 @@
     pistol:  function () { noiseBurst(0.05, 0.24, 3400); tone(520, 110, 0.07, "square", 0.16); tone(150, 45, 0.08, "sine", 0.14); },
     shotgun: function () { noiseBurst(0.10, 0.42, 3200); noiseBurst(0.34, 0.34, 1300); tone(95, 38, 0.30, "triangle", 0.24); },
     plasma:  function () { tone(880, 230, 0.13, "sawtooth", 0.16); tone(1500, 500, 0.07, "square", 0.08); },
+    bfg:     function () { noiseBurst(0.22, 0.55, 900); tone(70, 40, 0.55, "sawtooth", 0.35); tone(180, 90, 0.4, "square", 0.2); tone(40, 30, 0.7, "triangle", 0.28); },
     hurt:    function () { tone(180, 55, 0.24, "sawtooth", 0.13); noiseBurst(0.08, 0.08, 1200); },
     edie:    function () { tone(300, 42, 0.34, "square", 0.11); noiseBurst(0.18, 0.09, 700); },
     boom:    function () { noiseBurst(0.55, 0.34, 520); tone(85, 28, 0.5, "sine", 0.26); tone(200, 40, 0.3, "sawtooth", 0.12); },
@@ -717,6 +733,20 @@
       g.fillStyle = "#8ad8ff"; g.fillRect(20, 44, 8, 6); g.fillRect(40, 44, 8, 6);
       g.fillStyle = "#d5f4ff"; g.fillRect(44, 40, 6, 4);
     });
+    out.Y = mkTex(TEX, function (g) { // BFG
+      g.fillStyle = "#14301c"; g.fillRect(12, 38, 40, 16);
+      g.fillStyle = "#2a6040"; g.fillRect(14, 40, 36, 12);
+      g.fillStyle = "#7dff9a"; g.fillRect(18, 42, 10, 8); g.fillRect(36, 42, 10, 8);
+      g.fillStyle = "#d5ffe0"; g.beginPath(); g.arc(32, 34, 6, 0, 7); g.fill();
+      g.fillStyle = "#ffd75e"; g.fillRect(12, 52, 40, 3);
+    });
+    out.v = mkTex(TEX, function (g) { // armor vest
+      g.fillStyle = "#2a3a4a"; g.fillRect(18, 28, 28, 28);
+      g.fillStyle = "#4a6a88"; g.fillRect(20, 30, 24, 10);
+      g.fillStyle = "#8ad8ff"; g.fillRect(22, 32, 20, 3);
+      g.fillStyle = "#3a5068"; g.fillRect(22, 42, 8, 10); g.fillRect(34, 42, 8, 10);
+      g.fillStyle = "#ffd75e"; g.fillRect(28, 44, 8, 6);
+    });
     out.B = mkTex(TEX, function (g) { // barrel
       g.fillStyle = "#3a4254"; g.fillRect(20, 26, 24, 34);
       g.fillStyle = "#2a2f3d"; g.fillRect(20, 26, 24, 4); g.fillRect(20, 56, 24, 4);
@@ -819,7 +849,7 @@
                          state: "idle", animT: 0, atkT: 1 + Math.random(), painT: 0, roared: false,
                          phase: 0, blink: 0 });
         }
-        else if ("hasckWQ".indexOf(ch) >= 0) items.push({ x: x + 0.5, y: y + 0.5, kind: ch });
+        else if ("hasckWQYv".indexOf(ch) >= 0) items.push({ x: x + 0.5, y: y + 0.5, kind: ch });
         else if (ch === "B") barrels.push({ x: x + 0.5, y: y + 0.5, hp: 12, dead: false });
       }
       map.push(row);
@@ -846,7 +876,9 @@
       brute: buildDemon(ETYPES.brute.pal, { horns: true, bulk: true, spikes: true }),
       boss: buildBoss(ETYPES.boss.pal),
       wraith: buildWraith(ETYPES.wraith.pal),
-      gunner: buildGunner(ETYPES.gunner.pal)
+      gunner: buildGunner(ETYPES.gunner.pal),
+      lurker: buildDemon(ETYPES.lurker.pal, { horns: false, spikes: true }),
+      nightmare: buildDemon(ETYPES.nightmare.pal, { horns: true, bulk: true, spikes: true })
     };
     this.items = buildItems();
     this.keys = {};
@@ -866,7 +898,7 @@
     const self = this;
     this._down = function (e) {
       const k = e.key.toLowerCase();
-      if (["arrowup","arrowdown","arrowleft","arrowright"," ","w","a","s","d","r","m","p","1","2","3"].indexOf(k) >= 0) e.preventDefault();
+      if (["arrowup","arrowdown","arrowleft","arrowright"," ","w","a","s","d","r","m","p","1","2","3","4"].indexOf(k) >= 0) e.preventDefault();
       self.keys[k] = true;
       self.press(k);
     };
@@ -1138,7 +1170,7 @@
       if (k === " ") this.tryFire();
       if (k === "r") this.retryLevel();
       if (k === "p") { this.mode = "pause"; return; }
-      if (k === "1" || k === "2" || k === "3") {
+      if (k === "1" || k === "2" || k === "3" || k === "4") {
         const w = +k - 1;
         if (this.owned[w] && this.cur !== w) { this.cur = w; SFX.switch(); this.say(WEAPONS[w].name, 0.7); }
       }
@@ -1148,9 +1180,9 @@
   };
 
   Game.prototype.startRun = function () {
-    this.score = 0; this.hp = 100;
+    this.score = 0; this.hp = 100; this.armor = 0;
     this.bullets = 40; this.shells = 0; this.cells = 0;
-    this.owned = [true, false, false]; this.cur = 0;
+    this.owned = [true, false, false, false]; this.cur = 0;
     this.loadLevel(0);
     this.mode = "play";
   };
@@ -1166,6 +1198,7 @@
   };
   Game.prototype.retryLevel = function () {
     this.hp = 100;
+    this.armor = Math.max(0, Math.min(this.armor, 25));
     this.bullets = Math.max(this.bullets, 24);
     this.mode = "play";
     this.loadLevel(this.levelIdx);
@@ -1318,6 +1351,12 @@
   };
   Game.prototype.hurtPlayer = function (dmg) {
     if (this.mode !== "play") return;
+    dmg = Math.max(0, dmg | 0);
+    if (this.armor > 0 && dmg > 0) {
+      const absorbed = Math.min(this.armor, Math.ceil(dmg * 0.66));
+      this.armor -= absorbed;
+      dmg -= absorbed;
+    }
     this.hp -= dmg;
     this.dmgFlash = 0.65;
     SFX.hurt();
@@ -1327,20 +1366,26 @@
   Game.prototype.tryFire = function () {
     if (this.mode !== "play" || this.fireCd > 0) return;
     const w = WEAPONS[this.cur];
-    if (this[w.ammo] <= 0) {
-      this.fireCd = 0.5; // throttle the empty click when the fire button is held
-      this.say("NO " + (w.ammo === "bullets" ? "BULLETS" : w.ammo.toUpperCase()) + " — SWITCH (1-3) OR FIND AMMO", 1.1);
+    const cost = w.cost || 1;
+    if (this[w.ammo] < cost) {
+      this.fireCd = 0.5;
+      this.say("NO " + (w.ammo === "bullets" ? "BULLETS" : w.ammo.toUpperCase()) + " — SWITCH (1-4) OR FIND AMMO", 1.1);
       SFX.empty(); return;
     }
-    this[w.ammo]--;
+    this[w.ammo] -= cost;
     this.fireCd = w.rate;
-    this.muzzle = 0.09;
-    (w.name === "PISTOL" ? SFX.pistol : w.name === "SHOTGUN" ? SFX.shotgun : SFX.plasma)();
+    this.muzzle = w.bfg ? 0.18 : 0.09;
+    if (w.bfg) { SFX.bfg(); this.shake = Math.max(this.shake, 0.45); }
+    else (w.name === "PISTOL" ? SFX.pistol : w.name === "SHOTGUN" ? SFX.shotgun : SFX.plasma)();
 
-    if (w.proj) { // plasma bolt
-      this.projs.push({ x: this.px + this.dx * 0.4, y: this.py + this.dy * 0.4,
-                        vx: this.dx * 9, vy: this.dy * 9, player: true,
-                        dmg: w.dmg[0] + Math.random() * (w.dmg[1] - w.dmg[0]) });
+    if (w.proj) {
+      const speed = w.bfg ? 5.2 : 9;
+      this.projs.push({
+        x: this.px + this.dx * 0.45, y: this.py + this.dy * 0.45,
+        vx: this.dx * speed, vy: this.dy * speed, player: true,
+        dmg: w.dmg[0] + Math.random() * (w.dmg[1] - w.dmg[0]),
+        bfg: !!w.bfg, splash: w.splash || 0
+      });
       return;
     }
     // hitscan pellets
@@ -1364,6 +1409,24 @@
       if (best) {
         if (best.e) this.damageEnemy(best.e, w.dmg[0] + Math.random() * (w.dmg[1] - w.dmg[0]));
         else { best.b.hp -= 10; this.spawnParts(best.b.x, best.b.y, 3, "#8ad8ff", 1); if (best.b.hp <= 0) this.explodeBarrel(best.b); }
+      }
+    }
+  };
+
+  Game.prototype.bfgBlast = function (x, y, dmg, radius) {
+    this.spawnParts(x, y, 42, "#7dff9a", 4.2);
+    this.spawnParts(x, y, 24, "#d5ffe0", 3.2);
+    this.shake = Math.max(this.shake, 0.55);
+    for (let i = 0; i < this.L.enemies.length; i++) {
+      const e = this.L.enemies[i];
+      if (e.state === "dead") continue;
+      const d = Math.hypot(e.x - x, e.y - y);
+      if (d < radius) this.damageEnemy(e, dmg * (1 - d / radius));
+    }
+    for (let i = 0; i < this.L.barrels.length; i++) {
+      const b = this.L.barrels[i];
+      if (!b.dead && Math.hypot(b.x - x, b.y - y) < radius * 0.75) {
+        b.hp = 0; this.explodeBarrel(b);
       }
     }
   };
@@ -1402,14 +1465,16 @@
       if (Math.hypot(it.x - this.px, it.y - this.py) < 0.55) {
         let took = true;
         if (it.kind === "h") { if (this.hp >= 100) took = false; else { this.hp = Math.min(100, this.hp + 25); this.say("+25 HEALTH", 1); } }
+        else if (it.kind === "v") { if (this.armor >= 100) took = false; else { this.armor = Math.min(100, this.armor + 25); this.say("+25 ARMOR", 1); } }
         else if (it.kind === "a") { this.bullets += 10; this.say("+10 BULLETS", 1); }
         else if (it.kind === "s") { this.shells += 4; this.say("+4 SHELLS", 1); }
         else if (it.kind === "c") { this.cells += 20; this.say("+20 CELLS", 1); }
         else if (it.kind === "k") { this.hasKey = true; this.say("GOLD KEYCARD ACQUIRED", 1.6); SFX.key(); }
         else if (it.kind === "W") { this.owned[1] = true; this.cur = 1; this.shells += 8; this.say("SHOTGUN! (KEY 2)", 1.8); SFX.key(); }
         else if (it.kind === "Q") { this.owned[2] = true; this.cur = 2; this.cells += 40; this.say("PLASMA RIFLE! (KEY 3)", 1.8); SFX.key(); }
+        else if (it.kind === "Y") { this.owned[3] = true; this.cur = 3; this.cells += 80; this.say("BFG-9000! (KEY 4)", 2.2); SFX.key(); this.shake = 0.35; }
         if (took) {
-          if (it.kind !== "k" && it.kind !== "W" && it.kind !== "Q") SFX.pickup();
+          if (it.kind !== "k" && it.kind !== "W" && it.kind !== "Q" && it.kind !== "Y") SFX.pickup();
           this.pickFlash = 0.5; this.itemsGot++; this.score += 25;
           this.L.items.splice(i, 1);
         }
@@ -1481,7 +1546,8 @@
       const p = this.projs[i];
       p.x += p.vx * dt; p.y += p.vy * dt;
       if (this.solidAt(p.x, p.y)) {
-        this.spawnParts(p.x, p.y, 4, p.player ? "#8ad8ff" : "#ff8a50", 1.2);
+        if (p.bfg) this.bfgBlast(p.x, p.y, p.dmg * 0.85, p.splash || 2.5);
+        else this.spawnParts(p.x, p.y, 4, p.player ? "#8ad8ff" : "#ff8a50", 1.2);
         this.projs.splice(i, 1); continue;
       }
       if (p.player) {
@@ -1489,13 +1555,18 @@
         const targets = this.hitscanTargets();
         for (let t = 0; t < targets.length; t++) {
           const tg = targets[t];
-          if (Math.hypot(tg.x - p.x, tg.y - p.y) < tg.r + 0.12) {
-            if (tg.e) this.damageEnemy(tg.e, p.dmg);
+          const hitR = tg.r + (p.bfg ? 0.35 : 0.12);
+          if (Math.hypot(tg.x - p.x, tg.y - p.y) < hitR) {
+            if (p.bfg) this.bfgBlast(p.x, p.y, p.dmg, p.splash || 2.5);
+            else if (tg.e) this.damageEnemy(tg.e, p.dmg);
             else { tg.b.hp = 0; this.explodeBarrel(tg.b); }
             hit = true; break;
           }
         }
-        if (hit) { this.spawnParts(p.x, p.y, 5, "#8ad8ff", 1.4); this.projs.splice(i, 1); }
+        if (hit) {
+          if (!p.bfg) this.spawnParts(p.x, p.y, 5, "#8ad8ff", 1.4);
+          this.projs.splice(i, 1);
+        }
       } else if (Math.hypot(this.px - p.x, this.py - p.y) < 0.38) {
         this.hurtPlayer(p.dmg | 0);
         this.projs.splice(i, 1);
@@ -1664,11 +1735,21 @@
       if (trY <= 0.1) continue;
       const sx = (W / 2) * (1 + trX / trY);
       if (sx < 0 || sx >= W || this.zbuf[sx | 0] <= trY) continue;
-      const r = Math.max(2, (VIEW_H * 0.041) / trY);
-      g.fillStyle = p.player ? "rgba(138,216,255,0.35)" : "rgba(255,138,80,0.35)";
-      g.beginPath(); g.arc(sx, VIEW_H / 2, r * 1.8, 0, 7); g.fill();
-      g.fillStyle = p.player ? "#d5f4ff" : "#ffd07a";
-      g.beginPath(); g.arc(sx, VIEW_H / 2, r, 0, 7); g.fill();
+      const scale = p.bfg ? 0.09 : 0.041;
+      const r = Math.max(2, (VIEW_H * scale) / trY);
+      if (p.bfg) {
+        g.fillStyle = "rgba(125,255,154,0.28)";
+        g.beginPath(); g.arc(sx, VIEW_H / 2, r * 2.4, 0, 7); g.fill();
+        g.fillStyle = "#7dff9a";
+        g.beginPath(); g.arc(sx, VIEW_H / 2, r * 1.35, 0, 7); g.fill();
+        g.fillStyle = "#d5ffe0";
+        g.beginPath(); g.arc(sx, VIEW_H / 2, r * 0.55, 0, 7); g.fill();
+      } else {
+        g.fillStyle = p.player ? "rgba(138,216,255,0.35)" : "rgba(255,138,80,0.35)";
+        g.beginPath(); g.arc(sx, VIEW_H / 2, r * 1.8, 0, 7); g.fill();
+        g.fillStyle = p.player ? "#d5f4ff" : "#ffd07a";
+        g.beginPath(); g.arc(sx, VIEW_H / 2, r, 0, 7); g.fill();
+      }
     }
 
     // ---- particles ----
@@ -1757,11 +1838,17 @@
       g.fillStyle = "#12141c"; g.fillRect(gx - 12, gy - 8, 8, 5); g.fillRect(gx + 4, gy - 8, 8, 5);
       g.fillStyle = "#5e3a1e"; g.fillRect(gx - 16, gy + 22, 32, 16);
       g.fillStyle = "#ffd75e"; g.fillRect(gx - 16, gy + 22, 32, 3);
-    } else { // plasma
+    } else if (this.cur === 2) { // plasma
       g.fillStyle = "#1c2f42"; g.fillRect(gx - 12, gy - 6, 24, 40);
       g.fillStyle = "#8ad8ff"; g.fillRect(gx - 8, gy - 2, 6, 26); g.fillRect(gx + 2, gy - 2, 6, 26);
       g.fillStyle = "#d5f4ff"; g.fillRect(gx - 4, gy - 8, 8, 5);
       g.fillStyle = "#ffd75e"; g.fillRect(gx - 12, gy + 30, 24, 3);
+    } else { // BFG
+      g.fillStyle = "#14301c"; g.fillRect(gx - 18, gy - 4, 36, 42);
+      g.fillStyle = "#2a6040"; g.fillRect(gx - 14, gy, 28, 30);
+      g.fillStyle = "#7dff9a"; g.fillRect(gx - 10, gy + 4, 8, 20); g.fillRect(gx + 2, gy + 4, 8, 20);
+      g.fillStyle = "#d5ffe0"; g.beginPath(); g.arc(gx, gy - 6, 8, 0, 7); g.fill();
+      g.fillStyle = "#ffd75e"; g.fillRect(gx - 18, gy + 32, 36, 4);
     }
     g.restore();
   };
@@ -1788,7 +1875,7 @@
     }
     for (let i = 0; i < L.items.length; i++) {
       const it = L.items[i];
-      g.fillStyle = it.kind === "k" ? "#ffd75e" : "#8ad8ff";
+      g.fillStyle = it.kind === "k" ? "#ffd75e" : it.kind === "Y" ? "#7dff9a" : it.kind === "v" ? "#4a9ad8" : "#8ad8ff";
       g.fillRect(ox + it.x * sc - 1, oy + it.y * sc - 1, 2, 2);
     }
     g.fillStyle = "#fff";
@@ -1884,41 +1971,46 @@
     g.fillStyle = "#0b0f1a"; g.fillRect(0, VIEW_B, BW, BHUD);
     g.fillStyle = "#232c47"; g.fillRect(0, VIEW_B, BW, 1);
     this.renderFace(g, 3, VIEW_B + 3);
-    g.font = "bold 9px monospace"; g.textBaseline = "middle"; g.textAlign = "left";
+    g.font = "bold 8px monospace"; g.textBaseline = "middle"; g.textAlign = "left";
     // HP
-    g.fillStyle = "#31121a"; g.fillRect(30, VIEW_B + 5, 52, 9);
+    g.fillStyle = "#31121a"; g.fillRect(28, VIEW_B + 3, 44, 7);
     g.fillStyle = this.hp > 35 ? "#c9333f" : "#ff7043";
-    g.fillRect(30, VIEW_B + 5, (52 * this.hp / 100) | 0, 9);
-    g.fillStyle = "#fff"; g.fillText(String(this.hp), 34, VIEW_B + 10);
+    g.fillRect(28, VIEW_B + 3, (44 * this.hp / 100) | 0, 7);
+    g.fillStyle = "#fff"; g.fillText(String(this.hp), 30, VIEW_B + 7);
+    // Armor
+    g.fillStyle = "#122033"; g.fillRect(28, VIEW_B + 12, 44, 6);
+    g.fillStyle = "#4a9ad8";
+    g.fillRect(28, VIEW_B + 12, (44 * (this.armor || 0) / 100) | 0, 6);
+    g.fillStyle = "#cfe8ff"; g.fillText(String(this.armor || 0), 30, VIEW_B + 15);
     // ammo for current weapon
     const w = WEAPONS[this.cur];
-    g.fillStyle = "#8d99b8"; g.fillText("AMMO", 30, VIEW_B + 21);
-    g.fillStyle = "#ffd75e"; g.fillText(String(this[w.ammo]), 62, VIEW_B + 21);
-    // weapon slots
-    for (let i = 0; i < 3; i++) {
+    g.fillStyle = "#8d99b8"; g.fillText("AMMO", 76, VIEW_B + 8);
+    g.fillStyle = "#ffd75e"; g.fillText(String(this[w.ammo]), 104, VIEW_B + 8);
+    // weapon slots 1-4
+    for (let i = 0; i < 4; i++) {
       const owned = this.owned[i];
       g.fillStyle = i === this.cur ? "#ffd75e" : owned ? "#8ad8ff" : "#2a3350";
-      g.fillText(String(i + 1), 92 + i * 12, VIEW_B + 10);
+      g.fillText(String(i + 1), 76 + i * 11, VIEW_B + 20);
     }
-    g.fillStyle = "#8d99b8"; g.fillText(w.name, 92, VIEW_B + 21);
+    g.fillStyle = "#8d99b8"; g.fillText(w.name, 122, VIEW_B + 20);
     // keycard
     if (this.hasKey) {
-      g.fillStyle = "#ffd75e"; g.fillRect(146, VIEW_B + 5, 7, 10);
-      g.fillStyle = "#0b0f1a"; g.fillRect(148, VIEW_B + 7, 3, 3);
+      g.fillStyle = "#ffd75e"; g.fillRect(168, VIEW_B + 4, 7, 10);
+      g.fillStyle = "#0b0f1a"; g.fillRect(170, VIEW_B + 6, 3, 3);
     } else {
-      g.fillStyle = "#2a3350"; g.fillRect(146, VIEW_B + 5, 7, 10);
+      g.fillStyle = "#2a3350"; g.fillRect(168, VIEW_B + 4, 7, 10);
     }
     // kills
-    g.fillStyle = "#8d99b8"; g.fillText("K", 160, VIEW_B + 10);
-    g.fillStyle = "#8ad8ff"; g.fillText(this.kills + "/" + this.L.totKills, 170, VIEW_B + 10);
+    g.fillStyle = "#8d99b8"; g.fillText("K", 180, VIEW_B + 8);
+    g.fillStyle = "#8ad8ff"; g.fillText(this.kills + "/" + this.L.totKills, 190, VIEW_B + 8);
     // level + time
-    g.fillStyle = "#8d99b8"; g.fillText("L" + (this.levelIdx + 1), 160, VIEW_B + 21);
+    g.fillStyle = "#8d99b8"; g.fillText("L" + (this.levelIdx + 1), 180, VIEW_B + 20);
     const tm = this.time | 0;
-    g.fillText(((tm / 60) | 0) + ":" + ("0" + tm % 60).slice(-2), 178, VIEW_B + 21);
+    g.fillText(((tm / 60) | 0) + ":" + ("0" + tm % 60).slice(-2), 198, VIEW_B + 20);
     // score
     g.textAlign = "right";
-    g.fillStyle = "#ffd75e"; g.fillText("SCORE " + this.score, BW - 5, VIEW_B + 10);
-    g.fillStyle = "#8d99b8"; g.fillText("HI " + Math.max(this.hi, this.score), BW - 5, VIEW_B + 21);
+    g.fillStyle = "#ffd75e"; g.fillText("SCORE " + this.score, BW - 5, VIEW_B + 8);
+    g.fillStyle = "#8d99b8"; g.fillText("HI " + Math.max(this.hi, this.score), BW - 5, VIEW_B + 20);
     g.restore();
   };
 
@@ -1992,8 +2084,8 @@
     g.fillText(Math.sin(t * 4) > -0.2 ? "CLICK OR PRESS SPACE TO ENTER HELL" : "", BW / 2, 116);
     g.font = "bold 8px monospace"; g.fillStyle = "#8d99b8";
     g.fillText("WASD MOVE · MOVE MOUSE OR ARROWS TO AIM", BW / 2, 148);
-    g.fillText("HOLD CLICK / SPACE = FIRE · 1-3 WEAPONS · M MAP · P PAUSE", BW / 2, 160);
-    g.fillText("4 LEVELS · 6 DEMON BREEDS · OPEN THE DOORS · SLAY THE CINDER KING", BW / 2, 172);
+    g.fillText("HOLD CLICK / SPACE = FIRE · 1-4 WEAPONS · M MAP · P PAUSE", BW / 2, 160);
+    g.fillText("4 LEVELS · 8 DEMON BREEDS · ARMOR · BFG · SLAY THE CINDER KING", BW / 2, 172);
     if (this.hi > 0) { g.fillStyle = "#ffd75e"; g.fillText("HI-SCORE " + this.hi, BW / 2, 188); }
     g.restore();
   };

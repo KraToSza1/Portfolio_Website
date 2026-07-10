@@ -64,7 +64,7 @@ hr();
 // Summary
 section("Summary");
 doc.fillColor(ink).font("Helvetica").fontSize(9.8).text(
-  "Developer focused on cinematic UI and interactive systems — shipping production React products and Unreal Engine 5 HUDs that stay sharp at 60fps. Founder of Whts4dinner.com. Comfortable owning UI end-to-end: design collaboration, implementation, performance budgets, and accessibility.",
+  "Developer focused on cinematic UI and interactive systems — shipping production React products and Unreal Engine 5 HUDs that stay sharp at 60fps. Co-founder of Whts4dinner.com with my beautiful partner. Comfortable owning UI end-to-end: design collaboration, implementation, performance budgets, and accessibility.",
   { width: pageW, lineGap: 2 }
 );
 
@@ -85,7 +85,7 @@ skills.forEach(([label, value]) => {
 // Experience
 section("Experience");
 job("Founder & Developer — Whts4dinner.com", "2025 – Present", [
-  "Designed, built, and shipped a live meal-planning web app with OAuth authentication.",
+  "Designed, built, and shipped a live meal-planning web app with my beautiful partner.",
   "Production product at whts4dinner.com — React, TypeScript, Supabase, Vercel.",
 ]);
 job("Product Engineer — QuotePilot, ForgeQuest AI, StorIQ, MiniSME, Will Tool", "2025 – Present", [

@@ -1574,7 +1574,7 @@ button.link-btn{
   touch-action:manipulation;
   box-shadow:0 6px 16px rgba(0,0,0,.28);
 }
-.arcade__btn--map{grid-column:1 / span 2}
+.arcade__btn--map{grid-column:2}
 .arcade__btn--fire{
   grid-column:3 / span 2;
   min-height:56px;

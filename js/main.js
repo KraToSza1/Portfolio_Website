@@ -1258,18 +1258,18 @@ const CASE_C = {
 };
 const CASE_W4D = {
   title:"Whts4dinner.com",
-  summary:"My flagship shipped product — a smart recipe finder and meal-planning web app that answers “what’s for dinner?” in seconds.",
-  role:"Founder · Design · Build · Ship",
+  summary:"Our flagship shipped product — a smart recipe finder and meal-planning web app that answers “what’s for dinner?” in seconds.",
+  role:"Co-founder · Design · Build · Ship",
   year:"2025–26",
   type:"SaaS product",
   stack:["React","TypeScript","Tailwind","Supabase","OAuth","Spoonacular API","Stripe","Vercel"],
   status:"live",
   problem:"People waste time staring at the fridge. Recipe sites are bloated, and planning dinner from ingredients on hand is still annoying.",
-  solution:"A fast meal-planning product with recipe search, ingredient-aware discovery, OAuth accounts, serverless API proxying (Spoonacular), caching, and production auth via Supabase — designed, built, and shipped solo.",
+  solution:"A fast meal-planning product with recipe search, ingredient-aware discovery, OAuth accounts, serverless API proxying (Spoonacular), caching, and production auth via Supabase — designed, built, and shipped with my beautiful partner.",
   outcome:"A live consumer product at whts4dinner.com with real accounts, ongoing iteration, and a full founder lifecycle from idea → deploy → maintain.",
   highlights:[
     { value:"Live", label:"Production SaaS" },
-    { value:"Solo", label:"Full lifecycle" },
+    { value:"Partners", label:"Built together" },
     { value:"OAuth", label:"Real accounts" },
     { value:"API", label:"Cached proxy" }
   ],
@@ -1279,7 +1279,7 @@ const CASE_W4D = {
     "Serverless Spoonacular proxy so API keys never hit the browser.",
     "Client + server caching for snappy recipe search.",
     "Stripe-ready billing path for paid tiers.",
-    "Designed, developed, deployed and maintained solo."
+    "Designed, developed, deployed and maintained with my beautiful partner."
   ],
   hero:"assets/images/cases/previews/w4d/01-home.jpg",
   thumb:"assets/images/thumb-w4d.svg",
@@ -1661,7 +1661,7 @@ const aboutHTML = `
           <p class="about__bio-text">
             I’m also a founder-builder. My flagship product is
             <a href="https://whts4dinner.com" target="_blank" rel="noopener"><strong class="highlight">Whts4dinner.com</strong></a>
-            — a live meal-planning app — alongside tools like QuotePilot, ForgeQuest AI, StorIQ, Elize’s Canteen, and Will Tool.
+            — a live meal-planning app I built with my beautiful partner — alongside tools like QuotePilot, ForgeQuest AI, StorIQ, Elize’s Canteen, and Will Tool.
             On the game side I craft cinematic mission HUDs, ARPG menu systems, and UI that speaks the same language as game state.
           </p>
           <p class="about__bio-text">
@@ -1689,7 +1689,7 @@ const aboutHTML = `
               <div class="detail-item__years">2025–26</div>
               <div class="detail-item__desc">
                 <strong>Whts4dinner.com — Founder &amp; Developer</strong><br>
-                Designed, built, and shipped a live meal-planning web app with OAuth — in production at whts4dinner.com.
+                Designed, built, and shipped a live meal-planning web app with my beautiful partner — in production at whts4dinner.com.
               </div>
             </div>
             <div class="about__detail-item">
@@ -1860,9 +1860,10 @@ function workWithMeHTML(){
 function arcadeHTML(){
   return `
     <p>A complete retro FPS I built from scratch in a canvas — raycast walls, sliding
-    doors, three weapons, six demon breeds, exploding barrels, keycards and a boss
-    fight across four levels. No engine, no libraries, no image files: everything is
-    code, the same rendering tech behind the 1993 classics.</p>
+    doors, four weapons (including a late-game BFG), eight demon breeds, armor pickups,
+    exploding barrels, keycards and a boss fight across four levels. No engine, no
+    libraries, no image files: everything is code, the same rendering tech behind the
+    1993 classics.</p>
     <div class="arcade">
       <div class="arcade__rotate">↻ Rotate your phone sideways for the best experience</div>
       <div class="arcade__stage" id="arcade-stage">
@@ -1877,6 +1878,7 @@ function arcadeHTML(){
             <button type="button" class="arcade__btn" data-touch-key="1" aria-label="Pistol">1</button>
             <button type="button" class="arcade__btn" data-touch-key="2" aria-label="Shotgun">2</button>
             <button type="button" class="arcade__btn" data-touch-key="3" aria-label="Plasma">3</button>
+            <button type="button" class="arcade__btn" data-touch-key="4" aria-label="BFG">4</button>
             <button type="button" class="arcade__btn" data-touch-fs aria-label="Fullscreen">⛶</button>
             <button type="button" class="arcade__btn arcade__btn--map" data-touch-key="m" aria-label="Map">Map</button>
             <button type="button" class="arcade__btn arcade__btn--fire" data-touch-fire aria-label="Fire">Fire</button>
@@ -1887,8 +1889,8 @@ function arcadeHTML(){
         </div>
       </div>
       <div class="arcade__controls">
-        <span><strong>Desktop:</strong> WASD move · mouse aim · click/space fire · 1–3 weapons · M map · P pause</span>
-        <span class="arcade__controls-mobile"><strong>Mobile:</strong> left stick move · right pad aim · Fire button · 1–3 weapons</span>
+        <span><strong>Desktop:</strong> WASD move · mouse aim · click/space fire · 1–4 weapons · M map · P pause</span>
+        <span class="arcade__controls-mobile"><strong>Mobile:</strong> left stick move · right pad aim · Fire button · 1–4 weapons</span>
       </div>
     </div>`;
 }
