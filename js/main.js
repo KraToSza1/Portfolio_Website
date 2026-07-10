@@ -567,71 +567,56 @@ function renderDistantSun(ctx, now) {
   ctx.drawImage(sunSprite, sunX - half, sunY - half, half * 2, half * 2);
 }
 
-// ========================== TIE FIGHTER SILHOUETTES ==========================
-const TIE_FIGHTERS = [];
-let tieFighterLastUpdate = 0;
-const TIE_UPDATE_INTERVAL = 50; // Update TIE fighters every 50ms (20fps instead of 60fps)
+// ========================== DISTANT SCOUT SILHOUETTES ==========================
+const SCOUTS = [];
+let scoutLastUpdate = 0;
+const SCOUT_UPDATE_INTERVAL = 50;
 
-function initTIEFighters() {
-  // Reduced count for performance - only 2 TIE fighters
+function initScouts() {
   const count = 2;
   for (let i = 0; i < count; i++) {
-    TIE_FIGHTERS.push({
+    SCOUTS.push({
       x: Math.random() * bgW,
       y: Math.random() * bgH * 0.3,
-      speed: 0.15 + Math.random() * 0.2,
-      size: 10 + Math.random() * 8,
-      alpha: 0.12 + Math.random() * 0.08,
+      speed: 0.12 + Math.random() * 0.18,
+      size: 8 + Math.random() * 6,
+      alpha: 0.1 + Math.random() * 0.07,
       time: Math.random() * Math.PI * 2
     });
   }
 }
 
-function drawTIEFighters(ctx, now) {
+function drawScouts(ctx, now) {
   if (reduceMotion || !missionStarted) return;
+  if (SCOUTS.length === 0) initScouts();
 
-  if (TIE_FIGHTERS.length === 0) initTIEFighters();
-
-  // Throttle POSITION updates only — always draw, otherwise the fighters
-  // flicker in and out (the bg canvas is repainted every frame)
-  const doUpdate = now - tieFighterLastUpdate >= TIE_UPDATE_INTERVAL;
-  if (doUpdate) tieFighterLastUpdate = now;
+  const doUpdate = now - scoutLastUpdate >= SCOUT_UPDATE_INTERVAL;
+  if (doUpdate) scoutLastUpdate = now;
 
   ctx.save();
-
-  TIE_FIGHTERS.forEach(tie => {
+  SCOUTS.forEach(s => {
     if (doUpdate) {
-      tie.time += 0.0005;
-      tie.x += Math.sin(tie.time) * 0.2;
-      tie.y += tie.speed;
-
-      // Wrap around screen
-      if (tie.x < -50) tie.x = bgW + 50;
-      if (tie.x > bgW + 50) tie.x = -50;
-      if (tie.y > bgH + 50) {
-        tie.y = -50;
-        tie.x = Math.random() * bgW;
+      s.time += 0.0005;
+      s.x += Math.sin(s.time) * 0.18;
+      s.y += s.speed;
+      if (s.x < -40) s.x = bgW + 40;
+      if (s.x > bgW + 40) s.x = -40;
+      if (s.y > bgH + 40) {
+        s.y = -40;
+        s.x = Math.random() * bgW;
       }
     }
-
-    ctx.globalAlpha = tie.alpha;
-    ctx.fillStyle = "rgba(150, 150, 150, 0.7)";
-    ctx.strokeStyle = "rgba(200, 200, 200, 0.5)";
-    ctx.lineWidth = 1;
-    
-    // Main body only (simpler for performance)
+    // Simple chevron / dart silhouette — original, not franchise homage
+    ctx.globalAlpha = s.alpha;
+    ctx.fillStyle = "rgba(170, 190, 220, 0.65)";
     ctx.beginPath();
-    ctx.arc(tie.x, tie.y, tie.size * 0.35, 0, Math.PI * 2);
+    ctx.moveTo(s.x, s.y - s.size * 0.55);
+    ctx.lineTo(s.x + s.size * 0.55, s.y + s.size * 0.35);
+    ctx.lineTo(s.x, s.y + s.size * 0.12);
+    ctx.lineTo(s.x - s.size * 0.55, s.y + s.size * 0.35);
+    ctx.closePath();
     ctx.fill();
-    
-    // Wings (single call with moveTo)
-    ctx.beginPath();
-    ctx.arc(tie.x - tie.size * 0.5, tie.y, tie.size * 0.35, 0, Math.PI * 2);
-    ctx.moveTo(tie.x + tie.size * 0.5, tie.y);
-    ctx.arc(tie.x + tie.size * 0.5, tie.y, tie.size * 0.35, 0, Math.PI * 2);
-    ctx.stroke();
   });
-  
   ctx.restore();
 }
 
@@ -648,8 +633,8 @@ function renderStars(dt = 16.7) {
   const now = performance.now();
   renderDistantSun(bctx, now);
   
-  // Draw TIE fighter silhouettes (very distant)
-  drawTIEFighters(bctx, now);
+  // Distant scout silhouettes
+  drawScouts(bctx, now);
 
   // adaptive quality while page/tab hidden (skip work)
   const hidden = document.visibilityState === "hidden";
@@ -698,13 +683,11 @@ function pickWarpTheme(preferred = true){
 }
 
 function startWarp(theme = pickWarpTheme(true)){
-  // Mark mission as started - sun will now appear
+  // Mark orbit as started — distant sun appears
   missionStarted = true;
-  
-  // Initialize TIE fighters after mission starts
-  if (TIE_FIGHTERS.length === 0) {
-    initTIEFighters();
-  }
+
+  // Soft distant scouts (not franchise homage)
+  if (SCOUTS.length === 0) initScouts();
   
   // Safety: remove previous theme classes
   warpOverlay.classList.remove("theme-cyan","theme-violet","theme-magma","theme-emerald","pulse");
@@ -749,7 +732,10 @@ function startWarp(theme = pickWarpTheme(true)){
   setTimeout(() => {
     warpTarget = CONFIG.STARS.CRUISE_SPEED;
     warpOverlay.classList.remove("active","pulse");
-    setTimeout(() => { warpOverlay.hidden = true; }, CONFIG.WARP.EXIT_FADE_MS);
+    setTimeout(() => {
+      warpOverlay.hidden = true;
+      maybeShowCompass();
+    }, CONFIG.WARP.EXIT_FADE_MS);
   }, CONFIG.WARP.ENTER_FADE_MS + CONFIG.WARP.HOLD_MS);
 }
 
@@ -1184,9 +1170,12 @@ const CASE_A = {
   hero:"assets/images/cases/Demo.png",
   thumb:"assets/images/thumb-hud.svg",
   previews:[
-    "assets/images/cases/Demo.png"
+    "assets/images/cases/Demo.png",
+    "assets/images/cases/1.jpg",
+    "assets/images/cases/2.jpg",
+    "assets/images/cases/3.jpg"
   ],
-  video:"assets/videos/Horror.mp4",
+  video:"",
   links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/HorrorFPS" }]
 };
 const CASE_B = {
@@ -1251,9 +1240,12 @@ const CASE_C = {
   hero:"assets/images/cases/Equipped Axe.png",
   thumb:"assets/images/thumb-commonui.svg",
   previews:[
-    "assets/images/cases/Equipped Axe.png"
+    "assets/images/cases/Equipped Axe.png",
+    "assets/images/cases/2.jpg",
+    "assets/images/cases/3.jpg",
+    "assets/images/cases/4.jpg"
   ],
-  video:"assets/videos/A Basic Dungeon.mp4",
+  video:"",
   links:[{ label:"GitHub →", href:"https://github.com/KraToSza1/SlashRPG" }]
 };
 const CASE_W4D = {
@@ -1503,6 +1495,7 @@ function normalizeCert(c){
     image: c.image || c.cover || "",
     track: c.track || "",
     profile: c.profile || "",
+    hero: !!c.hero,
     status, pct
   };
 }
@@ -1553,45 +1546,36 @@ function certCardHTML(c){
 }
 
 function certificationsHTML(){
-  const items = (SITE.certifications?.length ? SITE.certifications : RAW_CERTS)
-    .map(normalizeCert)
-    .sort((a,b) => {
-      const order = v => v.status==="complete" ? 0
-               : v.status==="in-progress" ? 1
-               : 2;
-      if (order(a) !== order(b)) return order(a) - order(b);
-      const ay = parseInt(a.year) || 0, by = parseInt(b.year) || 0;
-      return by - ay;
-    });
-
-  const done = items.filter(c => c.status === "complete" || c.pct === 100);
-  const active = items.filter(c => !(c.status === "complete" || c.pct === 100));
+  const all = (SITE.certifications?.length ? SITE.certifications : RAW_CERTS).map(normalizeCert);
+  const showcase = all.filter(c => c.hero);
+  const grid = showcase.length ? showcase : all.filter(c => c.status === "complete" || c.pct === 100).slice(0, 6);
+  const activeCount = all.filter(c => !(c.status === "complete" || c.pct === 100)).length;
+  const extraComplete = Math.max(0, all.filter(c => c.status === "complete" || c.pct === 100).length - grid.length);
   const profile = "https://www.udemy.com/user/raymond-van-der-walt/";
 
   return `
     <div class="certs">
       <div class="certs__hero">
         <div>
-          <p class="certs__kicker">Learning log</p>
+          <p class="certs__kicker">Credentials</p>
           <p class="certs__summary">
-            <strong>${done.length}</strong> completed ·
-            <strong>${active.length}</strong> in progress ·
-            formal IIE Higher Certificate + Udemy game/UI track
+            Formal IIE Higher Certificate plus focused UE5 / React credentials —
+            the ones that matter for the work I ship.
           </p>
         </div>
         <a class="link-btn" href="${profile}" target="_blank" rel="noopener">Udemy profile →</a>
       </div>
 
       <section class="certs__section">
-        <h3 class="certs__heading">Completed</h3>
-        <div class="certs__grid">${done.map(certCardHTML).join("")}</div>
+        <h3 class="certs__heading">Highlights</h3>
+        <div class="certs__grid">${grid.map(certCardHTML).join("")}</div>
       </section>
 
-      ${active.length ? `
-      <section class="certs__section">
-        <h3 class="certs__heading">In progress</h3>
-        <div class="certs__grid">${active.map(certCardHTML).join("")}</div>
-      </section>` : ""}
+      ${(extraComplete + activeCount) > 0 ? `
+      <p class="certs__more">
+        ${extraComplete ? `${extraComplete} additional completed courses` : ""}${extraComplete && activeCount ? " · " : ""}${activeCount ? `${activeCount} UE tracks in progress` : ""}.
+        <a href="${profile}" target="_blank" rel="noopener">See the full learning log →</a>
+      </p>` : ""}
     </div>`;
 }
 
@@ -1611,17 +1595,23 @@ const aboutHTML = `
       <p class="about__main-title">${SITE.contact?.availability || "Open to opportunities"}</p>
       <div class="about__contact-pills">
         ${CONTACT_LOCATION ? `<div class="contact-pill">
-          <span class="contact-pill__icon">📍</span>
+          <span class="contact-pill__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg>
+          </span>
           <span class="contact-pill__text">${CONTACT_LOCATION}</span>
         </div>` : ""}
         <div class="contact-pill">
-          <span class="contact-pill__icon">✉️</span>
+          <span class="contact-pill__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5L4 8V6l8 5 8-5v2z"/></svg>
+          </span>
           <span class="contact-pill__text">
             <a href="mailto:${CONTACT_EMAIL}" class="contact-pill__link">Email me</a>
           </span>
         </div>
         ${CONTACT_PHONE ? `<div class="contact-pill">
-          <span class="contact-pill__icon">📞</span>
+          <span class="contact-pill__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.3 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.3 1.1L6.6 10.8z"/></svg>
+          </span>
           <span class="contact-pill__text">
             <a href="tel:${CONTACT_PHONE}" class="contact-pill__link">${CONTACT_PHONE}</a>
           </span>
@@ -1647,9 +1637,9 @@ const aboutHTML = `
           <p class="about__title">Frontend &amp; Game Developer</p>
           <p class="about__bio-text">
             Based in <strong class="highlight">South Africa</strong>, I build at the intersection of
-            <strong class="highlight">cinematic UI</strong> and
+            <strong class="highlight">product UI</strong> and
             <strong class="highlight">interactive systems</strong> —
-            whether that’s a production web product or an Unreal HUD that has to feel alive at 60fps.
+            whether that’s a production web app or an Unreal HUD that has to feel alive at 60fps.
           </p>
           <p class="about__bio-text">
             With <strong class="highlight">${YEARS}+ years</strong> shipping interfaces, I work across
@@ -1673,7 +1663,7 @@ const aboutHTML = `
             <div class="about__soft-skills">
               <span class="soft-skill-tag">UE5 UI systems</span>
               <span class="soft-skill-tag">React products</span>
-              <span class="soft-skill-tag">Cinematic HUDs</span>
+              <span class="soft-skill-tag">Mission HUDs</span>
               <span class="soft-skill-tag">AI-assisted tools</span>
               <span class="soft-skill-tag">Performance budgets</span>
             </div>
@@ -1839,20 +1829,20 @@ const aboutHTML = `
 const SERVICES = SITE.services || {};
 function workWithMeHTML(){
   const tiers = (SERVICES.tiers || []).map(t => `
-    <article class="price-card${t.featured ? " price-card--featured" : ""}">
-      ${t.featured ? `<div class="price-card__flag">Most popular</div>` : ""}
+    <article class="price-card outcome-card${t.featured ? " price-card--featured" : ""}">
+      ${t.featured ? `<div class="price-card__flag">Signature</div>` : ""}
       <h3 class="price-card__name">${t.name}</h3>
-      <div class="price-card__price">${t.price}</div>
       <div class="price-card__tagline">${t.tagline || ""}</div>
       <ul class="price-card__features">${(t.features || []).map(f => `<li>${f}</li>`).join("")}</ul>
+      <div class="price-card__price">${t.price || "Scoped quote"}</div>
     </article>`).join("");
   const includes = (SERVICES.includes || []).map(i => `<span class="badge">${i}</span>`).join("");
   return `
-    <p>${SERVICES.intro || "I design and build websites — get in touch for a quote."}</p>
+    <p>${SERVICES.intro || "I design and build interfaces — get in touch for a scoped quote."}</p>
     <div class="price-grid">${tiers}</div>
-    ${includes ? `<p class="subhead">Every project includes</p><div class="badges">${includes}</div>` : ""}
+    ${includes ? `<p class="subhead">Every engagement includes</p><div class="badges">${includes}</div>` : ""}
     ${SERVICES.note ? `<p class="input-help" style="margin-top:12px">${SERVICES.note}</p>` : ""}
-    <p class="subhead" style="margin-top:20px">Start your project</p>
+    <p class="subhead" style="margin-top:20px">Start a conversation</p>
     ${CONTACT_HTML}`;
 }
 
@@ -1903,7 +1893,7 @@ function arcadeHTML(){
     </div>`;
 }
 function openArcadePanel(){
-  openLanding("Inferno — Retro FPS", arcadeHTML());
+  openLanding("Inferno — Retro FPS", arcadeHTML(), "arcade");
   if (window.initArcade) { window.initArcade("arcade-canvas"); return; }
   const s = document.createElement("script");
   s.src = "js/arcade.js";
@@ -1918,6 +1908,7 @@ const PROJECTS = [
     title:"Whts4dinner.com",
     summary:"Flagship product — smart recipe finder & meal planning. “What’s for dinner?” answered in seconds.",
     status:"live",
+    thumb:"assets/images/cases/previews/w4d/01-home.jpg",
     requires:["React","TypeScript","Tailwind","OAuth","Supabase","Vercel"],
     does:[
       "Recipe discovery and meal planning flows",
@@ -1933,97 +1924,129 @@ const PROJECTS = [
     title:"QuotePilot AI",
     summary:"Lead, quote & follow-up PWA for service SMEs — cut time-to-quote.",
     status:"live",
+    thumb:"assets/images/cases/previews/quote/01-home.jpg",
     requires:["React","TypeScript","PWA","AI Assist","Vercel"],
     does:[
       "Enquiry → quote → follow-up pipeline",
       "Mobile-friendly PWA for on-site quoting",
       "AI-assisted draft quotes"
     ],
-    links:[{ label:"Open live app", href:"https://quote-pilot-ai.vercel.app" }]
+    links:[
+      { label:"Open live app", href:"https://quote-pilot-ai.vercel.app" },
+      { label:"Case study →", case:"QUOTE" }
+    ]
   },
   {
     title:"ForgeQuest AI",
     summary:"Personalized Unreal learning via build / break / fix quests.",
     status:"live",
+    thumb:"assets/images/cases/previews/forge/01-home.jpg",
     requires:["React","TypeScript","AI","UE5 Learning","Vercel"],
     does:[
       "Quest-style practice loops for UE concepts",
       "Personalized learning paths",
       "Shipped web learning experience"
     ],
-    links:[{ label:"Open ForgeQuest", href:"https://forgequest-ai-web.vercel.app" }]
+    links:[
+      { label:"Open ForgeQuest", href:"https://forgequest-ai-web.vercel.app" },
+      { label:"Case study →", case:"FORGE" }
+    ]
   },
   {
     title:"StorIQ Location SEO Builder",
     summary:"Facility location page production cockpit for SEO-ready pages at scale.",
     status:"live",
+    thumb:"assets/images/cases/previews/storiq/01-home.jpg",
     requires:["React","TypeScript","SEO","Content Ops","Vercel"],
     does:[
       "Location page generation workflow",
       "Consistent local SEO structure",
       "Live production tooling"
     ],
-    links:[{ label:"Open StorIQ", href:"https://storiq-location-seo-builder.vercel.app" }]
+    links:[
+      { label:"Open StorIQ", href:"https://storiq-location-seo-builder.vercel.app" },
+      { label:"Case study →", case:"STORIQ" }
+    ]
   },
   {
     title:"Elize's Canteen (MiniSME)",
     summary:"Corporate canteen ordering UI — menus and daily staff flows.",
     status:"live",
+    thumb:"assets/images/cases/previews/canteen/01-home.jpg",
     requires:["React","TypeScript","Vite","Vercel"],
     does:[
       "Menu browsing + order flow",
       "Operational UI for SME canteen use",
       "Live MiniSME demo product"
     ],
-    links:[{ label:"Open live demo", href:"https://mini-sme-elizes-canteen.vercel.app" }]
+    links:[
+      { label:"Open live demo", href:"https://mini-sme-elizes-canteen.vercel.app" },
+      { label:"Case study →", case:"CANTEEN" }
+    ]
   },
   {
     title:"Will Tool — Dynamic PDF",
     summary:"Schema-driven forms that export legally structured PDFs.",
     status:"live",
+    thumb:"assets/images/cases/previews/will/01-home.jpg",
     requires:["React","TypeScript","PDF","Forms","Vercel"],
     does:[
       "Schema-driven questions with validation + autofill",
       "Printer-friendly themes",
       "Live MVP clients can click through"
     ],
-    links:[{ label:"Open live demo", href:"https://mvp-tool-will-form-generator.vercel.app" }]
+    links:[
+      { label:"Open live demo", href:"https://mvp-tool-will-form-generator.vercel.app" },
+      { label:"Case study →", case:"B" }
+    ]
   },
   {
     title:"Horror Mission HUD",
-    summary:"Cinematic HUD driving objectives, diegetic markers, and guided flow.",
+    summary:"Mission HUD driving objectives, diegetic markers, and guided flow.",
     status:"prototype",
+    thumb:"assets/images/cases/Demo.png",
     requires:["UE5","Blueprints","CommonUI","Materials/Shaders"],
     does:[
       "Objective/state machine → HUD states + timed beats",
       "Marker hints, distance gating, screen-edge arrows",
       "Strict frame-time budget for animations/materials"
     ],
-    links:[{ label:"GitHub", href:"https://github.com/KraToSza1/HorrorFPS" }]
+    links:[
+      { label:"GitHub", href:"https://github.com/KraToSza1/HorrorFPS" },
+      { label:"Case study →", case:"A" }
+    ]
   },
   {
     title:"Hack & Slash ARPG UI",
     summary:"UE5 CommonUI menus with rotators, EnhancedInput and styling.",
     status:"prototype",
+    thumb:"assets/images/cases/Equipped Axe.png",
     requires:["UE5","C++","Blueprints","CommonUI"],
     does:[
       "Slot-based widgets and data-driven options",
       "EnhancedInput navigation + sound cues",
       "Skins via style assets and data tables"
     ],
-    links:[{ label:"GitHub", href:"https://github.com/KraToSza1/SlashRPG" }]
+    links:[
+      { label:"GitHub", href:"https://github.com/KraToSza1/SlashRPG" },
+      { label:"Case study →", case:"C" }
+    ]
   },
   {
     title:"Farmily",
     summary:"Expo/React Native foundations for farm-produce orders with auth + payments plan.",
     status:"prototype",
+    thumb:"assets/images/thumb-farmily.svg",
     requires:["React Native","Expo","TypeScript","Auth","PayFast"],
     does:[
       "Auth flow + protected routes",
       "Responsive components + theming",
       "Payments integration plan"
     ],
-    links:[{ label:"GitHub", href:"https://github.com/KraToSza1/Farmilly_Mobile_App" }]
+    links:[
+      { label:"GitHub", href:"https://github.com/KraToSza1/Farmilly_Mobile_App" },
+      { label:"Case study →", case:"D" }
+    ]
   }
 ];
 
@@ -2037,6 +2060,9 @@ function projectsHTML(){
     const badge = p.status === "live"
       ? `<span class="status-badge status-badge--live">Live</span>`
       : (p.status === "prototype" ? `<span class="status-badge">Prototype</span>` : "");
+    const thumb = p.thumb
+      ? `<div class="card__media"><img class="card__thumb" src="${p.thumb}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'"></div>`
+      : "";
     const linkHtml = (p.links||[]).map(l => {
       if (l.case && CASE_BY_KEY[l.case]) {
         return `<button type="button" class="link-btn" data-case="${l.case}">${l.label}</button>`;
@@ -2045,16 +2071,19 @@ function projectsHTML(){
     }).join("");
     return `
     <article class="card card--project" style="--card-i:${i}">
-      <div class="case__heading">
-        <h3 class="card__title">${p.title}</h3>
-        ${badge}
+      ${thumb}
+      <div class="card__body">
+        <div class="case__heading">
+          <h3 class="card__title">${p.title}</h3>
+          ${badge}
+        </div>
+        <p class="card__desc">${p.summary}</p>
+        <h4 class="card__sub">What it does</h4>
+        <ul class="list">${p.does.map(d=>`<li>${d}</li>`).join("")}</ul>
+        <h4 class="card__sub">Stack</h4>
+        <div class="pills">${p.requires.map(t=>`<span class="pill">${t}</span>`).join("")}</div>
+        ${linkHtml ? `<div class="link-row">${linkHtml}</div>` : ""}
       </div>
-      <p class="card__desc">${p.summary}</p>
-      <h4 class="card__sub">What it does</h4>
-      <ul class="list">${p.does.map(d=>`<li>${d}</li>`).join("")}</ul>
-      <h4 class="card__sub">Stack</h4>
-      <div class="pills">${p.requires.map(t=>`<span class="pill">${t}</span>`).join("")}</div>
-      ${linkHtml ? `<div class="link-row">${linkHtml}</div>` : ""}
     </article>`;
   }).join("");
   return `
@@ -2873,9 +2902,19 @@ function refreshSkillBars(){
   });
 }
 
-function openLanding(title, html){
+function openLanding(title, html, kind){
   ensureLanding();
-  if (window.destroyArcade) window.destroyArcade(); // leaving the arcade for another panel
+  if (window.destroyArcade) window.destroyArcade();
+  const panel = landing.querySelector(".landing__panel");
+  const inferred = kind || (
+    /Inferno|Arcade/i.test(title) ? "arcade"
+    : /About/i.test(title) ? "about"
+    : /Work With Me|Contact/i.test(title) ? "hire"
+    : /Certif/i.test(title) ? "certs"
+    : /case|HUD|Tool|Pilot|Canteen|dinner|Quote|Forge|Stor|Farm|ARPG|Will/i.test(title) ? "case"
+    : "default"
+  );
+  panel.className = "landing__panel landing__panel--" + inferred;
   landing.querySelector("#landing-title").textContent = title;
   landing.querySelector("#landing-body").innerHTML = html;
   landing.hidden = false;
@@ -2887,9 +2926,30 @@ function openLanding(title, html){
       const key = btn.getAttribute("data-case");
       const cs = CASE_BY_KEY[key];
       if (!cs) return;
-      openLanding(cs.title, caseStudyHTML(cs));
+      openLanding(cs.title, caseStudyHTML(cs), "case");
     });
   });
+}
+
+function maybeShowCompass(){
+  if (reduceMotion) return;
+  try { if (localStorage.getItem("rvdw-seen-compass") === "1") return; } catch (e) {}
+  if (document.getElementById("orbit-compass")) return;
+  const el = document.createElement("div");
+  el.id = "orbit-compass";
+  el.className = "orbit-compass";
+  el.setAttribute("role", "status");
+  el.innerHTML = `
+    <p class="orbit-compass__text">Click a planet — or open <strong>Menu</strong> — to explore</p>
+    <button type="button" class="orbit-compass__dismiss" aria-label="Dismiss">Got it</button>`;
+  document.body.appendChild(el);
+  const dismiss = () => {
+    el.classList.add("is-leaving");
+    try { localStorage.setItem("rvdw-seen-compass", "1"); } catch (e) {}
+    setTimeout(() => el.remove(), 280);
+  };
+  el.querySelector(".orbit-compass__dismiss").addEventListener("click", dismiss);
+  setTimeout(dismiss, 7000);
 }
 
 // ========================== INPUT ==========================
