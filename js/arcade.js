@@ -25,7 +25,7 @@
       "rows": [
         "##############################",
         "#P........#........#........h#",
-        "#.........D........D....E..A.#",
+        "#..n......D........D....E..A.#",
         "#....r....#...B....#.........#",
         "#.........#........#...h.v...#",
         "####D######........#####D#####",
@@ -37,8 +37,8 @@
         "#######....#.......######....#",
         "#.....#....D.....E.....R...h.#",
         "#..E..#....#..B..........E...#",
-        "#.....#....#.....H........a..#",
-        "#.....#....#....s...........X#",
+        "#.....%....#.....H........a..#",
+        "#.....#....#!...s...........X#",
         "#..a..D....#....##############",
         "#..B..#....#....#..k....r....#",
         "####D##....#....########D#####",
@@ -65,19 +65,19 @@
         "#..J..#..t.#...A....#....E.....#",
         "#.t...#....#...SS...#....t.....#",
         "####D##....#.......######D######",
-        "#....#.....#....B..#......C....#",
+        "#....#..e..#....B..#......C....#",
         "#..C.D...t.#.......#....t......#",
         "#....#..H..#...L...#....s......#",
-        "#..a.#.....#.......####D########",
+        "#..a.#.....#~......####D########",
         "####D#######..F.t..#.........h.#",
         "#......E..#....#...D....H......#",
         "#..h......D....#...#....t......#",
         "#....t.t..#....#...#...........#",
         "#...B..L..#....#...#..a........#",
         "###########G########.#######X###",
-        "#....E.....C........J....A....##",
+        "#....E.....C....1...J....A....##",
         "#....R....H..t..L.....F.......##",
-        "#....##*##......A.....L........#",
+        "#....##*##...~..A.....L........#",
         "#....#cv.#.....................#",
         "################################"
       ]
@@ -98,19 +98,19 @@
         "#..O..i.#....#...F.....#.....C...#",
         "#.......#....#...A.....#....i....#",
         "#####D#######.........###D########",
-        "#.....##....#...H...#...#...A....#",
+        "#.....#%....#...H...#...#...A....#",
         "#..C..#.....#.......#...#.....R..#",
         "#.....D.....#..Q....#...D........#",
         "#..a..#.....#..v.c..#...#.....s..#",
         "#####D#######..F....#####D########",
-        "#..........#........#....E.....h.#",
+        "#...m......#........#....E.....h.#",
         "#..h..R....D...B....#....#.......#",
         "#..........#........#....#...c...#",
         "#..B..E....#...F....#....#......X#",
         "############G########.######D#####",
-        "#....E.....A.......O.....F......##",
-        "#......L....N..I.H....O....L.K..##",
-        "#....##*##.....R.....A...........#",
+        "#....E.....A....@..O.....F......##",
+        "#......L....N..I.H....O....L.2..##",
+        "#....##*##..$..R.....A.....o.....#",
         "#....#ac.#.......................#",
         "##################################"
       ]
@@ -131,18 +131,18 @@
         "#.....A....#.....H...............#",
         "############......h.......########",
         "#....E...........f.....L......s..#",
-        "#MM....f..............MM.....c...#",
+        "#MM..~.f..............MM.....c...#",
         "#..a.....A...........R...........#",
         "#........B...F...F...B...........#",
         "##########...........#.........h.#",
-        "#MM..............N...#.......c...#",
-        "#....H.....A.........#....F....s.#",
+        "#MM...........@..N...#.......c...#",
+        "#....H.....A.........%....F....s.#",
         "#####D######....######...........#",
         "#....s..h.F....c..............a..#",
-        "#....N............L....R.........#",
-        "#....L.........H....A...V....J...#",
-        "#...............................X#",
-        "#....##*##...................k...#",
+        "#....N.......$.....L....R........#",
+        "#....L..g......H....A...3....J...#",
+        "#.............~.................X#",
+        "#....##*##.....o.........k.......#",
         "#....#ca.#.......................#",
         "##################################"
       ]
@@ -167,11 +167,11 @@
         "#..a..D..........................#",
         "########...B...F.Z.F...B.........#",
         "#.............#.....#..........h.#",
-        "#MM...........#.....#........c...#",
+        "#MM.....g.....#.....#........c...#",
         "#.............#.....#..........s.#",
         "#####D#####...#######............#",
         "#....s..h.F....c...............a.#",
-        "#....N............L....R.........#",
+        "#....N...!........L....R.........#",
         "#......I.......N.......H....K....#",
         "#....u.....E.....A........V...u..#",
         "#....##*##.....R.....A...........#",
@@ -180,9 +180,12 @@
       ]
     }
   ];
-  const WALLS = { "#": 1, "T": 2, "S": 3, "M": 4, "X": 5, "D": 6, "G": 7, "*": 8 };
+  const WALLS = { "#": 1, "T": 2, "S": 3, "M": 4, "X": 5, "D": 6, "G": 7, "*": 8, "%": 9 };
   const DOOR_SPEED = 2.2;   // openness units per second
   const DOOR_HOLD = 4;      // seconds a door stays open
+  let diff = 1; // 0 recruit / 1 normal / 2 nightmare
+  const DIFF_NAMES = ["RECRUIT", "NORMAL", "NIGHTMARE"];
+  const DIFF_MUL  = [0.75, 1.0, 1.35]; // hp/dmg scale
 
   // ============================ CONFIG ============================
   // Base ("chrome") space: HUD/menus are authored in 320x200 coordinates and
@@ -195,10 +198,12 @@
   const TEX = 128; // art is authored in 64-space and rendered at 2x
 
   const WEAPONS = [
-    { name: "PISTOL",  ammo: "bullets", rate: 0.32, pellets: 1, spread: 0.012, dmg: [12, 18], kick: 4,  color: "#ffe6a0" },
-    { name: "SHOTGUN", ammo: "shells",  rate: 0.95, pellets: 6, spread: 0.085, dmg: [8, 13],  kick: 9,  color: "#ffd07a" },
-    { name: "PLASMA",  ammo: "cells",   rate: 0.15, proj: true, cost: 1,  dmg: [18, 26], kick: 2,  color: "#9fe8ff" },
-    { name: "BFG",     ammo: "cells",   rate: 1.35, proj: true, cost: 40, bfg: true, dmg: [90, 130], splash: 2.8, kick: 16, color: "#7dff9a" }
+    { name: "PISTOL",   ammo: "bullets", rate: 0.32, pellets: 1, spread: 0.012, dmg: [12, 18],  kick: 4,  color: "#ffe6a0" },
+    { name: "SHOTGUN",  ammo: "shells",  rate: 0.95, pellets: 6, spread: 0.085, dmg: [8, 13],   kick: 9,  color: "#ffd07a" },
+    { name: "PLASMA",   ammo: "cells",   rate: 0.15, proj: true, cost: 1,  dmg: [18, 26],  kick: 2,  color: "#9fe8ff" },
+    { name: "BFG",      ammo: "cells",   rate: 1.35, proj: true, cost: 40, bfg: true, dmg: [90, 130], splash: 2.8, kick: 16, color: "#7dff9a" },
+    { name: "CHAINSAW", ammo: "none",    rate: 0.12, melee: true, range: 1.15, dmg: [18, 28],  kick: 2,  color: "#88cc44" },
+    { name: "ROCKET",   ammo: "rockets", rate: 0.90, proj: true, cost: 1, rocket: true, dmg: [55, 80], splash: 2.2, kick: 12, color: "#ff7722" }
   ];
 
   const ETYPES = {
@@ -235,14 +240,25 @@
               pal: { body: "#3a2a18", skin: "#6a4a28", eye: "#ffd070" } },
     knight: { hp: 160, sp: 0.85, scale: 1.4, mdmg: [18, 26], mrange: 1.2, score: 380,
               pal: { body: "#2a3038", skin: "#5a6878", eye: "#8ad8ff" } },
-    boss:   { hp: 480, sp: 0.95, scale: 2.15, mdmg: [22, 30], mrange: 1.4,  score: 1000, boss: true,
+    boss:      { hp: 480, sp: 0.95, scale: 2.15, mdmg: [22, 30], mrange: 1.4,  score: 1000, boss: true,
               ranged: { cd: 1.5, speed: 4.6, dmg: [12, 18], hold: 7, burst: 3 },
-              pal: { body: "#5a1010", skin: "#8a1f14", eye: "#ffd75e" } }
+              pal: { body: "#5a1010", skin: "#8a1f14", eye: "#ffd75e" } },
+    egg:       { hp: 12,  sp: 0,    scale: 0.6,  mdmg: [0, 0],   mrange: 0,    score: 50,
+              pal: { body: "#c8b898", skin: "#e0d0a8", eye: "#88aa44" } },
+    swampLord: { hp: 200, sp: 0.9,  scale: 1.45, mdmg: [20, 28], mrange: 1.25, score: 500, miniboss: true, title: "SWAMP LORD",
+              ranged: { cd: 1.8, speed: 3.5, dmg: [14, 20], hold: 4.5 },
+              pal: { body: "#1a4020", skin: "#3a6840", eye: "#88ff66" } },
+    boneWarden:{ hp: 200, sp: 0.85, scale: 1.4,  mdmg: [18, 26], mrange: 1.2,  score: 500, miniboss: true, title: "BONE WARDEN", shield: true,
+              pal: { body: "#3a3028", skin: "#6a5838", eye: "#88ccff" } },
+    slagTitan: { hp: 250, sp: 1.0,  scale: 1.5,  mdmg: [20, 30], mrange: 1.3,  score: 500, miniboss: true, title: "SLAG TITAN",
+              ranged: { cd: 1.8, speed: 4.0, dmg: [15, 22], hold: 5.0 },
+              pal: { body: "#4a2010", skin: "#7a3818", eye: "#ff8844" } }
   };
   const ECHARS = {
     E: "imp", C: "caster", U: "brute", Z: "boss", F: "wraith", R: "gunner",
     L: "lurker", N: "nightmare", H: "hound", O: "ogre", J: "jelly",
-    A: "arachnid", I: "cultist", V: "vulture", K: "knight"
+    A: "arachnid", I: "cultist", V: "vulture", K: "knight",
+    g: "egg", "1": "swampLord", "2": "boneWarden", "3": "slagTitan"
   };
 
   // ============================ AUDIO (synth) ============================
@@ -295,8 +311,12 @@
     switch:  function () { tone(240, 360, 0.05, "square", 0.07); noiseBurst(0.03, 0.05, 2600); },
     fireball:function () { tone(440, 150, 0.18, "sawtooth", 0.08); },
     roar:    function () { tone(95, 38, 0.8, "sawtooth", 0.2); noiseBurst(0.6, 0.14, 380); tone(60, 30, 0.7, "sine", 0.18); },
-    empty:   function () { tone(90, 80, 0.05, "square", 0.06); },
-    step:    function () {}
+    empty:    function () { tone(90, 80, 0.05, "square", 0.06); },
+    step:     function () {},
+    chainsaw: function () { noiseBurst(0.08, 0.28, 2800); tone(280, 220, 0.08, "sawtooth", 0.12); },
+    rocket:   function () { noiseBurst(0.14, 0.40, 2000); tone(130, 52, 0.22, "sine", 0.24); tone(80, 38, 0.28, "sawtooth", 0.14); },
+    teleport: function () { tone(440, 1200, 0.18, "sine", 0.13); tone(880, 440, 0.12, "square", 0.07); },
+    buzz:     function () { noiseBurst(0.06, 0.18, 3200); tone(320, 260, 0.06, "square", 0.08); }
   };
 
   // ============================ ART (procedural) ============================
@@ -413,7 +433,20 @@
       g.fillStyle = "rgba(0,0,0,0.2)";
       g.fillRect(28, 20, 2, 24); g.fillRect(34, 20, 2, 24);
     });
-    const light = [null, brick, tech, slime, metal, exit, door, gold, secret].map(function (t) { return t && polish(t); });
+    const crackedBrick = mkTex(TEX, function (g) {
+      g.drawImage(brick, 0, 0);
+      // cracks overlaid on brick
+      g.strokeStyle = "#110602"; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(12, 6); g.lineTo(22, 24); g.lineTo(15, 40); g.stroke();
+      g.beginPath(); g.moveTo(42, 4); g.lineTo(48, 22); g.lineTo(40, 36); g.stroke();
+      g.beginPath(); g.moveTo(26, 32); g.lineTo(34, 52); g.lineTo(28, 62); g.stroke();
+      g.strokeStyle = "rgba(200,80,40,0.35)"; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(10, 10); g.lineTo(20, 22); g.stroke();
+      g.beginPath(); g.moveTo(44, 6); g.lineTo(50, 18); g.stroke();
+      g.fillStyle = "rgba(0,0,0,0.25)";
+      g.fillRect(18, 20, 3, 12); g.fillRect(44, 18, 3, 10);
+    });
+    const light = [null, brick, tech, slime, metal, exit, door, gold, secret, crackedBrick].map(function (t) { return t && polish(t); });
     return { light: light, dark: [null].concat(light.slice(1).map(darken)) };
   }
 
@@ -870,6 +903,36 @@
       for (let i = 0; i < 3; i++) g.fillRect(22 + i * 8, 41, 5, 4);
       g.fillStyle = "#63d97a"; g.beginPath(); g.ellipse(32, 27, 10, 3, 0, 0, 7); g.fill();
     });
+    out.n = mkTex(TEX, function (g) { // chainsaw pickup
+      g.fillStyle = "#3a3a3a"; g.fillRect(14, 38, 36, 10); // body
+      g.fillStyle = "#88cc44"; g.fillRect(42, 36, 8, 14);  // blade guard
+      g.fillStyle = "#cccc44"; // chain teeth
+      for (let i = 0; i < 5; i++) g.fillRect(14 + i * 7, 34, 4, 4);
+      g.fillStyle = "#2a1808"; g.fillRect(16, 46, 20, 8);  // handle
+      g.fillStyle = "#444"; g.fillRect(44, 40, 4, 6);      // tip
+    });
+    out.m = mkTex(TEX, function (g) { // rocket launcher pickup
+      g.fillStyle = "#5a2810"; g.fillRect(12, 40, 40, 10);
+      g.fillStyle = "#8a4820"; g.fillRect(14, 42, 36, 6);
+      g.fillStyle = "#1a0c06"; g.fillRect(48, 41, 4, 8);   // barrel hole
+      g.fillStyle = "#ff7722"; g.beginPath(); g.arc(50, 45, 3, 0, 7); g.fill();
+      g.fillStyle = "#4a3020"; g.fillRect(16, 48, 24, 8);  // grip
+      g.fillStyle = "#ffd75e"; g.fillRect(12, 40, 40, 2);  // stripe
+    });
+    out.o = mkTex(TEX, function (g) { // rocket ammo
+      g.fillStyle = "#5a2810"; g.fillRect(22, 28, 8, 26);
+      g.fillStyle = "#ff7722"; g.beginPath(); g.moveTo(26, 20); g.lineTo(20, 30); g.lineTo(32, 30); g.fill();
+      g.fillStyle = "#ffd75e"; g.fillRect(22, 48, 8, 4);
+      for (let i = 0; i < 3; i++) g.fillRect(24 + i * 2, 54 + i, 2, 3);
+    });
+    out.e = mkTex(TEX, function (g) { // berserk sphere
+      g.fillStyle = "rgba(200,30,30,0.9)";
+      g.beginPath(); g.arc(32, 36, 16, 0, 7); g.fill();
+      g.fillStyle = "#ff8a50"; g.beginPath(); g.arc(32, 32, 10, 0, 7); g.fill();
+      g.fillStyle = "#fff"; g.beginPath(); g.arc(32, 30, 5, 0, 7); g.fill();
+      g.fillStyle = "#c9333f"; g.font = "bold 10px sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText("!", 32, 44);
+    });
     return out;
   }
 
@@ -963,30 +1026,51 @@
   function parseLevel(idx) {
     const rows = LEVELS[idx].rows;
     const map = [], enemies = [], items = [], barrels = [], doors = {}, props = [];
+    const hazards = [], telepads = [], ambushes = [];
+    const breakables = {}; // y*1000+x → {x,y,hp}
     let px = 1.5, py = 1.5;
+    const hpScale = DIFF_MUL[diff] || 1;
     for (let y = 0; y < rows.length; y++) {
       const line = rows[y], row = [];
       for (let x = 0; x < line.length; x++) {
         const ch = line[x];
         const wv = WALLS[ch] || 0;
-        row.push(wv);
+        // floor-marker chars: treat as open floor in the map array
+        if (ch === "~" || ch === "@" || ch === "$" || ch === "!") {
+          row.push(0);
+        } else {
+          row.push(wv);
+        }
+        if (wv === 9) {
+          breakables[y * 1000 + x] = { x: x, y: y, hp: 3 };
+        }
         if (wv === 6 || wv === 7 || wv === 8) {
           doors[y * 1000 + x] = { x: x, y: y, open: 0, target: 0, gold: wv === 7, secret: wv === 8, hold: 0 };
         }
         if (ch === "P") { px = x + 0.5; py = y + 0.5; }
+        else if (ch === "~") { hazards.push({ x: x + 0.5, y: y + 0.5 }); }
+        else if (ch === "@" || ch === "$") { telepads.push({ x: x + 0.5, y: y + 0.5, kind: ch, dest: null }); }
+        else if (ch === "!") { ambushes.push({ x: x + 0.5, y: y + 0.5, used: false }); }
         else if (ECHARS[ch]) {
           const cfg = ETYPES[ECHARS[ch]];
-          enemies.push({ type: ECHARS[ch], cfg: cfg, x: x + 0.5, y: y + 0.5, hp: cfg.hp,
+          enemies.push({ type: ECHARS[ch], cfg: cfg, x: x + 0.5, y: y + 0.5, hp: Math.max(1, (cfg.hp * hpScale) | 0),
                          state: "idle", animT: 0, atkT: 1 + Math.random(), painT: 0, roared: false,
-                         phase: 0, blink: 0, asleep: true });
+                         phase: 0, blink: 0, asleep: true, blinkT: 0, hatchT: -1, hatching: false });
         }
-        else if ("hasckWQYv".indexOf(ch) >= 0) items.push({ x: x + 0.5, y: y + 0.5, kind: ch });
+        else if ("hasckWQYvnmoeg".indexOf(ch) >= 0) items.push({ x: x + 0.5, y: y + 0.5, kind: ch });
         else if (ch === "B") barrels.push({ x: x + 0.5, y: y + 0.5, hp: 12, dead: false });
         else if ("trifu".indexOf(ch) >= 0) props.push({ x: x + 0.5, y: y + 0.5, kind: ch });
       }
       map.push(row);
     }
+    // link first @ ↔ first $
+    const ats = telepads.filter(function (t) { return t.kind === "@"; });
+    const dls = telepads.filter(function (t) { return t.kind === "$"; });
+    for (let i = 0; i < Math.min(ats.length, dls.length); i++) {
+      ats[i].dest = dls[i]; dls[i].dest = ats[i];
+    }
     return { map: map, enemies: enemies, items: items, barrels: barrels, doors: doors, props: props,
+             hazards: hazards, telepads: telepads, ambushes: ambushes, breakables: breakables,
              px: px, py: py, w: rows[0].length, h: rows.length,
              name: LEVELS[idx].name, par: LEVELS[idx].par, theme: LEVELS[idx].theme || "hangar",
              totKills: enemies.length, totItems: items.length };
@@ -1017,7 +1101,11 @@
       arachnid: buildDemon(ETYPES.arachnid.pal, { horns: false, spikes: true }),
       cultist: buildDemon(ETYPES.cultist.pal, { horns: true, spikes: false }),
       vulture: buildWraith(ETYPES.vulture.pal),
-      knight: buildDemon(ETYPES.knight.pal, { horns: false, bulk: true, spikes: true })
+      knight: buildDemon(ETYPES.knight.pal, { horns: false, bulk: true, spikes: true }),
+      egg: buildDemon(ETYPES.egg.pal, { horns: false, spikes: false }),
+      swampLord: buildDemon(ETYPES.swampLord.pal, { horns: true, bulk: true, spikes: true }),
+      boneWarden: buildDemon(ETYPES.boneWarden.pal, { horns: false, bulk: true, spikes: true }),
+      slagTitan: buildDemon(ETYPES.slagTitan.pal, { horns: true, bulk: true, spikes: true })
     };
     this.items = buildItems();
     this.keys = {};
@@ -1029,6 +1117,8 @@
     this.msg = ""; this.msgT = 0;
     this.dmgFlash = 0; this.pickFlash = 0; this.muzzle = 0; this.fireCd = 0;
     this.bob = 0; this.shake = 0;
+    this.berserkT = 0; this.hazardCd = 0; this.teleCd = 0;
+    this.streakCount = 0; this.streakT = 0; this.rockets = 0;
     this.running = true;
     this._last = performance.now();
     this.hi = 0;
@@ -1037,7 +1127,7 @@
     const self = this;
     this._down = function (e) {
       const k = e.key.toLowerCase();
-      if (["arrowup","arrowdown","arrowleft","arrowright"," ","w","a","s","d","r","m","p","1","2","3","4"].indexOf(k) >= 0) e.preventDefault();
+      if (["arrowup","arrowdown","arrowleft","arrowright"," ","w","a","s","d","r","m","p","1","2","3","4","5","6","[","]","-","="].indexOf(k) >= 0) e.preventDefault();
       self.keys[k] = true;
       self.press(k);
     };
@@ -1301,7 +1391,11 @@
 
   Game.prototype.press = function (k) {
     if (k === "m") this.showMap = !this.showMap;
-    if (this.mode === "title" && (k === " " || k === "enter")) { this.startRun(); return; }
+    if (this.mode === "title") {
+      if (k === " " || k === "enter") { this.startRun(); return; }
+      if (k === "[" || k === "-") { diff = Math.max(0, diff - 1); return; }
+      if (k === "]" || k === "=") { diff = Math.min(2, diff + 1); return; }
+    }
     if (this.mode === "inter" && k === " ") { this.nextLevel(); return; }
     if (this.mode === "dead" && (k === "r" || k === " ")) { this.retryLevel(); return; }
     if (this.mode === "win" && (k === "r" || k === " ")) { this.mode = "title"; return; }
@@ -1309,7 +1403,7 @@
       if (k === " ") this.tryFire();
       if (k === "r") this.retryLevel();
       if (k === "p") { this.mode = "pause"; return; }
-      if (k === "1" || k === "2" || k === "3" || k === "4") {
+      if (k === "1" || k === "2" || k === "3" || k === "4" || k === "5" || k === "6") {
         const w = +k - 1;
         if (this.owned[w] && this.cur !== w) { this.cur = w; SFX.switch(); this.say(WEAPONS[w].name, 0.7); }
       }
@@ -1320,8 +1414,9 @@
 
   Game.prototype.startRun = function () {
     this.score = 0; this.hp = 100; this.armor = 0;
-    this.bullets = 40; this.shells = 0; this.cells = 0;
-    this.owned = [true, false, false, false]; this.cur = 0;
+    this.bullets = 40; this.shells = 0; this.cells = 0; this.rockets = 0;
+    this.owned = [true, false, false, false, false, false]; this.cur = 0;
+    this.berserkT = 0; this.streakCount = 0; this.streakT = 0;
     this.loadLevel(0);
     this.mode = "play";
   };
@@ -1332,6 +1427,7 @@
     this.dx = 1; this.dy = 0; this.plx = 0; this.ply = FOV_PLANE;
     this.kills = 0; this.itemsGot = 0; this.time = 0;
     this.hasKey = false;
+    this.hazardCd = 0; this.teleCd = 0;
     this.projs.length = 0; this.parts.length = 0; this.boomQueue.length = 0;
     FLOOR_PIX = THEME_FLOOR[this.L.theme] || THEME_FLOOR.hangar;
     CEIL_PIX = THEME_CEIL[this.L.theme] || THEME_CEIL.hangar;
@@ -1347,6 +1443,7 @@
     this.hp = 100;
     this.armor = Math.max(0, Math.min(this.armor, 25));
     this.bullets = Math.max(this.bullets, 24);
+    this.berserkT = 0;
     this.mode = "play";
     this.loadLevel(this.levelIdx);
   };
@@ -1455,18 +1552,52 @@
     return t;
   };
   Game.prototype.damageEnemy = function (e, dmg) {
+    // knight shield: frontal hits are reduced
+    if (e.cfg.shield) {
+      const dist = Math.hypot(this.px - e.x, this.py - e.y);
+      if (dist > 1.5) dmg *= 0.35; // shield blocks frontal damage at range
+    }
     e.hp -= dmg;
-    this.spawnParts(e.x, e.y, 5, e.cfg.boss ? "#ffb08a" : "#c9333f", 1.8);
+    const partN = Math.min(16, 5 + Math.floor(dmg / 15));
+    this.spawnParts(e.x, e.y, partN, e.cfg.boss || e.cfg.miniboss ? "#ffb08a" : "#c9333f", 1.8 + dmg * 0.012);
+    // nearby kill flash (red tint)
+    if (e.hp <= 0 && Math.hypot(this.px - e.x, this.py - e.y) < 3.5) {
+      this.dmgFlash = Math.max(this.dmgFlash, 0.14);
+    }
     if (e.hp <= 0) {
       e.state = "dead";
       this.kills++;
       this.score += e.cfg.score;
       SFX.edie();
+      // kill streak
+      this.streakT = 2.0;
+      this.streakCount++;
+      if (this.streakCount >= 8)      this.say("UNSTOPPABLE!!", 1.6);
+      else if (this.streakCount >= 5) this.say("KILLING SPREE!", 1.4);
+      else if (this.streakCount >= 3) this.say("DOUBLE KILL!",  1.2);
+      // egg hatches into 2 arachnids
+      if (e.type === "egg") {
+        for (let i = 0; i < 2; i++) {
+          const cfg = ETYPES.arachnid;
+          this.L.enemies.push({ type: "arachnid", cfg: cfg,
+            x: e.x + (Math.random() - 0.5) * 0.8, y: e.y + (Math.random() - 0.5) * 0.8,
+            hp: cfg.hp, state: "chase", animT: 0, atkT: 0.4, painT: 0,
+            roared: false, phase: 0, blink: 0, asleep: false, blinkT: 0, hatchT: -1, hatching: false });
+          this.L.totKills++;
+        }
+        this.spawnParts(e.x, e.y, 12, "#c8b898", 2.2);
+        this.say("IT HATCHED!", 1.2);
+      }
+      if (e.cfg.miniboss) {
+        this.spawnParts(e.x, e.y, 50, "#ff8a50", 3.6);
+        this.spawnParts(e.x, e.y, 30, "#ffd75e", 2.6);
+        this.shake = Math.max(this.shake, 0.7); SFX.boom();
+        this.say(e.cfg.title + " SLAIN!", 2.0);
+      }
       if (e.cfg.boss) {
         this.spawnParts(e.x, e.y, 60, "#ff8a50", 3.2);
         this.spawnParts(e.x, e.y, 40, "#ffd75e", 2.4);
-        this.shake = 0.8;
-        SFX.boom();
+        this.shake = 0.8; SFX.boom();
         const self = this;
         setTimeout(function () { if (self.running && self.mode === "play") self.doWin(); }, 1400);
       }
@@ -1516,29 +1647,64 @@
   Game.prototype.tryFire = function () {
     if (this.mode !== "play" || this.fireCd > 0) return;
     const w = WEAPONS[this.cur];
-    const cost = w.cost || 1;
-    if (this[w.ammo] < cost) {
-      this.fireCd = 0.5;
-      this.say("NO " + (w.ammo === "bullets" ? "BULLETS" : w.ammo.toUpperCase()) + " — SWITCH (1-4) OR FIND AMMO", 1.1);
-      SFX.empty(); return;
+    const bersMul = (this.berserkT > 0 && (w.melee || this.cur === 4)) ? 2 : 1;
+    // ammo check (chainsaw has "none" = infinite)
+    if (w.ammo !== "none") {
+      const cost = w.cost || 1;
+      if ((this[w.ammo] || 0) < cost) {
+        this.fireCd = 0.5;
+        this.say("NO AMMO — SWITCH WEAPONS (1-6) OR FIND SOME", 1.1);
+        SFX.empty(); return;
+      }
+      this[w.ammo] -= cost;
     }
-    this[w.ammo] -= cost;
     this.fireCd = w.rate;
-    this.muzzle = w.bfg ? 0.18 : 0.09;
+    this.muzzle = w.bfg ? 0.18 : w.rocket ? 0.14 : 0.09;
+    this.shake = Math.max(this.shake, w.kick * 0.016);
     if (w.bfg) { SFX.bfg(); this.shake = Math.max(this.shake, 0.45); }
+    else if (w.melee) { SFX.chainsaw(); }
+    else if (w.rocket) { SFX.rocket(); this.shake = Math.max(this.shake, 0.28); }
     else (w.name === "PISTOL" ? SFX.pistol : w.name === "SHOTGUN" ? SFX.shotgun : SFX.plasma)();
 
+    // CHAINSAW: melee sweep
+    if (w.melee) {
+      const targets = this.hitscanTargets();
+      const aim = Math.atan2(this.dy, this.dx);
+      for (let i = 0; i < targets.length; i++) {
+        const t = targets[i];
+        if (t.e && t.e.state === "dead") continue;
+        if (t.b && t.b.dead) continue;
+        const dist = Math.hypot(t.x - this.px, t.y - this.py);
+        if (dist > w.range) continue;
+        let da = Math.atan2(t.y - this.py, t.x - this.px) - aim;
+        while (da > Math.PI) da -= 2 * Math.PI;
+        while (da < -Math.PI) da += 2 * Math.PI;
+        if (Math.abs(da) > 0.75) continue;
+        const dmg = (w.dmg[0] + Math.random() * (w.dmg[1] - w.dmg[0])) * bersMul;
+        if (t.e) this.damageEnemy(t.e, dmg);
+        else { t.b.hp -= 8; this.spawnParts(t.b.x, t.b.y, 2, "#88cc44", 0.9); if (t.b.hp <= 0) this.explodeBarrel(t.b); }
+      }
+      // hit breakable wall directly ahead
+      const bx = (this.px + this.dx * 1.0) | 0;
+      const by = (this.py + this.dy * 1.0) | 0;
+      const bk = by * 1000 + bx;
+      if (this.L.breakables[bk]) this.damageBreakable(bk);
+      return;
+    }
+
+    // PROJECTILE (plasma, bfg, rocket)
     if (w.proj) {
-      const speed = w.bfg ? 5.2 : 9;
+      const speed = w.bfg ? 5.2 : w.rocket ? 7 : 9;
       this.projs.push({
         x: this.px + this.dx * 0.45, y: this.py + this.dy * 0.45,
         vx: this.dx * speed, vy: this.dy * speed, player: true,
         dmg: w.dmg[0] + Math.random() * (w.dmg[1] - w.dmg[0]),
-        bfg: !!w.bfg, splash: w.splash || 0
+        bfg: !!w.bfg, rocket: !!w.rocket, splash: w.splash || 0
       });
       return;
     }
-    // hitscan pellets
+
+    // HITSCAN pellets
     const aim = Math.atan2(this.dy, this.dx);
     const targets = this.hitscanTargets();
     for (let p = 0; p < w.pellets; p++) {
@@ -1559,6 +1725,57 @@
       if (best) {
         if (best.e) this.damageEnemy(best.e, w.dmg[0] + Math.random() * (w.dmg[1] - w.dmg[0]));
         else { best.b.hp -= 10; this.spawnParts(best.b.x, best.b.y, 3, "#8ad8ff", 1); if (best.b.hp <= 0) this.explodeBarrel(best.b); }
+      }
+      // also check breakable wall along aim ray
+      const wxh = (this.px + Math.cos(aim + off) * Math.min(bestD || 8, 8)) | 0;
+      const wyh = (this.py + Math.sin(aim + off) * Math.min(bestD || 8, 8)) | 0;
+      const bkh = wyh * 1000 + wxh;
+      if (this.L.breakables[bkh] && this.wallAt(wxh, wyh) === 9) this.damageBreakable(bkh);
+    }
+  };
+
+  Game.prototype.damageBreakable = function (key) {
+    const br = this.L.breakables[key];
+    if (!br) return;
+    br.hp--;
+    this.spawnParts(br.x + 0.5, br.y + 0.5, 6, "#8a6040", 1.4);
+    if (br.hp <= 0) {
+      this.L.map[br.y][br.x] = 0;
+      delete this.L.breakables[key];
+      this.spawnParts(br.x + 0.5, br.y + 0.5, 20, "#8a5030", 2.4);
+      this.spawnParts(br.x + 0.5, br.y + 0.5, 12, "#ffd75e", 1.8);
+      this.shake = Math.max(this.shake, 0.4);
+      SFX.boom();
+      this.say("WALL DESTROYED!", 1.2);
+    }
+  };
+
+  Game.prototype.rocketBlast = function (x, y, dmg, radius) {
+    this.spawnParts(x, y, 28, "#ff7722", 3.6);
+    this.spawnParts(x, y, 16, "#ffd75e", 2.4);
+    this.shake = Math.max(this.shake, 0.5); SFX.boom();
+    // self-damage if too close
+    const pd = Math.hypot(this.px - x, this.py - y);
+    if (pd < radius) this.hurtPlayer(((dmg * 0.6 * (1 - pd / radius)) | 0));
+    for (let i = 0; i < this.L.enemies.length; i++) {
+      const e = this.L.enemies[i];
+      if (e.state === "dead") continue;
+      const d = Math.hypot(e.x - x, e.y - y);
+      if (d < radius) this.damageEnemy(e, dmg * (1 - d / radius));
+    }
+    for (let i = 0; i < this.L.barrels.length; i++) {
+      const b = this.L.barrels[i];
+      if (!b.dead && Math.hypot(b.x - x, b.y - y) < radius * 0.8) {
+        b.hp = 0; this.explodeBarrel(b);
+      }
+    }
+    // damage nearby breakable walls
+    const rx0 = (x - radius) | 0, rx1 = (x + radius) | 0;
+    const ry0 = (y - radius) | 0, ry1 = (y + radius) | 0;
+    for (let by = ry0; by <= ry1; by++) for (let bx2 = rx0; bx2 <= rx1; bx2++) {
+      const bk = by * 1000 + bx2;
+      if (this.L.breakables[bk] && Math.hypot(bx2 + 0.5 - x, by + 0.5 - y) < radius) {
+        this.damageBreakable(bk);
       }
     }
   };
@@ -1592,8 +1809,15 @@
     this.shake = Math.max(0, this.shake - dt * 1.6);
     if (this.msgT > 0) this.msgT -= dt;
 
-    // held-fire: mouse held always auto-fires; space auto-fires plasma
-    if (this.mdown || (this.keys[" "] && WEAPONS[this.cur].proj)) this.tryFire();
+    // berserk timer
+    if (this.berserkT > 0) { this.berserkT -= dt; if (this.berserkT <= 0) this.say("BERSERK FADED", 1.0); }
+
+    // kill streak decay
+    if (this.streakT > 0) { this.streakT -= dt; if (this.streakT <= 0) this.streakCount = 0; }
+
+    // held-fire: mouse held always auto-fires; space auto-fires plasma/rocket; chainsaw auto-fires when held
+    const cw = WEAPONS[this.cur];
+    if (this.mdown || (this.keys[" "] && (cw.proj || cw.melee))) this.tryFire();
 
     // movement
     const sp = 3.1 * dt, rot = 2.5 * dt;
@@ -1605,9 +1829,65 @@
     if (this.keys["arrowleft"])  this.rotate(-rot);
     if (this.keys["arrowright"]) this.rotate(rot);
     const ml = Math.hypot(mvx, mvy);
-    if (ml > 0.001) { this.tryMove(this.px + (mvx / ml) * sp, this.py + (mvy / ml) * sp); moved = true; }
+    const spMulB = (this.berserkT > 0) ? 1.25 : 1;
+    if (ml > 0.001) { this.tryMove(this.px + (mvx / ml) * sp * spMulB, this.py + (mvy / ml) * sp * spMulB); moved = true; }
     this.bob += dt * (moved ? 9 : 2);
     this.updateDoors(dt);
+
+    // floor hazards (~): damage player if standing on one
+    if (this.L.hazards && this.L.hazards.length > 0) {
+      this.hazardCd = Math.max(0, this.hazardCd - dt);
+      for (let i = 0; i < this.L.hazards.length; i++) {
+        const hz = this.L.hazards[i];
+        if (Math.abs(this.px - hz.x) < 0.6 && Math.abs(this.py - hz.y) < 0.6) {
+          if (this.hazardCd <= 0) {
+            this.hurtPlayer((8 * DIFF_MUL[diff]) | 0);
+            this.hazardCd = 0.35;
+            if (Math.random() < 0.4) this.say("TOXIC GROUND!", 0.8);
+          }
+          break;
+        }
+      }
+    }
+
+    // teleporters (@ / $)
+    if (this.L.telepads && this.L.telepads.length > 0 && this.teleCd <= 0) {
+      for (let i = 0; i < this.L.telepads.length; i++) {
+        const tp = this.L.telepads[i];
+        if (!tp.dest) continue;
+        if (Math.abs(this.px - tp.x) < 0.55 && Math.abs(this.py - tp.y) < 0.55) {
+          this.px = tp.dest.x + 0.5; this.py = tp.dest.y + 0.5;
+          this.teleCd = 1.0; this.shake = Math.max(this.shake, 0.3);
+          SFX.teleport(); this.say("TELEPORT!", 1.0);
+          break;
+        }
+      }
+    }
+    if (this.teleCd > 0) this.teleCd -= dt;
+
+    // ambush triggers (!)
+    if (this.L.ambushes) {
+      for (let i = 0; i < this.L.ambushes.length; i++) {
+        const ab = this.L.ambushes[i];
+        if (ab.used) continue;
+        if (Math.abs(this.px - ab.x) < 0.55 && Math.abs(this.py - ab.y) < 0.55) {
+          ab.used = true;
+          this.say("AMBUSH!", 2.0); SFX.roar(); this.shake = Math.max(this.shake, 0.45);
+          // open all doors within 4 tiles
+          for (const k in this.L.doors) {
+            const d = this.L.doors[k];
+            if (Math.hypot(d.x - ab.x, d.y - ab.y) < 4) { d.target = 1; d.hold = DOOR_HOLD; }
+          }
+          // wake all enemies within 6 tiles
+          for (let j = 0; j < this.L.enemies.length; j++) {
+            const e = this.L.enemies[j];
+            if (e.state !== "dead" && Math.hypot(e.x - ab.x, e.y - ab.y) < 6) {
+              e.asleep = false; e.state = "chase";
+            }
+          }
+        }
+      }
+    }
 
     // pickups
     for (let i = this.L.items.length - 1; i >= 0; i--) {
@@ -1619,12 +1899,17 @@
         else if (it.kind === "a") { this.bullets += 10; this.say("+10 BULLETS", 1); }
         else if (it.kind === "s") { this.shells += 4; this.say("+4 SHELLS", 1); }
         else if (it.kind === "c") { this.cells += 20; this.say("+20 CELLS", 1); }
+        else if (it.kind === "o") { this.rockets += 5; this.say("+5 ROCKETS", 1); }
         else if (it.kind === "k") { this.hasKey = true; this.say("GOLD KEYCARD ACQUIRED", 1.6); SFX.key(); }
         else if (it.kind === "W") { this.owned[1] = true; this.cur = 1; this.shells += 8; this.say("SHOTGUN! (KEY 2)", 1.8); SFX.key(); }
         else if (it.kind === "Q") { this.owned[2] = true; this.cur = 2; this.cells += 40; this.say("PLASMA RIFLE! (KEY 3)", 1.8); SFX.key(); }
         else if (it.kind === "Y") { this.owned[3] = true; this.cur = 3; this.cells += 80; this.say("BFG-9000! (KEY 4)", 2.2); SFX.key(); this.shake = 0.35; }
+        else if (it.kind === "n") { this.owned[4] = true; this.cur = 4; this.say("CHAINSAW! (KEY 5)", 1.8); SFX.key(); }
+        else if (it.kind === "m") { this.owned[5] = true; this.cur = 5; this.rockets += 10; this.say("ROCKET LAUNCHER! (KEY 6)", 1.8); SFX.key(); this.shake = 0.25; }
+        else if (it.kind === "e") { this.berserkT = 8; this.say("BERSERK!!", 2.0); SFX.roar(); this.pickFlash = 0.8; this.shake = 0.3; }
         if (took) {
-          if (it.kind !== "k" && it.kind !== "W" && it.kind !== "Q" && it.kind !== "Y") SFX.pickup();
+          if (it.kind !== "k" && it.kind !== "W" && it.kind !== "Q" && it.kind !== "Y" &&
+              it.kind !== "n" && it.kind !== "m" && it.kind !== "e") SFX.pickup();
           this.pickFlash = 0.5; this.itemsGot++; this.score += 25;
           this.L.items.splice(i, 1);
         }
@@ -1649,7 +1934,7 @@
     }
 
     // enemies
-    const dmgMul = 1 + this.levelIdx * 0.14;
+    const dmgMul = (1 + this.levelIdx * 0.14) * DIFF_MUL[diff];
     for (let i = 0; i < this.L.enemies.length; i++) {
       const e = this.L.enemies[i];
       if (e.state === "dead") continue;
@@ -1663,9 +1948,36 @@
         if (this.chaosT > 0 && dist > 2.2) continue;
         e.asleep = false;
       }
-      if (e.state === "idle") { if (sees) { e.state = "chase"; if (e.cfg.boss && !e.roared) { e.roared = true; this.say("THE CINDER KING AWAKENS", 2.2); SFX.roar(); this.shake = 0.6; } } else continue; }
+      // egg: idle until damaged or player within 2.5, then hatch after 0.5s
+      if (e.type === "egg") {
+        if (e.state === "idle" && dist < 2.5 && !e.hatching) { e.hatching = true; e.hatchT = 0.5; }
+        if (e.hatching) {
+          e.hatchT -= dt;
+          if (e.hatchT <= 0) { this.damageEnemy(e, e.hp + 1); } // force death = hatch
+        }
+        continue;
+      }
+      if (e.state === "idle") {
+        if (sees) {
+          e.state = "chase";
+          if (e.cfg.boss && !e.roared) { e.roared = true; this.say("THE CINDER KING AWAKENS", 2.2); SFX.roar(); this.shake = 0.6; }
+          if (e.cfg.miniboss && !e.roared) { e.roared = true; this.say(e.cfg.title + " AWAKENS!", 2.0); SFX.roar(); this.shake = 0.45; }
+        } else continue;
+      }
       e.animT += dt * 5;
       e.atkT = Math.max(0, e.atkT - dt);
+
+      // arachnid blink: teleport ~1.5 tiles toward player every 2.5s when chasing at distance
+      if (e.type === "arachnid" && e.state === "chase") {
+        e.blinkT = (e.blinkT || 0) + dt;
+        if (e.blinkT >= 2.5 && dist > 2) {
+          e.blinkT = 0;
+          const bstep = 1.5;
+          const nx = e.x + (ex / dist) * bstep;
+          const ny = e.y + (ey / dist) * bstep;
+          if (!this.solidAt(nx, ny)) { e.x = nx; e.y = ny; }
+        }
+      }
 
       // BOSS enrage: below 40% HP it speeds up, fires faster with a wider spread
       let spMul = 1, rngCd = 1, rngSpread = 0;
@@ -1711,8 +2023,15 @@
       const p = this.projs[i];
       p.x += p.vx * dt; p.y += p.vy * dt;
       if (this.solidAt(p.x, p.y)) {
-        if (p.bfg) this.bfgBlast(p.x, p.y, p.dmg * 0.85, p.splash || 2.5);
+        if (p.bfg)    this.bfgBlast(p.x, p.y, p.dmg * 0.85, p.splash || 2.5);
+        else if (p.rocket) this.rocketBlast(p.x, p.y, p.dmg, p.splash || 2.2);
         else this.spawnParts(p.x, p.y, 4, p.player ? "#8ad8ff" : "#ff8a50", 1.2);
+        // rocket can damage breakable wall it hit
+        if (p.rocket) {
+          const bwx = (p.x) | 0, bwy = (p.y) | 0;
+          const bwk = bwy * 1000 + bwx;
+          if (this.L.breakables[bwk]) this.damageBreakable(bwk);
+        }
         this.projs.splice(i, 1); continue;
       }
       if (p.player) {
@@ -1722,14 +2041,15 @@
           const tg = targets[t];
           const hitR = tg.r + (p.bfg ? 0.35 : 0.12);
           if (Math.hypot(tg.x - p.x, tg.y - p.y) < hitR) {
-            if (p.bfg) this.bfgBlast(p.x, p.y, p.dmg, p.splash || 2.5);
+            if (p.bfg)    this.bfgBlast(p.x, p.y, p.dmg, p.splash || 2.5);
+            else if (p.rocket) this.rocketBlast(p.x, p.y, p.dmg, p.splash || 2.2);
             else if (tg.e) this.damageEnemy(tg.e, p.dmg);
             else { tg.b.hp = 0; this.explodeBarrel(tg.b); }
             hit = true; break;
           }
         }
         if (hit) {
-          if (!p.bfg) this.spawnParts(p.x, p.y, 5, "#8ad8ff", 1.4);
+          if (!p.bfg && !p.rocket) this.spawnParts(p.x, p.y, 5, "#8ad8ff", 1.4);
           this.projs.splice(i, 1);
         }
       } else if (Math.hypot(this.px - p.x, this.py - p.y) < 0.38) {
@@ -1830,6 +2150,26 @@
       }
     }
 
+    // telepad glow on floor (simple overlay circles in screen-space)
+    if (this.L.telepads && this.L.telepads.length > 0) {
+      const invD2 = 1 / (this.plx * this.dy - this.dx * this.ply);
+      for (let ti = 0; ti < this.L.telepads.length; ti++) {
+        const tp = this.L.telepads[ti];
+        const trx = tp.x - this.px, trry = tp.y - this.py;
+        const trX2 = invD2 * (this.dy * trx - this.dx * trry);
+        const trY2 = invD2 * (-this.ply * trx + this.plx * trry);
+        if (trY2 <= 0.1) continue;
+        const tpsx = (W / 2) * (1 + trX2 / trY2);
+        if (tpsx < 0 || tpsx >= W) continue;
+        const tpSize = Math.max(4, (VIEW_H * 0.18) / trY2);
+        const tpPulse = 0.5 + 0.5 * Math.sin(this.time * 4 + ti);
+        g.globalAlpha = 0.25 + tpPulse * 0.2;
+        g.fillStyle = tp.kind === "@" ? "#cc88ff" : "#88ccff";
+        g.beginPath(); g.arc(tpsx, VIEW_H - tpSize * 0.3, tpSize, 0, 7); g.fill();
+        g.globalAlpha = 1;
+      }
+    }
+
     // ---- billboards (enemies, barrels, items) far→near ----
     const spr = [];
     for (let i = 0; i < L.enemies.length; i++) {
@@ -1885,6 +2225,7 @@
         yOff = size * (sp.prop === "t" ? 0.05 : 0.14);
       } else {
         img = this.items[sp.kind];
+        if (!img) continue;
         size = (size * 0.72) | 0;
         yOff = size * 0.18;
       }
@@ -1956,9 +2297,24 @@
     // vignette (cached gradient — one fill)
     g.fillStyle = this.vig; g.fillRect(0, 0, W, VIEW_H);
 
-    // flashes
+    // flashes + berserk vignette
     if (this.dmgFlash > 0) { g.fillStyle = "rgba(200,30,30," + (this.dmgFlash * 0.4).toFixed(2) + ")"; g.fillRect(0, 0, W, VIEW_H); }
     if (this.pickFlash > 0) { g.fillStyle = "rgba(255,240,180," + (this.pickFlash * 0.22).toFixed(2) + ")"; g.fillRect(0, 0, W, VIEW_H); }
+    if (this.berserkT > 0) { g.fillStyle = "rgba(160,0,0," + Math.min(0.22, this.berserkT * 0.025).toFixed(3) + ")"; g.fillRect(0, 0, W, VIEW_H); }
+
+    // weather screen-space particles (theme-based)
+    const theme = this.L && this.L.theme;
+    if (theme === "swamp" || theme === "foundry" || theme === "throne") {
+      const wt = this.time;
+      const wCount = 18;
+      for (let wi = 0; wi < wCount; wi++) {
+        const wx = ((wi * 97 + Math.sin(wt * 0.7 + wi) * 14) % W + W) % W;
+        const wy = (W - ((wt * (6 + wi % 5) + wi * 43) % VIEW_H + VIEW_H)) % VIEW_H;
+        if (theme === "swamp")   { g.fillStyle = "rgba(80,160,60,0.45)"; g.fillRect(wx, wy, 2, 3); }
+        else if (theme === "foundry") { g.fillStyle = "rgba(255,120,40,0.50)"; g.fillRect(wx, wy, 2, 2); }
+        else                    { g.fillStyle = "rgba(180,180,180,0.30)"; g.fillRect(wx, wy, 2, 4); }
+      }
+    }
 
     // crosshair (chrome space)
     g.save(); g.scale(SCALE, SCALE);
@@ -1999,9 +2355,10 @@
     const gy = VIEW_B - 8 + bobY + kick;
 
     if (this.muzzle > 0) {
-      const fx = gx + (this.cur === 0 ? 2 : 0);
-      const fy = gy - (this.cur === 0 ? 38 : this.cur === 1 ? 42 : this.cur === 2 ? 40 : 46);
-      g.fillStyle = w.bfg ? "rgba(125,255,154,0.95)" : w.proj ? "rgba(150,230,255,0.9)" : "rgba(255,230,140,0.95)";
+      const fx = gx + (this.cur === 0 ? 2 : this.cur === 5 ? 22 : 0);
+      const fy = gy - (this.cur === 0 ? 38 : this.cur === 1 ? 42 : this.cur === 2 ? 40 : this.cur === 3 ? 46 : this.cur === 4 ? 28 : 20);
+      const mColor = w.bfg ? "rgba(125,255,154,0.95)" : w.rocket ? "rgba(255,120,60,0.95)" : w.melee ? "rgba(80,200,60,0.85)" : w.proj ? "rgba(150,230,255,0.9)" : "rgba(255,230,140,0.95)";
+      g.fillStyle = mColor;
       g.beginPath(); g.arc(fx, fy, 7 + Math.random() * 5, 0, 7); g.fill();
       g.fillStyle = "#fff";
       g.beginPath(); g.arc(fx, fy, 3, 0, 7); g.fill();
@@ -2046,7 +2403,7 @@
       g.fillStyle = "#4a90b8"; g.fillRect(gx - 8, gy - 8, 16, 10);
       g.fillStyle = "#ffd75e"; g.fillRect(gx - 16, gy - 2, 32, 2);
       g.fillStyle = "#0a1820"; g.fillRect(gx - 12, gy + 2, 24, 10);
-    } else {
+    } else if (this.cur === 3) {
       // BFG
       g.fillStyle = "#0e2418"; g.fillRect(gx - 22, gy - 36, 44, 40);
       g.fillStyle = "#1a4030"; g.fillRect(gx - 18, gy - 30, 36, 30);
@@ -2058,6 +2415,35 @@
       g.beginPath(); g.arc(gx, gy - 38, 6, 0, 7); g.fill();
       g.fillStyle = "#ffd75e"; g.fillRect(gx - 22, gy + 2, 44, 3);
       g.fillStyle = "#14301c"; g.fillRect(gx - 10, gy + 4, 20, 10);
+    } else if (this.cur === 4) {
+      // CHAINSAW — green/grey saw with chain detail
+      const buzz = this.fireCd > 0 ? Math.floor(this.time * 28) % 2 : 0;
+      g.fillStyle = "#3a3a3a"; g.fillRect(gx - 22, gy - 22, 42, 14); // body
+      g.fillStyle = "#555";    g.fillRect(gx - 22, gy - 20, 42, 8);  // body highlight
+      // blade
+      g.fillStyle = "#88cc44"; g.fillRect(gx + 18, gy - 32, 18, 22);
+      g.fillStyle = "#aae066"; g.fillRect(gx + 20, gy - 30, 14, 6);
+      // chain teeth along top (animated buzz when firing)
+      g.fillStyle = "#cccc44";
+      for (let ci = 0; ci < 5; ci++) {
+        const tx = gx - 18 + ci * 9 + buzz;
+        g.fillRect(tx, gy - 30, 5, 6);
+      }
+      g.fillStyle = "#666"; g.fillRect(gx - 24, gy - 10, 6, 18); // rear grip
+      g.fillStyle = "#88cc44"; g.fillRect(gx + 34, gy - 28, 6, 8); // tip
+      g.fillStyle = "#2a1808"; g.fillRect(gx - 16, gy - 8, 28, 14); // handle housing
+    } else {
+      // ROCKET LAUNCHER — orange/brown tube
+      const fv = this.fireCd > w.rate - 0.25 ? 1 : 0;
+      g.fillStyle = "#5a2810"; g.fillRect(gx - 24, gy - 28, 50, 16); // tube
+      g.fillStyle = "#8a4820"; g.fillRect(gx - 22, gy - 26, 46, 10);
+      g.fillStyle = "#ff7722"; // exhaust glow when firing
+      if (fv) { g.globalAlpha = 0.7; g.beginPath(); g.arc(gx - 26, gy - 20, 8, 0, 7); g.fill(); g.globalAlpha = 1; }
+      g.fillStyle = "#1a0c06"; g.fillRect(gx + 22, gy - 27, 5, 12); // barrel
+      g.fillStyle = "#4a3020"; g.fillRect(gx - 16, gy - 12, 26, 16); // grip body
+      g.fillStyle = "#6a4030"; g.fillRect(gx - 12, gy - 10, 18, 10);
+      g.fillStyle = "#ffd75e"; g.fillRect(gx - 24, gy - 28, 50, 2);  // stripe
+      g.fillStyle = "#ff7722"; g.fillRect(gx - 2, gy - 32, 6, 6);    // sight
     }
     g.restore();
   };
@@ -2082,9 +2468,19 @@
       g.fillStyle = e.cfg.boss ? "#ff5d52" : "#c9333f";
       g.fillRect(ox + e.x * sc - 1, oy + e.y * sc - 1, e.cfg.boss ? 4 : 2, e.cfg.boss ? 4 : 2);
     }
+    for (let i = 0; i < (L.hazards || []).length; i++) {
+      const hz = L.hazards[i];
+      g.fillStyle = "#44aa22";
+      g.fillRect(ox + hz.x * sc - 1, oy + hz.y * sc - 1, 2, 2);
+    }
+    for (let i = 0; i < (L.telepads || []).length; i++) {
+      const tp = L.telepads[i];
+      g.fillStyle = "#cc88ff";
+      g.fillRect(ox + tp.x * sc - 1, oy + tp.y * sc - 1, 2, 2);
+    }
     for (let i = 0; i < L.items.length; i++) {
       const it = L.items[i];
-      g.fillStyle = it.kind === "k" ? "#ffd75e" : it.kind === "Y" ? "#7dff9a" : it.kind === "v" ? "#4a9ad8" : "#8ad8ff";
+      g.fillStyle = it.kind === "k" ? "#ffd75e" : it.kind === "Y" ? "#7dff9a" : it.kind === "n" ? "#88cc44" : it.kind === "m" ? "#ff7722" : it.kind === "v" ? "#4a9ad8" : "#8ad8ff";
       g.fillRect(ox + it.x * sc - 1, oy + it.y * sc - 1, 2, 2);
     }
     g.fillStyle = "#fff";
@@ -2193,15 +2589,16 @@
     g.fillStyle = "#cfe8ff"; g.fillText(String(this.armor || 0), 30, VIEW_B + 15);
     // ammo for current weapon
     const w = WEAPONS[this.cur];
+    const ammoVal = w.ammo === "none" ? "INF" : String(this[w.ammo] || 0);
     g.fillStyle = "#8d99b8"; g.fillText("AMMO", 76, VIEW_B + 8);
-    g.fillStyle = "#ffd75e"; g.fillText(String(this[w.ammo]), 104, VIEW_B + 8);
-    // weapon slots 1-4
-    for (let i = 0; i < 4; i++) {
+    g.fillStyle = w.ammo === "none" ? "#88cc44" : "#ffd75e"; g.fillText(ammoVal, 104, VIEW_B + 8);
+    // weapon slots 1-6
+    for (let i = 0; i < 6; i++) {
       const owned = this.owned[i];
       g.fillStyle = i === this.cur ? "#ffd75e" : owned ? "#8ad8ff" : "#2a3350";
-      g.fillText(String(i + 1), 76 + i * 11, VIEW_B + 20);
+      g.fillText(String(i + 1), 76 + i * 9, VIEW_B + 20);
     }
-    g.fillStyle = "#8d99b8"; g.fillText(w.name, 122, VIEW_B + 20);
+    g.fillStyle = "#8d99b8"; g.fillText(w.name, 132, VIEW_B + 20);
     // keycard
     if (this.hasKey) {
       g.fillStyle = "#ffd75e"; g.fillRect(168, VIEW_B + 4, 7, 10);
@@ -2238,17 +2635,27 @@
     g.fillStyle = "rgba(4,5,11,0.78)"; g.fillRect(0, 0, BW, BH);
     g.textAlign = "center"; g.textBaseline = "middle";
     g.font = "bold 18px monospace"; g.fillStyle = "#ffd75e";
-    g.fillText(title, BW / 2, 46);
+    g.fillText(title, BW / 2, 40);
+    // grade calculation
+    const killPct = this.kills / Math.max(1, this.L.totKills);
+    const timePct = this.time / Math.max(1, this.L.par);
+    let grade, gradeColor;
+    if (killPct >= 0.95 && timePct <= 1.0) { grade = "S"; gradeColor = "#ffd75e"; }
+    else if (killPct >= 0.80 && timePct <= 1.5) { grade = "A"; gradeColor = "#88ff88"; }
+    else if (killPct >= 0.60 && timePct <= 2.5) { grade = "B"; gradeColor = "#8ad8ff"; }
+    else { grade = "C"; gradeColor = "#8d99b8"; }
+    g.font = "bold 28px monospace"; g.fillStyle = gradeColor;
+    g.fillText(grade, BW / 2, 62);
     g.font = "bold 10px monospace";
     const rows = [
-      ["KILLS",  this.kills + " / " + this.L.totKills + "  (" + ((100 * this.kills / Math.max(1, this.L.totKills)) | 0) + "%)"],
+      ["KILLS",  this.kills + " / " + this.L.totKills + "  (" + ((100 * killPct) | 0) + "%)"],
       ["ITEMS",  this.itemsGot + " / " + this.L.totItems],
-      ["TIME",   (((this.time | 0) / 60) | 0) + ":" + ("0" + (this.time | 0) % 60).slice(-2) + "   (par " + ((this.L.par / 60) | 0) + ":" + ("0" + this.L.par % 60).slice(-2) + ")"],
+      ["TIME",   (((this.time | 0) / 60) | 0) + ":" + ("0" + (this.time | 0) % 60).slice(-2) + "  par " + ((this.L.par / 60) | 0) + ":" + ("0" + this.L.par % 60).slice(-2)],
       ["SCORE",  String(this.score)]
     ];
     for (let i = 0; i < rows.length; i++) {
-      g.fillStyle = "#8d99b8"; g.textAlign = "right"; g.fillText(rows[i][0], BW / 2 - 10, 78 + i * 16);
-      g.fillStyle = "#eef2ff"; g.textAlign = "left";  g.fillText(rows[i][1], BW / 2 + 10, 78 + i * 16);
+      g.fillStyle = "#8d99b8"; g.textAlign = "right"; g.fillText(rows[i][0], BW / 2 - 10, 82 + i * 16);
+      g.fillStyle = "#eef2ff"; g.textAlign = "left";  g.fillText(rows[i][1], BW / 2 + 10, 82 + i * 16);
     }
     g.textAlign = "center"; g.fillStyle = "#8ad8ff";
     g.fillText(sub, BW / 2, 160);
@@ -2291,11 +2698,16 @@
     g.fillText("— RAYMOND VDW'S DEMON PURGE —", BW / 2, 74);
     g.fillStyle = "#eef2ff"; g.font = "bold 11px monospace";
     g.fillText(Math.sin(t * 4) > -0.2 ? "CLICK OR PRESS SPACE TO ENTER HELL" : "", BW / 2, 116);
+    // difficulty selector
+    g.font = "bold 9px monospace"; g.fillStyle = "#8d99b8"; g.fillText("DIFFICULTY  [ / ]  TO CHANGE", BW / 2, 136);
+    const dColors = ["#88ff88", "#ffd75e", "#ff5d52"];
+    g.fillStyle = dColors[diff]; g.font = "bold 11px monospace";
+    g.fillText("▶ " + DIFF_NAMES[diff] + " ◀", BW / 2, 150);
     g.font = "bold 8px monospace"; g.fillStyle = "#8d99b8";
-    g.fillText("WASD MOVE · MOVE MOUSE OR ARROWS TO AIM", BW / 2, 148);
-    g.fillText("HOLD CLICK / SPACE = FIRE · 1-4 WEAPONS · M MAP · P PAUSE", BW / 2, 160);
-    g.fillText("5 THEMES · 15 BREEDS · SECRETS · ARMOR · BFG · SLAY THE KING", BW / 2, 172);
-    if (this.hi > 0) { g.fillStyle = "#ffd75e"; g.fillText("HI-SCORE " + this.hi, BW / 2, 188); }
+    g.fillText("WASD MOVE · MOUSE/ARROWS AIM · HOLD CLICK/SPACE FIRE", BW / 2, 162);
+    g.fillText("1-6 WEAPONS · M MAP · P PAUSE · CHAINSAW · ROCKETS · BERSERK", BW / 2, 172);
+    g.fillText("6 WEAPONS · 19 ENEMY TYPES · HAZARDS · TELEPORTERS · MINIBOSSES", BW / 2, 182);
+    if (this.hi > 0) { g.fillStyle = "#ffd75e"; g.fillText("HI-SCORE " + this.hi, BW / 2, 194); }
     g.restore();
   };
 

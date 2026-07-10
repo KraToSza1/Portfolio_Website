@@ -1860,9 +1860,10 @@ function workWithMeHTML(){
 function arcadeHTML(){
   return `
     <p>A complete retro FPS I built from scratch in a canvas — raycast walls, sliding
-    doors, four distinct weapons (pistol, shotgun, plasma, BFG), fifteen demon breeds,
-    armor, secret alcoves, themed props (swamp trees, crates, bone idols, slag), and five
-    levels that start quiet — then the horde wakes. No engine: drawn in code.</p>
+    doors, <strong>6 weapons</strong> (pistol, shotgun, plasma, BFG, chainsaw &amp; rockets), 19 enemy
+    types including minibosses and egg hatchers, toxic floor hazards, teleporters, breakable
+    walls, berserk power-ups, ambush triggers, kill streaks, letter grades, and five themed
+    levels. Three difficulty modes. No engine: every pixel drawn in code.</p>
     <div class="arcade">
       <div class="arcade__rotate">↻ Rotate your phone sideways for the best experience</div>
       <div class="arcade__stage" id="arcade-stage">
@@ -1878,6 +1879,8 @@ function arcadeHTML(){
             <button type="button" class="arcade__btn" data-touch-key="2" aria-label="Shotgun">2</button>
             <button type="button" class="arcade__btn" data-touch-key="3" aria-label="Plasma">3</button>
             <button type="button" class="arcade__btn" data-touch-key="4" aria-label="BFG">4</button>
+            <button type="button" class="arcade__btn" data-touch-key="5" aria-label="Chainsaw">5</button>
+            <button type="button" class="arcade__btn" data-touch-key="6" aria-label="Rocket">6</button>
             <button type="button" class="arcade__btn" data-touch-fs aria-label="Fullscreen">⛶</button>
             <button type="button" class="arcade__btn arcade__btn--map" data-touch-key="m" aria-label="Map">Map</button>
             <button type="button" class="arcade__btn arcade__btn--fire" data-touch-fire aria-label="Fire">Fire</button>
@@ -1888,8 +1891,8 @@ function arcadeHTML(){
         </div>
       </div>
       <div class="arcade__controls">
-        <span><strong>Desktop:</strong> WASD move · mouse aim · click/space fire · 1–4 weapons · M map · P pause</span>
-        <span class="arcade__controls-mobile"><strong>Mobile:</strong> left stick move · right pad aim · Fire button · 1–4 weapons</span>
+        <span><strong>Desktop:</strong> WASD move · mouse aim · click/space fire · 1–6 weapons · [ ] difficulty · M map · P pause</span>
+        <span class="arcade__controls-mobile"><strong>Mobile:</strong> left stick move · right pad aim · Fire button · 1–6 weapons</span>
       </div>
     </div>`;
 }

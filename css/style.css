@@ -1563,7 +1563,7 @@ button.link-btn{
 .arcade__look-label{bottom:8px}
 .arcade__actions{
   position:absolute;right:10px;bottom:10px;
-  display:grid;grid-template-columns:repeat(4,44px);gap:8px;
+  display:grid;grid-template-columns:repeat(6,40px);gap:6px;
   align-items:end;
 }
 .arcade__btn{
@@ -1574,9 +1574,9 @@ button.link-btn{
   touch-action:manipulation;
   box-shadow:0 6px 16px rgba(0,0,0,.28);
 }
-.arcade__btn--map{grid-column:2}
+.arcade__btn--map{grid-column:2 / span 2}
 .arcade__btn--fire{
-  grid-column:3 / span 2;
+  grid-column:4 / span 3;
   min-height:56px;
   background:linear-gradient(180deg,#ff8a7a,#e24b3b);
   border-color:rgba(255,180,160,.55);
