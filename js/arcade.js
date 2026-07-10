@@ -942,36 +942,6 @@
       jelly: buildDemon(ETYPES.jelly.pal, { horns: false, spikes: false })
     };
     this.items = buildItems();
-    this.gunSheets = [null, null, null, null];
-    this.gunReady = false;
-    (function loadGuns(self) {
-      const names = ["pistol", "shotgun", "plasmagun", "railgun"];
-      let left = names.length;
-      names.forEach(function (name, i) {
-        const img = new Image();
-        img.onload = function () {
-          // 4x2 grid of 16x32 frames — idle = 0, fire = 1
-          const mk = function (frame) {
-            const c = document.createElement("canvas");
-            c.width = 16; c.height = 32;
-            const g = c.getContext("2d");
-            const col = frame % 4, row = (frame / 4) | 0;
-            g.drawImage(img, col * 16, row * 32, 16, 32, 0, 0, 16, 32);
-            const id = g.getImageData(0, 0, 16, 32);
-            for (let p = 0; p < id.data.length; p += 4) {
-              if (id.data[p] < 10 && id.data[p + 1] < 10 && id.data[p + 2] < 10) id.data[p + 3] = 0;
-            }
-            g.putImageData(id, 0, 0);
-            return c;
-          };
-          self.gunSheets[i] = { idle: mk(0), fire: mk(1) };
-          left--;
-          if (left <= 0) self.gunReady = true;
-        };
-        img.onerror = function () { left--; };
-        img.src = "assets/arcade/guns/" + name + ".png";
-      });
-    })(this);
     this.keys = {};
     this.mode = "title";     // title | play | pause | inter | dead | win
     this.projs = [];
@@ -1909,66 +1879,74 @@
   function dist2(a, b) { return a * a + b * b; }
 
   Game.prototype.renderGun = function (g) {
-    g.save(); g.scale(SCALE, SCALE); // chrome space
+    g.save(); g.scale(SCALE, SCALE);
     const w = WEAPONS[this.cur];
-    const bobX = Math.sin(this.bob) * 5, bobY = Math.abs(Math.cos(this.bob)) * 4;
-    const kick = this.fireCd > w.rate - 0.1 ? w.kick : 0;
-    const gx = BW / 2 + bobX, gy = VIEW_B - 34 + bobY + kick;
-    const sheet = this.gunSheets && this.gunSheets[this.cur];
-    if (sheet) {
-      const spr = (this.muzzle > 0.04 && sheet.fire) ? sheet.fire : sheet.idle;
-      const dw = 92, dh = 184;
-      g.imageSmoothingEnabled = false;
-      g.drawImage(spr, gx - dw / 2, gy - dh + 48, dw, dh);
-      if (this.muzzle > 0) {
-        g.fillStyle = w.bfg ? "rgba(125,255,154,0.95)" : w.proj ? "rgba(150,230,255,0.9)" : "rgba(255,230,140,0.9)";
-        g.beginPath(); g.arc(gx - 6, gy - 18, 10 + Math.random() * 7, 0, 7); g.fill();
-        g.fillStyle = "rgba(255,255,255,0.95)";
-        g.beginPath(); g.arc(gx - 6, gy - 18, 4, 0, 7); g.fill();
-      }
-      g.restore();
-      return;
-    }
-    // procedural fallback (hands + detailed weapons)
+    const bobX = Math.sin(this.bob) * 4, bobY = Math.abs(Math.cos(this.bob)) * 3;
+    const kick = this.fireCd > w.rate - 0.12 ? w.kick : 0;
+    // Classic Doom placement: low in the frame, never a full-screen pillar
+    const gx = BW / 2 + bobX;
+    const gy = VIEW_B - 8 + bobY + kick;
+
     if (this.muzzle > 0) {
-      g.fillStyle = w.bfg ? "rgba(125,255,154,0.9)" : w.proj ? "rgba(150,230,255,0.9)" : "rgba(255,230,140,0.9)";
-      g.beginPath(); g.arc(gx, gy - 14, 10 + Math.random() * 6, 0, 7); g.fill();
-      g.fillStyle = "rgba(255,255,255,0.95)";
-      g.beginPath(); g.arc(gx, gy - 14, 4, 0, 7); g.fill();
+      const fx = gx + (this.cur === 0 ? 2 : 0);
+      const fy = gy - (this.cur === 0 ? 38 : this.cur === 1 ? 42 : this.cur === 2 ? 40 : 46);
+      g.fillStyle = w.bfg ? "rgba(125,255,154,0.95)" : w.proj ? "rgba(150,230,255,0.9)" : "rgba(255,230,140,0.95)";
+      g.beginPath(); g.arc(fx, fy, 7 + Math.random() * 5, 0, 7); g.fill();
+      g.fillStyle = "#fff";
+      g.beginPath(); g.arc(fx, fy, 3, 0, 7); g.fill();
     }
-    // hands
+
+    // sleeves + hands
+    g.fillStyle = "#2a2030";
+    g.fillRect(gx - 36, gy - 4, 22, 18);
+    g.fillRect(gx + 14, gy - 2, 22, 16);
     g.fillStyle = "#c4a882";
-    g.fillRect(gx - 28, gy + 18, 14, 18);
-    g.fillRect(gx + 14, gy + 20, 14, 16);
+    g.fillRect(gx - 32, gy - 2, 14, 12);
+    g.fillRect(gx + 18, gy, 14, 10);
     g.fillStyle = "#a88860";
-    g.fillRect(gx - 28, gy + 18, 14, 3);
-    g.fillRect(gx + 14, gy + 20, 14, 3);
+    g.fillRect(gx - 32, gy - 2, 14, 2);
+    g.fillRect(gx + 18, gy, 14, 2);
+
     if (this.cur === 0) {
-      g.fillStyle = "#2a2f3d"; g.fillRect(gx - 6, gy - 16, 12, 40);
-      g.fillStyle = "#3a4254"; g.fillRect(gx - 10, gy + 8, 20, 26);
-      g.fillStyle = "#ffd75e"; g.fillRect(gx - 10, gy + 8, 20, 3);
-      g.fillStyle = "#12141c"; g.fillRect(gx - 3, gy - 14, 6, 8);
-      g.fillStyle = "#8a9ab0"; g.fillRect(gx - 4, gy - 4, 8, 10);
+      // PISTOL
+      g.fillStyle = "#1a1e28"; g.fillRect(gx - 4, gy - 36, 10, 28);
+      g.fillStyle = "#3a4254"; g.fillRect(gx - 5, gy - 34, 12, 8);
+      g.fillStyle = "#12141c"; g.fillRect(gx - 2, gy - 36, 6, 5);
+      g.fillStyle = "#2a2f3d"; g.fillRect(gx - 6, gy - 12, 14, 16);
+      g.fillStyle = "#5e3a1e"; g.fillRect(gx - 5, gy + 2, 10, 14);
+      g.fillStyle = "#ffd75e"; g.fillRect(gx - 6, gy - 12, 14, 2);
+      g.fillStyle = "#8a9ab0"; g.fillRect(gx + 4, gy - 8, 3, 6);
     } else if (this.cur === 1) {
-      g.fillStyle = "#23272f"; g.fillRect(gx - 16, gy - 12, 12, 44);
-      g.fillStyle = "#2c313c"; g.fillRect(gx + 2, gy - 12, 12, 44);
-      g.fillStyle = "#12141c"; g.fillRect(gx - 14, gy - 12, 8, 6); g.fillRect(gx + 4, gy - 12, 8, 6);
-      g.fillStyle = "#5e3a1e"; g.fillRect(gx - 18, gy + 20, 36, 18);
-      g.fillStyle = "#ffd75e"; g.fillRect(gx - 18, gy + 20, 36, 3);
-      g.fillStyle = "#8a6b3a"; g.fillRect(gx - 8, gy + 28, 16, 8);
+      // SHOTGUN — twin barrels + wood stock
+      g.fillStyle = "#1a1c22"; g.fillRect(gx - 14, gy - 40, 10, 34);
+      g.fillStyle = "#22262e"; g.fillRect(gx + 2, gy - 40, 10, 34);
+      g.fillStyle = "#0c0e12"; g.fillRect(gx - 12, gy - 40, 6, 4); g.fillRect(gx + 4, gy - 40, 6, 4);
+      g.fillStyle = "#3a4254"; g.fillRect(gx - 16, gy - 10, 30, 12);
+      g.fillStyle = "#6b4420"; g.fillRect(gx - 18, gy, 34, 14);
+      g.fillStyle = "#8a5a28"; g.fillRect(gx - 10, gy + 4, 18, 8);
+      g.fillStyle = "#ffd75e"; g.fillRect(gx - 16, gy - 10, 30, 2);
+      g.fillStyle = "#c4a882"; g.fillRect(gx - 8, gy - 6, 8, 6);
     } else if (this.cur === 2) {
-      g.fillStyle = "#1c2f42"; g.fillRect(gx - 14, gy - 8, 28, 42);
-      g.fillStyle = "#8ad8ff"; g.fillRect(gx - 10, gy - 4, 8, 28); g.fillRect(gx + 2, gy - 4, 8, 28);
-      g.fillStyle = "#d5f4ff"; g.fillRect(gx - 5, gy - 12, 10, 6);
-      g.fillStyle = "#ffd75e"; g.fillRect(gx - 14, gy + 28, 28, 3);
-      g.fillStyle = "#4a90b8"; g.fillRect(gx - 8, gy + 10, 16, 10);
+      // PLASMA RIFLE
+      g.fillStyle = "#142838"; g.fillRect(gx - 16, gy - 38, 32, 36);
+      g.fillStyle = "#1c3a50"; g.fillRect(gx - 14, gy - 34, 28, 28);
+      g.fillStyle = "#8ad8ff"; g.fillRect(gx - 10, gy - 30, 7, 24); g.fillRect(gx + 3, gy - 30, 7, 24);
+      g.fillStyle = "#d5f4ff"; g.fillRect(gx - 4, gy - 40, 8, 6);
+      g.fillStyle = "#4a90b8"; g.fillRect(gx - 8, gy - 8, 16, 10);
+      g.fillStyle = "#ffd75e"; g.fillRect(gx - 16, gy - 2, 32, 2);
+      g.fillStyle = "#0a1820"; g.fillRect(gx - 12, gy + 2, 24, 10);
     } else {
-      g.fillStyle = "#14301c"; g.fillRect(gx - 20, gy - 6, 40, 44);
-      g.fillStyle = "#2a6040"; g.fillRect(gx - 16, gy - 2, 32, 32);
-      g.fillStyle = "#7dff9a"; g.fillRect(gx - 12, gy + 4, 10, 22); g.fillRect(gx + 2, gy + 4, 10, 22);
-      g.fillStyle = "#d5ffe0"; g.beginPath(); g.arc(gx, gy - 8, 10, 0, 7); g.fill();
-      g.fillStyle = "#ffd75e"; g.fillRect(gx - 20, gy + 30, 40, 4);
-      g.fillStyle = "#4a8060"; g.fillRect(gx - 10, gy + 12, 20, 12);
+      // BFG
+      g.fillStyle = "#0e2418"; g.fillRect(gx - 22, gy - 36, 44, 40);
+      g.fillStyle = "#1a4030"; g.fillRect(gx - 18, gy - 30, 36, 30);
+      g.fillStyle = "#2a6040"; g.fillRect(gx - 14, gy - 24, 28, 20);
+      g.fillStyle = "#7dff9a"; g.fillRect(gx - 12, gy - 20, 10, 16); g.fillRect(gx + 2, gy - 20, 10, 16);
+      g.fillStyle = "#d5ffe0";
+      g.beginPath(); g.arc(gx, gy - 38, 11, 0, 7); g.fill();
+      g.fillStyle = "#7dff9a";
+      g.beginPath(); g.arc(gx, gy - 38, 6, 0, 7); g.fill();
+      g.fillStyle = "#ffd75e"; g.fillRect(gx - 22, gy + 2, 44, 3);
+      g.fillStyle = "#14301c"; g.fillRect(gx - 10, gy + 4, 20, 10);
     }
     g.restore();
   };

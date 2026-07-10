@@ -1860,9 +1860,9 @@ function workWithMeHTML(){
 function arcadeHTML(){
   return `
     <p>A complete retro FPS I built from scratch in a canvas — raycast walls, sliding
-    doors, four weapons with real viewmodel sprites (including a late-game BFG), eleven
-    demon breeds, armor, and five themed levels (hangar, swamp, catacombs, foundry,
-    throne). No engine: everything is code plus a few CC gun sprites.</p>
+    doors, four distinct weapons (pistol, shotgun, plasma, BFG), eleven demon breeds,
+    armor, and five themed levels (hangar, swamp, catacombs, foundry, throne). No engine:
+    walls, demons, and viewmodels are all drawn in code.</p>
     <div class="arcade">
       <div class="arcade__rotate">↻ Rotate your phone sideways for the best experience</div>
       <div class="arcade__stage" id="arcade-stage">
