@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-  <title>Raymond van der Walt — Frontend &amp; Game Developer</title>
+  <title>Raymond van der Walt — Frontend, UE5 HUD &amp; Product UI Developer</title>
   <link rel="canonical" href="https://rayvdw.dev/" />
 
   <!-- Preconnects first for max effect -->
@@ -12,15 +12,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 
-  <meta name="description" content="Raymond van der Walt — Frontend & Game Developer. Fly a solar-system portfolio of live products, UE5 HUDs, and Inferno — a retro FPS built from scratch in the browser." />
+  <meta name="description" content="Hire Raymond van der Walt for frontend, UE5 HUD, and product UI work. Based in South Africa, available for remote collaboration. Includes Inferno, a browser FPS built from scratch." />
   <meta name="theme-color" content="#04050b" />
   <meta name="color-scheme" content="dark" />
   <meta name="robots" content="index,follow" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Raymond van der Walt — Interactive Portfolio" />
-  <meta property="og:description" content="Cinematic UI + interactive gameplay. Engage. Explore. Interact." />
+  <meta property="og:title" content="Raymond van der Walt — Frontend &amp; UE5 UI Developer" />
+  <meta property="og:description" content="Frontend, UE5 HUD, and product UI developer available for remote collaboration from South Africa. Explore projects and Inferno." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://rayvdw.dev/assets/images/og-cover.png" />
   <meta property="og:image:width" content="1200" />
@@ -31,11 +31,12 @@
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Raymond van der Walt — Interactive Portfolio" />
-  <meta name="twitter:description" content="Cinematic UI + interactive gameplay. Engage. Explore. Interact." />
+  <meta name="twitter:title" content="Raymond van der Walt — Frontend &amp; UE5 UI Developer" />
+  <meta name="twitter:description" content="Frontend, UE5 HUD, and product UI developer available for remote work. Includes Inferno, a from-scratch browser FPS." />
   <meta name="twitter:image" content="https://rayvdw.dev/assets/images/og-cover.png" />
 
   <!-- Icons -->
+  <link rel="icon" href="/favicon.ico" />
   <link rel="icon" type="image/png" href="assets/favicon.png" sizes="32x32" />
   <link rel="apple-touch-icon" href="assets/favicon.png" sizes="180x180" />
 
@@ -48,6 +49,25 @@
 <body>
   <!-- Calm starfield -->
   <canvas id="bg-canvas" class="bg-canvas" aria-hidden="true" width="1920" height="1080"></canvas>
+
+  <!-- Recruiter-first quick access -->
+  <section id="hire-strip" class="hire-strip" aria-label="Hiring and contact links">
+    <div class="hire-strip__inner">
+      <p class="hire-strip__copy">
+        Available for <strong>frontend</strong>, <strong>UE5 HUD</strong>, and <strong>product UI</strong> work · Remote from South Africa
+      </p>
+      <nav class="hire-strip__links" aria-label="Primary recruiter links">
+        <a href="/about">About</a>
+        <a href="/projects">Projects</a>
+        <a href="/inferno">Inferno</a>
+        <a href="mailto:Raymondvdw@gmail.com">Email</a>
+        <a href="https://www.linkedin.com/in/raymond-van-der-walt-2135b41a5/" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="/assets/docs/Raymond-Van-Der-Walt-Resume.pdf" target="_blank" rel="noopener">Resume PDF</a>
+        <a href="https://github.com/KraToSza1" target="_blank" rel="noopener">GitHub</a>
+        <button id="hire-enter-orbit" class="hire-strip__orbit-btn" type="button">Enter Orbit</button>
+      </nav>
+    </div>
+  </section>
 
   <!-- Intro / Crawl -->
   <div class="crawl-wrapper" id="intro">
@@ -440,14 +460,14 @@
     "@context":"https://schema.org",
     "@type":"Person",
     "name":"Raymond van der Walt",
-    "jobTitle":"Frontend & Game Developer",
+    "jobTitle":"Frontend & Game UI Developer",
     "email":"mailto:Raymondvdw@gmail.com",
     "url":"https://rayvdw.dev/",
     "image":"https://rayvdw.dev/assets/images/about/raymond.png",
+    "description":"Frontend, UE5 HUD, and product UI developer based in South Africa and available for remote collaboration. Builder of Inferno, a browser FPS built from scratch.",
     "sameAs":[
       "https://github.com/KraToSza1",
-      "https://www.linkedin.com/in/raymond-van-der-walt-2135b41a5/",
-      "https://whts4dinner.com"
+      "https://www.linkedin.com/in/raymond-van-der-walt-2135b41a5/"
     ],
     "knowsAbout":["Frontend Development","Game UI","Unreal Engine","React","WebGL","UX","TypeScript","Canvas","Motion Design","Accessibility"],
     "address":{"@type":"PostalAddress","addressCountry":"ZA"}
@@ -457,10 +477,23 @@
   {
     "@context":"https://schema.org",
     "@type":"WebSite",
+    "name":"Raymond van der Walt — Frontend & UE5 UI Portfolio",
+    "url":"https://rayvdw.dev/",
+    "description":"Hire-focused portfolio for frontend, UE5 HUD, and product UI work, featuring shipped projects and Inferno.",
+    "publisher":{"@type":"Person","name":"Raymond van der Walt"}
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebPage",
     "name":"Raymond van der Walt Portfolio",
     "url":"https://rayvdw.dev/",
-    "description":"Interactive portfolio for Raymond van der Walt — Frontend & Game Developer.",
-    "publisher":{"@type":"Person","name":"Raymond van der Walt"}
+    "description":"Frontend, UE5 HUD, and product UI developer portfolio with recruiter-friendly pages and contact links.",
+    "about":{
+      "@type":"Person",
+      "name":"Raymond van der Walt"
+    }
   }
   </script>
 
@@ -473,6 +506,15 @@
       disable2DShip: true,
       autoStartIntroMs: 0
     };
+
+    window.addEventListener("DOMContentLoaded", function () {
+      var orbitBtn = document.getElementById("hire-enter-orbit");
+      var startBtn = document.getElementById("start-button");
+      if (!orbitBtn || !startBtn) return;
+      orbitBtn.addEventListener("click", function () {
+        startBtn.click();
+      });
+    });
   </script>
 
   <!-- Browser compatibility layer -->
@@ -526,12 +568,17 @@
     <div style="color:#eef2ff; position:fixed; inset:0; display:grid; place-items:center; background:#04050b; margin:0; text-align:center; padding:24px; font-family:system-ui,sans-serif;">
       <div>
         <h1 style="color:#ffe081">Raymond van der Walt — Frontend &amp; Game Developer</h1>
-        <p>This interactive portfolio needs JavaScript. You can still reach me:</p>
+        <p>This interactive portfolio needs JavaScript. You can still browse and contact me directly:</p>
+        <p>
+          <a style="color:#8ad8ff" href="/about">About</a> ·
+          <a style="color:#8ad8ff" href="/projects">Projects</a> ·
+          <a style="color:#8ad8ff" href="/inferno">Inferno</a>
+        </p>
         <p>
           <a style="color:#8ad8ff" href="mailto:Raymondvdw@gmail.com">Email me</a> ·
           <a style="color:#8ad8ff" href="https://github.com/KraToSza1">GitHub</a> ·
           <a style="color:#8ad8ff" href="https://www.linkedin.com/in/raymond-van-der-walt-2135b41a5/">LinkedIn</a> ·
-          <a style="color:#8ad8ff" href="https://whts4dinner.com">Whts4dinner.com</a>
+          <a style="color:#8ad8ff" href="/assets/docs/Raymond-Van-Der-Walt-Resume.pdf">Resume PDF</a>
         </p>
       </div>
     </div>

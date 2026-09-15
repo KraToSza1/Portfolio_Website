@@ -5,7 +5,29 @@
   "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        { "type": "host", "value": "www.rayvdw.dev" }
+      ],
+      "destination": "https://rayvdw.dev/:path*",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    { "source": "/about", "destination": "/about.html" },
+    { "source": "/projects", "destination": "/projects.html" },
+    { "source": "/inferno", "destination": "/inferno.html" },
+    { "source": "/favicon.ico", "destination": "/assets/favicon.png" }
+  ],
   "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" }
+      ]
+    },
     {
       "source": "/assets/docs/(.*)",
       "headers": [

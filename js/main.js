@@ -2289,6 +2289,13 @@ function buildPlanetTextures(list){
       return;
     }
 
+    // Provide an immediate procedural placeholder so planets still render
+    // while artwork is fetched after "Enter Orbit".
+    if (!t.tex) {
+      t.tex = makePlanetTexture(t.r, t.planet, t.name.split("").reduce((a,c)=>a+c.charCodeAt(0),0));
+      ensureAsteroids(t);
+    }
+
     const img = new Image();
     // PATCH: hint async decode to avoid layout jank
     try { img.decoding = "async"; } catch {}
@@ -2304,12 +2311,10 @@ function buildPlanetTextures(list){
     img.src = `assets/planets/${fname}.png`;
   });
 }
-buildPlanetTextures(TARGETS);
-
 function setRoom(i){
   currentRoom = Math.max(0, Math.min(i, ROOMS.length-1));
   TARGETS = ROOMS[currentRoom].targets;
-  buildPlanetTextures(TARGETS);
+  if (missionStarted) buildPlanetTextures(TARGETS);
   if (typeof buildQuickNav === "function") buildQuickNav();
 }
 
@@ -3118,7 +3123,7 @@ function loop(){
   if (!covered) perfTime("stars+bg", renderStars, dt);
   perfTime("camera", updateCam, dt);
   perfTime("ship", updateShip);
-  if (!covered) perfTime("planets+ui", drawUI);
+  if (missionStarted && !covered) perfTime("planets+ui", drawUI);
   maybeAutopilot();
 
   adaptQuality(dt); // PATCH: adaptive perf
@@ -3166,6 +3171,7 @@ window.__portfolioState = () => ({
 
 async function enterMission({ playSfx = true } = {}){
   if (missionStarted) return;
+  buildPlanetTextures(TARGETS);
   if (playSfx && shootSfx) {
     try {
       await shootSfx.play();
