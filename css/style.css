@@ -49,7 +49,6 @@
   --vh:1vh;
   --safe-top:env(safe-area-inset-top, 0px);
   --safe-bottom:env(safe-area-inset-bottom, 0px);
-  --hire-strip-offset:104px;
 }
 
 /* ---------- Base ---------- */
@@ -123,63 +122,6 @@ a:focus-visible,
   background:radial-gradient(1200px 800px at 20% 15%,#0a0b12 0,#06070d 60%,#000 100%);
 }
 
-/* ---------- Recruiter strip (visible before entering orbit) ---------- */
-.hire-strip{
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  z-index:8;
-  background:rgba(5,8,18,.9);
-  border-bottom:1px solid rgba(150,175,230,.25);
-  -webkit-backdrop-filter:blur(8px);
-  backdrop-filter:blur(8px);
-}
-.hire-strip__inner{
-  max-width:1180px;
-  margin:0 auto;
-  padding:10px 16px;
-}
-.hire-strip__copy{
-  margin:0 0 8px;
-  color:var(--ink-soft);
-  font-size:.92rem;
-  line-height:1.35;
-}
-.hire-strip__links{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  align-items:center;
-}
-.hire-strip__links a,
-.hire-strip__orbit-btn{
-  color:var(--ink);
-  border:1px solid var(--line-strong);
-  border-radius:999px;
-  background:rgba(14,20,33,.85);
-  padding:6px 11px;
-  font-size:.83rem;
-  line-height:1.2;
-  text-decoration:none;
-}
-.hire-strip__links a:hover,
-.hire-strip__orbit-btn:hover{
-  color:var(--gold);
-  border-color:rgba(255,224,129,.45);
-  text-decoration:none;
-}
-.hire-strip__orbit-btn{
-  cursor:pointer;
-  font-family:var(--font-display);
-  text-transform:uppercase;
-  letter-spacing:.08em;
-}
-@media (max-width:780px){
-  .hire-strip__copy{font-size:.84rem}
-  :root{--hire-strip-offset:132px}
-}
-
 /* ---------- Intro / crawl ---------- */
 .crawl-wrapper{
   position:relative;
@@ -187,7 +129,6 @@ a:focus-visible,
   grid-template-rows:1fr auto;
   z-index:2;
   overflow:hidden;
-  padding-top:96px;
   padding-left:max(16px, env(safe-area-inset-left, 0px));
   padding-right:max(16px, env(safe-area-inset-right, 0px));
 }
@@ -387,7 +328,7 @@ a:focus-visible,
 .quick-nav{
   position:absolute;
   left:max(14px, env(safe-area-inset-left, 0px));
-  top:calc(var(--hire-strip-offset) + var(--safe-top));
+  top:calc(14px + var(--safe-top));
   z-index:5;
   display:flex;flex-direction:column;align-items:flex-start;gap:6px;
   /* never collide with the sound toggle in the top-right corner */
@@ -496,7 +437,7 @@ a:focus-visible,
 /* ---------- Sound toggle ---------- */
 .audio-toggle{
   position:fixed;
-  top:calc(var(--hire-strip-offset) + var(--safe-top));
+  top:calc(14px + var(--safe-top));
   right:max(14px, env(safe-area-inset-right, 0px));
   z-index:60;
   width:46px;height:46px;

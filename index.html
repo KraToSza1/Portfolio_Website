@@ -53,25 +53,6 @@
   <!-- Calm starfield -->
   <canvas id="bg-canvas" class="bg-canvas" aria-hidden="true" width="1920" height="1080"></canvas>
 
-  <!-- Recruiter-first quick access -->
-  <section id="hire-strip" class="hire-strip" aria-label="Hiring and contact links">
-    <div class="hire-strip__inner">
-      <p class="hire-strip__copy">
-        Available for <strong>frontend</strong>, <strong>UE5 HUD</strong>, and <strong>product UI</strong> work · Remote from South Africa
-      </p>
-      <nav class="hire-strip__links" aria-label="Primary recruiter links">
-        <a href="/about">About</a>
-        <a href="/projects">Projects</a>
-        <a href="/inferno">Inferno</a>
-        <a href="mailto:Raymondvdw@gmail.com">Email</a>
-        <a href="https://www.linkedin.com/in/raymond-van-der-walt-2135b41a5/" target="_blank" rel="noopener">LinkedIn</a>
-        <a href="/assets/docs/Raymond-Van-Der-Walt-Resume.pdf" target="_blank" rel="noopener">Resume PDF</a>
-        <a href="https://github.com/KraToSza1" target="_blank" rel="noopener">GitHub</a>
-        <button id="hire-enter-orbit" class="hire-strip__orbit-btn" type="button">Enter Orbit</button>
-      </nav>
-    </div>
-  </section>
-
   <!-- Intro / Crawl -->
   <div class="crawl-wrapper" id="intro">
     <div class="crawl-scroll" id="intro-scroll" tabindex="0" aria-label="Intro story — scroll to read">
@@ -509,15 +490,6 @@
       disable2DShip: true,
       autoStartIntroMs: 0
     };
-
-    window.addEventListener("DOMContentLoaded", function () {
-      var orbitBtn = document.getElementById("hire-enter-orbit");
-      var startBtn = document.getElementById("start-button");
-      if (!orbitBtn || !startBtn) return;
-      orbitBtn.addEventListener("click", function () {
-        startBtn.click();
-      });
-    });
   </script>
 
   <!-- Browser compatibility layer -->
